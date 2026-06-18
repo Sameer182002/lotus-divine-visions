@@ -9,8 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as Concept3RouteImport } from './routes/concept-3'
+import { Route as Concept2RouteImport } from './routes/concept-2'
+import { Route as Concept1RouteImport } from './routes/concept-1'
 import { Route as IndexRouteImport } from './routes/index'
 
+const Concept3Route = Concept3RouteImport.update({
+  id: '/concept-3',
+  path: '/concept-3',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Concept2Route = Concept2RouteImport.update({
+  id: '/concept-2',
+  path: '/concept-2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Concept1Route = Concept1RouteImport.update({
+  id: '/concept-1',
+  path: '/concept-1',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +37,61 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/concept-1': typeof Concept1Route
+  '/concept-2': typeof Concept2Route
+  '/concept-3': typeof Concept3Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/concept-1': typeof Concept1Route
+  '/concept-2': typeof Concept2Route
+  '/concept-3': typeof Concept3Route
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/concept-1': typeof Concept1Route
+  '/concept-2': typeof Concept2Route
+  '/concept-3': typeof Concept3Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/concept-1' | '/concept-2' | '/concept-3'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/concept-1' | '/concept-2' | '/concept-3'
+  id: '__root__' | '/' | '/concept-1' | '/concept-2' | '/concept-3'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  Concept1Route: typeof Concept1Route
+  Concept2Route: typeof Concept2Route
+  Concept3Route: typeof Concept3Route
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/concept-3': {
+      id: '/concept-3'
+      path: '/concept-3'
+      fullPath: '/concept-3'
+      preLoaderRoute: typeof Concept3RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/concept-2': {
+      id: '/concept-2'
+      path: '/concept-2'
+      fullPath: '/concept-2'
+      preLoaderRoute: typeof Concept2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/concept-1': {
+      id: '/concept-1'
+      path: '/concept-1'
+      fullPath: '/concept-1'
+      preLoaderRoute: typeof Concept1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +104,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  Concept1Route: Concept1Route,
+  Concept2Route: Concept2Route,
+  Concept3Route: Concept3Route,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
