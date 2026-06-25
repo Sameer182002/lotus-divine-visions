@@ -69,7 +69,7 @@ function Concept2() {
           A retreat inspired by the eternal lotus — a place to slow your breath, soften your shoulders, and remember the rhythm beneath the noise.
         </p>
         <div className="mt-12 max-w-5xl mx-auto px-2">
-          <BookingExperience variant="serenity" />
+          <BookingExperience variant="serenity" stickyTop="6rem" />
         </div>
 
         <div className="mt-20 max-w-6xl mx-auto px-6">

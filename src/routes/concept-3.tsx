@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BrandLogo, LotusMark } from "@/components/BrandLogo";
+import { BookingExperience } from "@/components/BookingWidget";
 import hero from "@/assets/hero-modern.jpg";
 import room1 from "@/assets/room-1.jpg";
 import room2 from "@/assets/room-2.jpg";
@@ -91,21 +92,8 @@ function Concept3() {
         </div>
         <div className="lg:col-span-5 relative bg-champagne min-h-[400px]">
           <img src={hero} alt="Lotus Divine suite" className="absolute inset-0 w-full h-full object-cover" />
-          {/* Floating booking widget */}
-          <div className="absolute bottom-8 left-8 right-8 lg:-left-24 lg:right-8 bg-ivory rounded-2xl shadow-gold p-6 ring-1 ring-brown/5">
-            <div className="eyebrow text-gold mb-4">Reserve Your Stay</div>
-            <div className="grid grid-cols-3 gap-3">
-              <BookField label="Check In" value="Jun 22" />
-              <BookField label="Check Out" value="Jun 26" />
-              <BookField label="Guests" value="2 · 1 Rm" />
-            </div>
-            <button className="w-full mt-4 bg-gold text-brown py-3.5 eyebrow rounded-xl hover:bg-brown hover:text-ivory transition-colors">
-              Search Availability
-            </button>
-            <div className="flex items-center justify-between mt-4 text-[10px] text-taupe">
-              <span>✓ Free cancellation</span>
-              <span>✓ Best rate guarantee</span>
-            </div>
+          <div className="absolute bottom-8 left-8 right-8 lg:-left-24 lg:right-8">
+            <BookingExperience variant="modern" stickyTop="5rem" />
           </div>
         </div>
       </section>
