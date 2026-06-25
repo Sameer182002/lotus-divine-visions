@@ -78,23 +78,51 @@ function HeroPanel({
 
 function LuxuryPanel({ values, setValues }: { values: Values; setValues: (v: Values) => void }) {
   return (
-    <div className="animate-fade-up [animation-delay:300ms] relative w-full max-w-4xl mt-10">
-      <div className="backdrop-blur-xl bg-brown/30 ring-1 ring-gold/40 shadow-gold p-6 lg:p-7 text-ivory">
-        <div className="flex items-center justify-between mb-5">
-          <span className="eyebrow text-gold">Reserve Your Suite</span>
-          <span className="eyebrow text-ivory/60 hidden md:inline">Best rate guaranteed</span>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-px bg-gold/30">
-          <FieldDate tone="dark" label="Arrival" value={values.checkIn} onChange={(v) => setValues({ ...values, checkIn: v })} />
-          <FieldDate tone="dark" label="Departure" value={values.checkOut} onChange={(v) => setValues({ ...values, checkOut: v })} />
-          <FieldSelect tone="dark" label="Suite" value={values.room} options={ROOMS} onChange={(v) => setValues({ ...values, room: v })} />
-          <FieldSelect tone="dark" label="Guests" value={values.guests} options={GUESTS} onChange={(v) => setValues({ ...values, guests: v })} />
-          <button className="bg-gold text-brown eyebrow px-6 py-5 hover:bg-ivory transition-colors">
-            Check Availability
-          </button>
+    <>
+      {/* Desktop (unchanged) */}
+      <div className="hidden lg:block animate-fade-up [animation-delay:300ms] relative w-full max-w-4xl mt-10">
+        <div className="backdrop-blur-xl bg-brown/30 ring-1 ring-gold/40 shadow-gold p-6 lg:p-7 text-ivory">
+          <div className="flex items-center justify-between mb-5">
+            <span className="eyebrow text-gold">Reserve Your Suite</span>
+            <span className="eyebrow text-ivory/60 hidden md:inline">Best rate guaranteed</span>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-px bg-gold/30">
+            <FieldDate tone="dark" label="Arrival" value={values.checkIn} onChange={(v) => setValues({ ...values, checkIn: v })} />
+            <FieldDate tone="dark" label="Departure" value={values.checkOut} onChange={(v) => setValues({ ...values, checkOut: v })} />
+            <FieldSelect tone="dark" label="Suite" value={values.room} options={ROOMS} onChange={(v) => setValues({ ...values, room: v })} />
+            <FieldSelect tone="dark" label="Guests" value={values.guests} options={GUESTS} onChange={(v) => setValues({ ...values, guests: v })} />
+            <button className="bg-gold text-brown eyebrow px-6 py-5 hover:bg-ivory transition-colors">
+              Check Availability
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Mobile / tablet — premium glass card, vertical, large touch targets */}
+      <div className="lg:hidden animate-fade-up [animation-delay:200ms] w-full mt-8">
+        <div className="backdrop-blur-2xl bg-brown/45 ring-1 ring-gold/40 shadow-gold px-5 pt-5 pb-5 sm:px-6 sm:pt-6 text-ivory relative">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
+          <div className="flex items-center justify-between mb-5">
+            <span className="eyebrow text-gold text-[10px]">Reserve Your Suite</span>
+            <LotusMark className="w-4 h-4 text-gold" />
+          </div>
+          <div className="grid grid-cols-2 gap-px bg-gold/25 mb-px">
+            <FieldDate tone="dark" label="Arrival" value={values.checkIn} onChange={(v) => setValues({ ...values, checkIn: v })} big />
+            <FieldDate tone="dark" label="Departure" value={values.checkOut} onChange={(v) => setValues({ ...values, checkOut: v })} big />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-gold/25">
+            <FieldSelect tone="dark" label="Suite" value={values.room} options={ROOMS} onChange={(v) => setValues({ ...values, room: v })} big />
+            <FieldSelect tone="dark" label="Guests" value={values.guests} options={GUESTS} onChange={(v) => setValues({ ...values, guests: v })} big />
+          </div>
+          <button className="w-full mt-5 bg-gold text-brown eyebrow py-5 hover:bg-ivory transition-colors active:scale-[0.99]">
+            Check Availability
+          </button>
+          <div className="mt-4 text-center text-[10px] text-ivory/55 tracking-[0.25em] uppercase">
+            Best rate guaranteed · Concierge welcome
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
