@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { META } from "../data/siteContent";
 
 function NotFoundComponent() {
   return (
@@ -77,10 +78,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lotus Divine — Luxury Hotel" },
-      { name: "description", content: "Three homepage concepts for Lotus Divine Luxury Hotel — Premium Luxury, Divine Serenity, and Modern Hospitality." },
-      { property: "og:title", content: "Lotus Divine — Luxury Hotel" },
-      { property: "og:description", content: "Three homepage concepts for client review." },
+      { title: META.title },
+      { name: "description", content: META.description },
+      { property: "og:title", content: META.ogTitle },
+      { property: "og:description", content: META.ogDescription },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
