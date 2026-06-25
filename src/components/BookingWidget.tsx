@@ -272,11 +272,12 @@ function StickyBar({
 
 /* ---------------- Fields ---------------- */
 
-function baseField(tone: "dark" | "light", rounded?: boolean) {
+function baseField(tone: "dark" | "light", rounded?: boolean, big?: boolean) {
   const bg = tone === "dark" ? "bg-brown/40 text-ivory" : "bg-ivory text-brown";
   const ring = tone === "dark" ? "ring-1 ring-gold/0 hover:ring-gold/40" : "ring-1 ring-brown/10 hover:ring-gold/60";
   const radius = rounded ? "rounded-xl" : "";
-  return `${bg} ${ring} ${radius} px-4 py-3 transition-all cursor-pointer text-left`;
+  const pad = big ? "px-5 py-4" : "px-4 py-3";
+  return `${bg} ${ring} ${radius} ${pad} transition-all cursor-pointer text-left`;
 }
 
 function FieldDate({
@@ -285,25 +286,27 @@ function FieldDate({
   value,
   onChange,
   rounded,
+  big,
 }: {
   tone: "dark" | "light";
   label: string;
   value: string;
   onChange: (v: string) => void;
   rounded?: boolean;
+  big?: boolean;
 }) {
   const labelColor = tone === "dark" ? "text-gold" : "text-taupe";
   const valueColor = tone === "dark" ? "text-ivory" : "text-brown";
   return (
-    <label className={`group block ${baseField(tone, rounded)}`}>
+    <label className={`group block relative ${baseField(tone, rounded, big)}`}>
       <div className={`eyebrow text-[9px] ${labelColor}`}>{label}</div>
       <div className="flex items-center justify-between mt-1">
-        <span className={`font-display text-base ${valueColor}`}>{fmt(value)}</span>
+        <span className={`font-display ${big ? "text-lg" : "text-base"} ${valueColor}`}>{fmt(value)}</span>
         <input
           type="date"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="absolute opacity-0 w-0 h-0"
+          className="absolute inset-0 opacity-0 cursor-pointer"
           aria-label={label}
         />
         <span className={`text-xs ${tone === "dark" ? "text-gold/60" : "text-gold"}`}>▾</span>
@@ -319,6 +322,7 @@ function FieldSelect({
   options,
   onChange,
   rounded,
+  big,
 }: {
   tone: "dark" | "light";
   label: string;
@@ -326,14 +330,15 @@ function FieldSelect({
   options: string[];
   onChange: (v: string) => void;
   rounded?: boolean;
+  big?: boolean;
 }) {
   const labelColor = tone === "dark" ? "text-gold" : "text-taupe";
   const valueColor = tone === "dark" ? "text-ivory" : "text-brown";
   return (
-    <label className={`group block relative ${baseField(tone, rounded)}`}>
+    <label className={`group block relative ${baseField(tone, rounded, big)}`}>
       <div className={`eyebrow text-[9px] ${labelColor}`}>{label}</div>
       <div className="flex items-center justify-between mt-1">
-        <span className={`font-display text-base truncate ${valueColor}`}>{value}</span>
+        <span className={`font-display ${big ? "text-lg" : "text-base"} truncate ${valueColor}`}>{value}</span>
         <span className={`text-xs ${tone === "dark" ? "text-gold/60" : "text-gold"}`}>▾</span>
       </div>
       <select
