@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BrandLogo, LotusMark } from "@/components/BrandLogo";
+import { BookingExperience } from "@/components/BookingWidget";
 import hero from "@/assets/hero-serenity.jpg";
 import room1 from "@/assets/room-1.jpg";
 import room2 from "@/assets/room-2.jpg";
@@ -67,13 +68,8 @@ function Concept2() {
         <p className="text-taupe mt-10 max-w-xl mx-auto leading-relaxed">
           A retreat inspired by the eternal lotus — a place to slow your breath, soften your shoulders, and remember the rhythm beneath the noise.
         </p>
-        <div className="flex flex-wrap justify-center gap-4 mt-12">
-          <button className="bg-brown text-ivory px-10 py-4 eyebrow hover:bg-gold hover:text-brown transition-colors">
-            Reserve Your Stay
-          </button>
-          <button className="border border-brown/20 px-10 py-4 eyebrow hover:border-gold hover:text-gold transition-colors">
-            View Rituals
-          </button>
+        <div className="mt-12 max-w-5xl mx-auto px-2">
+          <BookingExperience variant="serenity" />
         </div>
 
         <div className="mt-20 max-w-6xl mx-auto px-6">
