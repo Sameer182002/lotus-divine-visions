@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { NAV_LINKS, NAV, CONTACT } from "@/data/siteContent";
@@ -8,12 +10,16 @@ export function Header() {
       <nav className="hidden lg:flex absolute top-10 left-0 right-0 z-40 px-10 items-center justify-between text-ivory">
         <div className="flex gap-8">
           {NAV_LINKS.slice(0, 3).map((l) => (
-            <a key={l} href="#" className="eyebrow hover:text-gold transition-colors">{l}</a>
+            <a key={l} href="#" className="eyebrow hover:text-gold transition-colors">
+              {l}
+            </a>
           ))}
         </div>
         <BrandLogo tone="ivory" size="md" />
         <div className="flex items-center gap-8">
-          <a href="#" className="eyebrow hover:text-gold transition-colors">{NAV.reservations}</a>
+          <a href="#" className="eyebrow hover:text-gold transition-colors">
+            {NAV.reservations}
+          </a>
           <button className="border border-gold/60 text-gold px-7 py-3 eyebrow hover:bg-gold hover:text-brown transition-all">
             {NAV.bookCta}
           </button>

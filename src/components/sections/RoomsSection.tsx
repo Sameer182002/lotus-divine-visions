@@ -3,7 +3,7 @@ import room1 from "@/assets/room-1.jpg";
 import room2 from "@/assets/room-2.jpg";
 import room3 from "@/assets/room-3.jpg";
 
-const ROOM_IMAGES = [room1, room2, room3];
+const ROOM_IMAGES = [room1.src, room2.src, room3.src];
 
 export function RoomsSection() {
   return (
@@ -14,10 +14,14 @@ export function RoomsSection() {
             {ROOMS_SECTION.eyebrow}
           </span>
           <h2 className="font-display text-[2.25rem] sm:text-5xl lg:text-6xl text-ivory leading-[1.05]">
-            {ROOMS_SECTION.headingLine1}<br /><span className="italic">{ROOMS_SECTION.headingEmphasis}</span>
+            {ROOMS_SECTION.headingLine1}
+            <br />
+            <span className="italic">{ROOMS_SECTION.headingEmphasis}</span>
           </h2>
         </div>
-        <a href="#" className="eyebrow text-gold border-b border-gold pb-2">{ROOMS_SECTION.viewAllCta}</a>
+        <a href="#" className="eyebrow text-gold border-b border-gold pb-2">
+          {ROOMS_SECTION.viewAllCta}
+        </a>
       </div>
 
       {/* Mobile: horizontal snap carousel */}
@@ -25,7 +29,12 @@ export function RoomsSection() {
         {ROOMS.map((r, i) => (
           <article key={r.name} className="snap-start shrink-0 w-[78%] sm:w-[55%]">
             <div className="overflow-hidden mb-5">
-              <img src={ROOM_IMAGES[i]} alt={r.name} className="w-full aspect-[4/5] object-cover" loading="lazy" />
+              <img
+                src={ROOM_IMAGES[i]}
+                alt={r.name}
+                className="w-full aspect-[4/5] object-cover"
+                loading="lazy"
+              />
             </div>
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="font-display text-xl text-ivory truncate">{r.name}</h3>

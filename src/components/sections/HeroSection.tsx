@@ -6,7 +6,7 @@ export function HeroSection() {
   return (
     <section className="relative min-h-[640px] md:min-h-[720px] h-[100svh] lg:h-screen lg:min-h-[720px] flex items-end overflow-hidden bg-brown">
       <img
-        src={hero}
+        src={hero.src}
         alt={HERO.imgAlt}
         className="absolute inset-0 w-full h-full object-cover opacity-80 animate-kenburns"
         fetchPriority="high"
@@ -17,7 +17,8 @@ export function HeroSection() {
           {HERO.eyebrow}
         </span>
         <h1 className="font-display text-ivory text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[9rem] leading-[0.95] lg:leading-[0.92] text-balance">
-          {HERO.headingLine1} <br /><span className="italic">{HERO.headingEmphasis}</span> {HERO.headingLine2}
+          {HERO.headingLine1} <br />
+          <span className="italic">{HERO.headingEmphasis}</span> {HERO.headingLine2}
         </h1>
         <p className="text-ivory/75 max-w-md mt-5 lg:mt-10 leading-relaxed text-sm lg:text-base">
           {HERO.body}

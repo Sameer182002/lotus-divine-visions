@@ -5,7 +5,9 @@ export function AmenitiesSection() {
   return (
     <section className="py-20 lg:py-32 px-5 sm:px-8 lg:px-20">
       <div className="text-center max-w-2xl mx-auto mb-12 lg:mb-20">
-        <span className="eyebrow text-gold text-[10px] lg:text-[11px]">{AMENITIES_SECTION.eyebrow}</span>
+        <span className="eyebrow text-gold text-[10px] lg:text-[11px]">
+          {AMENITIES_SECTION.eyebrow}
+        </span>
         <h2 className="font-display text-[2.25rem] sm:text-4xl lg:text-5xl mt-4 lg:mt-6 text-balance leading-tight">
           {AMENITIES_SECTION.heading}
         </h2>

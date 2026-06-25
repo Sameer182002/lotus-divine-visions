@@ -1,10 +1,5 @@
 import { BrandLogo } from "@/components/BrandLogo";
-import {
-  BRAND,
-  FOOTER_COLS,
-  FOOTER_NEWSLETTER,
-  FOOTER_SOCIAL,
-} from "@/data/siteContent";
+import { BRAND, FOOTER_COLS, FOOTER_NEWSLETTER, FOOTER_SOCIAL } from "@/data/siteContent";
 
 export function Footer() {
   return (
@@ -12,9 +7,7 @@ export function Footer() {
       <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-10 lg:gap-12 max-w-7xl mx-auto">
         <div className="sm:col-span-2 md:col-span-1">
           <BrandLogo tone="ivory" align="left" />
-          <p className="text-xs mt-5 lg:mt-6 leading-relaxed max-w-xs">
-            {BRAND.description}
-          </p>
+          <p className="text-xs mt-5 lg:mt-6 leading-relaxed max-w-xs">{BRAND.description}</p>
         </div>
         {FOOTER_COLS.map((col) => (
           <FooterCol key={col.title} title={col.title} links={col.links as readonly string[]} />
@@ -38,7 +31,9 @@ export function Footer() {
         </span>
         <div className="flex gap-6 eyebrow text-ivory/40">
           {FOOTER_SOCIAL.map((s) => (
-            <a key={s.label} href={s.href} className="hover:text-gold">{s.label}</a>
+            <a key={s.label} href={s.href} className="hover:text-gold">
+              {s.label}
+            </a>
           ))}
         </div>
       </div>
@@ -53,7 +48,9 @@ function FooterCol({ title, links }: { title: string; links: readonly string[] }
       <ul className="space-y-3 text-xs">
         {links.map((l) => (
           <li key={l}>
-            <a href="#" className="hover:text-gold transition-colors">{l}</a>
+            <a href="#" className="hover:text-gold transition-colors">
+              {l}
+            </a>
           </li>
         ))}
       </ul>
