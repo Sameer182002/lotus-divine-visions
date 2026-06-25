@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BrandLogo, LotusMark } from "@/components/BrandLogo";
+import { BookingExperience } from "@/components/BookingWidget";
 import hero from "@/assets/hero-luxury.jpg";
 import room1 from "@/assets/room-1.jpg";
 import room2 from "@/assets/room-2.jpg";
@@ -66,10 +67,7 @@ function Concept1() {
           <p className="text-ivory/70 max-w-md mt-10 leading-relaxed">
             A century of uncompromised hospitality, distilled into thirty-six private sanctuaries between the mountains and the sea.
           </p>
-          <div className="flex flex-wrap gap-4 mt-12">
-            <button className="bg-gold text-brown px-10 py-4 eyebrow hover:bg-ivory transition-colors">Reserve a Suite</button>
-            <button className="border border-ivory/30 text-ivory px-10 py-4 eyebrow hover:border-gold hover:text-gold transition-colors">Explore the Estate</button>
-          </div>
+          <BookingExperience variant="luxury" />
         </div>
         <div className="absolute bottom-10 right-10 z-10 text-ivory/60 eyebrow hidden lg:flex items-center gap-3">
           <span>Scroll</span>
