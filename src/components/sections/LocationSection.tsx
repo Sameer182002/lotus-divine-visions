@@ -4,8 +4,6 @@ export function LocationSection() {
   return (
     <section className="bg-champagne/30 py-20 lg:py-32 overflow-x-hidden">
       <div className="px-5 sm:px-8 lg:px-20 max-w-7xl mx-auto">
-
-        {/* Section header */}
         <div className="mb-12 lg:mb-16">
           <span className="text-[10px] font-sans font-medium tracking-[0.2em] uppercase text-gold block mb-3">
             {LOCATION_SECTION.eyebrow}
@@ -17,14 +15,11 @@ export function LocationSection() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-
-          {/* Left: body + contact + CTA */}
           <div>
             <p className="text-taupe text-[15px] leading-relaxed max-w-lg">
               {LOCATION_SECTION.body}
             </p>
 
-            {/* Contact detail rows */}
             <div className="mt-10 border-t border-brown/10">
               <div className="grid grid-cols-[72px_1fr] gap-4 py-4 border-b border-brown/10 items-start">
                 <span className="text-[9px] font-sans font-medium tracking-[0.15em] uppercase text-gold mt-0.5">
@@ -56,10 +51,11 @@ export function LocationSection() {
               </div>
             </div>
 
-            {/* Get Directions button */}
             <div className="mt-8">
               <a
-                href="#"
+                href="https://www.google.com/maps/search/Lotus+Divine+Hotel+Amritsar"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 bg-brown text-ivory text-[10px] font-sans font-medium tracking-[0.14em] uppercase px-8 py-4 hover:bg-gold hover:text-brown transition-colors"
               >
                 <span>{LOCATION_SECTION.cta}</span>
@@ -68,7 +64,6 @@ export function LocationSection() {
             </div>
           </div>
 
-          {/* Right: Nearby Attractions */}
           <div className="bg-brown text-ivory px-8 py-8 lg:px-10 lg:py-10">
             <span className="text-[9px] font-sans font-medium tracking-[0.2em] uppercase text-gold block mb-8">
               {LOCATION_SECTION.attractionsLabel}
@@ -89,7 +84,6 @@ export function LocationSection() {
               ))}
             </ul>
           </div>
-
         </div>
       </div>
     </section>

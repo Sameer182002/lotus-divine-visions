@@ -1,7 +1,12 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { NAV_LINKS, NAV, CONTACT } from "@/data/siteContent";
+import { bookingHref } from "@/lib/booking-url";
+
+const EMPTY_BOOKING = bookingHref();
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -22,50 +27,54 @@ export function Header() {
             : "bg-transparent py-7"
         }`}
       >
-        {/* Left: Home, Rooms */}
         <div className="flex gap-7 items-center">
           {NAV_LINKS.slice(0, 2).map((item) =>
             item.enabled ? (
               <Link
                 key={item.label}
-                to={item.to!}
+                href={item.to!}
                 className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase hover:text-gold transition-colors"
               >
                 {item.label}
               </Link>
             ) : (
-              <span key={item.label} className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase text-ivory/40 cursor-default select-none">
+              <span
+                key={item.label}
+                className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase text-ivory/40 cursor-default select-none"
+              >
                 {item.label}
               </span>
-            )
+            ),
           )}
         </div>
 
-        {/* Center: Logo (always perfectly centered) */}
         <div className="flex justify-center">
-          <BrandLogo tone="ivory" size="xl" />
+          <Link href="/" aria-label="Lotus Divine home">
+            <BrandLogo tone="ivory" size="xl" />
+          </Link>
         </div>
 
-        {/* Right: About, Contact, Book Your Stay */}
         <div className="flex items-center gap-6 justify-end">
           {NAV_LINKS.slice(2).map((item) =>
             item.enabled ? (
               <Link
                 key={item.label}
-                to={item.to!}
+                href={item.to!}
                 className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase hover:text-gold transition-colors"
               >
                 {item.label}
               </Link>
             ) : (
-              <span key={item.label} className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase text-ivory/40 cursor-default select-none">
+              <span
+                key={item.label}
+                className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase text-ivory/40 cursor-default select-none"
+              >
                 {item.label}
               </span>
-            )
+            ),
           )}
           <Link
-            to="/booking"
-            search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
+            href={EMPTY_BOOKING}
             className="text-[10px] font-sans font-medium tracking-[0.14em] uppercase border border-gold/60 text-gold px-6 py-2.5 hover:bg-gold hover:text-brown transition-all whitespace-nowrap"
           >
             {NAV.bookCta}
@@ -115,10 +124,11 @@ function MobileNav() {
             <span className="block w-5 h-px bg-ivory" />
             <span className="block w-3 h-px bg-ivory ml-2" />
           </button>
-          <BrandLogo tone="ivory" size="sm" showTagline={false} />
+          <Link href="/" aria-label="Lotus Divine home">
+            <BrandLogo tone="ivory" size="sm" showTagline={false} />
+          </Link>
           <Link
-            to="/booking"
-            search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
+            href={EMPTY_BOOKING}
             className="eyebrow text-[10px] border border-gold/60 text-gold px-4 py-2.5 hover:bg-gold hover:text-brown transition-all"
           >
             {NAV.bookMobile}
@@ -131,7 +141,10 @@ function MobileNav() {
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       >
-        <div className="absolute inset-0 bg-brown/70 backdrop-blur-sm" onClick={() => setOpen(false)} />
+        <div
+          className="absolute inset-0 bg-brown/70 backdrop-blur-sm"
+          onClick={() => setOpen(false)}
+        />
         <aside
           className={`absolute right-0 top-0 bottom-0 w-[88%] max-w-sm bg-brown text-ivory shadow-gold flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
             open ? "translate-x-0" : "translate-x-full"
@@ -161,7 +174,7 @@ function MobileNav() {
                 >
                   {item.enabled ? (
                     <Link
-                      to={item.to!}
+                      href={item.to!}
                       onClick={() => setOpen(false)}
                       className="flex items-baseline justify-between py-5 font-display text-3xl hover:text-gold transition-colors"
                     >
@@ -179,8 +192,7 @@ function MobileNav() {
             </ul>
             <div className="mt-auto pt-10">
               <Link
-                to="/booking"
-                search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
+                href={EMPTY_BOOKING}
                 onClick={() => setOpen(false)}
                 className="block w-full bg-gold text-brown eyebrow py-4 hover:bg-ivory transition-colors text-center"
               >

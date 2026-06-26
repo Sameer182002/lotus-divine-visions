@@ -1,5 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+"use client";
+
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState, useRef, Suspense } from "react";
 import type { ReactNode } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -7,36 +10,13 @@ import { ROOMS_DETAIL, BOOKING_GUEST_OPTIONS } from "@/data/siteContent";
 import room1 from "@/assets/room-1.jpg";
 import room2 from "@/assets/room-2.jpg";
 
-const ROOM_IMAGES: Record<string, string> = { room1, room2 };
-
-export const Route = createFileRoute("/booking")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    checkIn: (search.checkIn as string) ?? "",
-    checkOut: (search.checkOut as string) ?? "",
-    guests: (search.guests as string) ?? "",
-    room: (search.room as string) ?? "",
-  }),
-  head: () => ({
-    meta: [
-      { title: "Reserve Your Stay — Lotus Divine" },
-      {
-        name: "description",
-        content:
-          "Reserve your room at Lotus Divine. Best rate guaranteed when you book direct.",
-      },
-    ],
-  }),
-  component: BookingPage,
-});
+const ROOM_IMAGES: Record<string, string> = { room1: room1.src, room2: room2.src };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function nightCount(a: string, b: string) {
   if (!a || !b) return 0;
-  return Math.max(
-    0,
-    Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000),
-  );
+  return Math.max(0, Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000));
 }
 
 function parsePrice(str: string) {
@@ -117,11 +97,7 @@ function ProgressTracker({ current }: { current: number }) {
                   </div>
                   <span
                     className={`text-[9px] lg:text-[10px] eyebrow tracking-wider whitespace-nowrap transition-colors ${
-                      active
-                        ? "text-brown"
-                        : done
-                          ? "text-gold"
-                          : "text-brown/25"
+                      active ? "text-brown" : done ? "text-gold" : "text-brown/25"
                     }`}
                   >
                     {label}
@@ -181,21 +157,11 @@ function CompletedStepRow({
 
 // ─── Section Header ───────────────────────────────────────────────────────────
 
-function SectionHeader({
-  n,
-  title,
-  subtitle,
-}: {
-  n: string;
-  title: string;
-  subtitle?: string;
-}) {
+function SectionHeader({ n, title, subtitle }: { n: string; title: string; subtitle?: string }) {
   return (
     <div className="mb-6 lg:mb-8">
       <span className="eyebrow text-gold text-[10px] block mb-2">{n}</span>
-      <h2 className="font-display text-3xl sm:text-[2rem] text-brown leading-tight">
-        {title}
-      </h2>
+      <h2 className="font-display text-3xl sm:text-[2rem] text-brown leading-tight">{title}</h2>
       {subtitle && <p className="text-taupe text-sm mt-2">{subtitle}</p>}
     </div>
   );
@@ -248,9 +214,7 @@ function DateCard({
         onChange={(e) => onChange(e.target.value)}
         className="w-full bg-transparent font-display text-brown text-lg outline-none cursor-pointer"
       />
-      {value && (
-        <span className="text-taupe text-xs mt-1.5 block">{fmtDate(value)}</span>
-      )}
+      {value && <span className="text-taupe text-xs mt-1.5 block">{fmtDate(value)}</span>}
     </div>
   );
 }
@@ -291,9 +255,7 @@ function RoomCard({
         )}
       </div>
       <div className="p-5 lg:p-6">
-        <span className="eyebrow text-gold text-[10px] block mb-1">
-          {room.category}
-        </span>
+        <span className="eyebrow text-gold text-[10px] block mb-1">{room.category}</span>
         <h3 className="font-display text-2xl text-brown mb-1">{room.name}</h3>
         <p className="text-taupe text-xs mb-4">
           {"size" in room ? `${room.size} · ` : ""}
@@ -312,18 +274,14 @@ function RoomCard({
         </div>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <span className="eyebrow text-brown/35 text-[10px] block mb-0.5">
-              Starting from
-            </span>
+            <span className="eyebrow text-brown/35 text-[10px] block mb-0.5">Starting from</span>
             <span className="font-display text-brown text-xl">
               {room.price.replace("From ", "")}
             </span>
           </div>
           <div
             className={`eyebrow text-[10px] px-5 py-2.5 transition-all ${
-              selected
-                ? "bg-gold text-brown"
-                : "bg-brown text-ivory hover:bg-gold hover:text-brown"
+              selected ? "bg-gold text-brown" : "bg-brown text-ivory hover:bg-gold hover:text-brown"
             }`}
           >
             {selected ? "Selected ✓" : "Select Room"}
@@ -336,13 +294,7 @@ function RoomCard({
 
 // ─── Summary Row ──────────────────────────────────────────────────────────────
 
-function SummaryRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4">
       <span className="text-ivory/50 text-sm shrink-0">{label}</span>
@@ -379,9 +331,7 @@ function BookingSidebar({
   return (
     <div className="bg-brown text-ivory">
       <div className="p-6 lg:p-7">
-        <span className="eyebrow text-gold text-[10px] block mb-5">
-          Booking Summary
-        </span>
+        <span className="eyebrow text-gold text-[10px] block mb-5">Booking Summary</span>
 
         {/* Stay details */}
         <div className="space-y-2.5 pb-5 border-b border-ivory/10">
@@ -389,11 +339,7 @@ function BookingSidebar({
           <SummaryRow label="Check-out" value={fmtDate(checkOut)} />
           <SummaryRow
             label="Duration"
-            value={
-              nights > 0
-                ? `${nights} night${nights !== 1 ? "s" : ""}`
-                : "—"
-            }
+            value={nights > 0 ? `${nights} night${nights !== 1 ? "s" : ""}` : "—"}
           />
           <SummaryRow label="Guests" value={guests || "—"} />
         </div>
@@ -414,18 +360,13 @@ function BookingSidebar({
                 <span className="font-display text-ivory text-sm leading-tight block">
                   {room.name}
                 </span>
-                {"size" in room && (
-                  <span className="text-ivory/40 text-xs">{room.size}</span>
-                )}
+                {"size" in room && <span className="text-ivory/40 text-xs">{room.size}</span>}
               </div>
             </div>
 
             {nights > 0 ? (
               <div className="space-y-2.5">
-                <SummaryRow
-                  label="Rate / night"
-                  value={`₹${perNight.toLocaleString("en-IN")}`}
-                />
+                <SummaryRow label="Rate / night" value={`₹${perNight.toLocaleString("en-IN")}`} />
                 <SummaryRow
                   label={`${nights} night${nights > 1 ? "s" : ""}`}
                   value={fmtMoney(subtotal)}
@@ -433,27 +374,18 @@ function BookingSidebar({
                 <SummaryRow label="GST (18%)" value={fmtMoney(gst)} />
               </div>
             ) : (
-              <SummaryRow
-                label="Rate / night"
-                value={`₹${perNight.toLocaleString("en-IN")}`}
-              />
+              <SummaryRow label="Rate / night" value={`₹${perNight.toLocaleString("en-IN")}`} />
             )}
 
             <div className="mt-4 pt-4 border-t border-ivory/10">
               <div className="flex items-baseline justify-between">
-                <span className="eyebrow text-ivory/40 text-[10px]">
-                  Grand Total
-                </span>
+                <span className="eyebrow text-ivory/40 text-[10px]">Grand Total</span>
                 <div className="text-right">
                   <span className="font-display text-gold text-2xl lg:text-3xl block">
-                    {nights > 0
-                      ? fmtMoney(total)
-                      : `₹${perNight.toLocaleString("en-IN")}`}
+                    {nights > 0 ? fmtMoney(total) : `₹${perNight.toLocaleString("en-IN")}`}
                   </span>
                   {nights === 0 && (
-                    <span className="text-ivory/30 text-[10px]">
-                      per night + GST
-                    </span>
+                    <span className="text-ivory/30 text-[10px]">per night + GST</span>
                   )}
                 </div>
               </div>
@@ -462,9 +394,7 @@ function BookingSidebar({
         ) : (
           <div className="py-5 border-b border-ivory/10">
             <div className="h-14 bg-ivory/5 flex items-center justify-center">
-              <span className="eyebrow text-ivory/20 text-[10px]">
-                No room selected yet
-              </span>
+              <span className="eyebrow text-ivory/20 text-[10px]">No room selected yet</span>
             </div>
           </div>
         )}
@@ -564,25 +494,17 @@ function MobileBottomBar({
       <div className="bg-brown text-ivory shadow-[0_-16px_48px_-12px_rgba(0,0,0,0.5)]">
         {summaryOpen && (
           <div className="px-5 pt-5 pb-2 border-b border-ivory/10 max-h-[50vh] overflow-y-auto">
-            <span className="eyebrow text-gold text-[10px] block mb-4">
-              Price Summary
-            </span>
+            <span className="eyebrow text-gold text-[10px] block mb-4">Price Summary</span>
             <div className="space-y-2.5 pb-4 mb-4 border-b border-ivory/10">
               <SummaryRow label="Check-in" value={fmtDate(checkIn)} />
               <SummaryRow label="Check-out" value={fmtDate(checkOut)} />
-              <SummaryRow
-                label="Nights"
-                value={nights > 0 ? String(nights) : "—"}
-              />
+              <SummaryRow label="Nights" value={nights > 0 ? String(nights) : "—"} />
               <SummaryRow label="Guests" value={guests} />
             </div>
             {room ? (
               <div className="space-y-2.5 pb-3">
                 <SummaryRow label="Room" value={room.name} />
-                <SummaryRow
-                  label="Rate / night"
-                  value={`₹${perNight.toLocaleString("en-IN")}`}
-                />
+                <SummaryRow label="Rate / night" value={`₹${perNight.toLocaleString("en-IN")}`} />
                 {nights > 0 && (
                   <>
                     <SummaryRow label="Subtotal" value={fmtMoney(subtotal)} />
@@ -590,20 +512,14 @@ function MobileBottomBar({
                   </>
                 )}
                 <div className="flex justify-between pt-3 border-t border-ivory/10">
-                  <span className="eyebrow text-ivory/40 text-[10px]">
-                    Grand Total
-                  </span>
+                  <span className="eyebrow text-ivory/40 text-[10px]">Grand Total</span>
                   <span className="font-display text-gold text-xl">
-                    {nights > 0
-                      ? fmtMoney(total)
-                      : `₹${perNight.toLocaleString("en-IN")}/night`}
+                    {nights > 0 ? fmtMoney(total) : `₹${perNight.toLocaleString("en-IN")}/night`}
                   </span>
                 </div>
               </div>
             ) : (
-              <p className="text-ivory/35 text-xs pb-3">
-                Select a room to see pricing.
-              </p>
+              <p className="text-ivory/35 text-xs pb-3">Select a room to see pricing.</p>
             )}
           </div>
         )}
@@ -621,11 +537,7 @@ function MobileBottomBar({
                     : `₹${perNight.toLocaleString("en-IN")}/night`
                   : "—"}
               </span>
-              {room && (
-                <span className="text-ivory/40 text-xs">
-                  {summaryOpen ? "▼" : "▲"}
-                </span>
-              )}
+              {room && <span className="text-ivory/40 text-xs">{summaryOpen ? "▼" : "▲"}</span>}
             </div>
           </button>
           <button
@@ -674,17 +586,14 @@ function SuccessSection({
         <div className="w-14 h-14 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center mx-auto mb-6">
           <span className="text-gold text-2xl">✓</span>
         </div>
-        <span className="eyebrow text-gold text-[10px] block mb-3">
-          Reservation Received
-        </span>
+        <span className="eyebrow text-gold text-[10px] block mb-3">Reservation Received</span>
         <h2 className="font-display text-4xl lg:text-5xl text-brown mb-4">
-          Thank you,{" "}
-          <span className="italic">{guestName.split(" ")[0]}.</span>
+          Thank you, <span className="italic">{guestName.split(" ")[0]}.</span>
         </h2>
         <p className="text-taupe text-sm lg:text-base leading-relaxed max-w-md mx-auto">
           We've received your reservation request. Our team will contact you at{" "}
-          <span className="text-brown font-medium">{guestEmail}</span> within 24
-          hours to confirm your booking.
+          <span className="text-brown font-medium">{guestEmail}</span> within 24 hours to confirm
+          your booking.
         </p>
       </div>
 
@@ -699,30 +608,15 @@ function SuccessSection({
               ["Room", room?.name ?? "—", ""],
               ["Check-in", fmtDate(checkIn), ""],
               ["Check-out", fmtDate(checkOut), ""],
-              [
-                "Duration",
-                nights > 0
-                  ? `${nights} night${nights !== 1 ? "s" : ""}`
-                  : "—",
-                "",
-              ],
+              ["Duration", nights > 0 ? `${nights} night${nights !== 1 ? "s" : ""}` : "—", ""],
               ["Guests", guests, ""],
               ["Guest Name", guestName, ""],
               ["Total", fmtMoney(total), "total"],
-              [
-                "Payment Status",
-                "Pending — Our team will confirm",
-                "status",
-              ],
+              ["Payment Status", "Pending — Our team will confirm", "status"],
             ] as [string, string, string][]
           ).map(([label, value, type]) => (
-            <div
-              key={label}
-              className="px-6 py-3.5 flex items-center justify-between gap-4"
-            >
-              <span className="eyebrow text-ivory/35 text-[10px] shrink-0">
-                {label}
-              </span>
+            <div key={label} className="px-6 py-3.5 flex items-center justify-between gap-4">
+              <span className="eyebrow text-ivory/35 text-[10px] shrink-0">{label}</span>
               <span
                 className={
                   type === "id"
@@ -743,13 +637,13 @@ function SuccessSection({
 
       <div className="flex flex-col sm:flex-row gap-3">
         <Link
-          to="/"
+          href="/"
           className="eyebrow text-[10px] border border-brown/20 px-8 py-4 text-brown/60 hover:text-brown hover:border-brown/40 transition-all text-center flex-1"
         >
           Return Home
         </Link>
         <Link
-          to="/rooms"
+          href="/rooms"
           className="eyebrow text-[10px] bg-brown text-ivory px-8 py-4 hover:bg-gold hover:text-brown transition-all text-center flex-1"
         >
           Explore Rooms
@@ -761,23 +655,21 @@ function SuccessSection({
 
 // ─── Booking Page ─────────────────────────────────────────────────────────────
 
-function BookingPage() {
-  const search = Route.useSearch();
+function BookingPageInner() {
+  const searchParams = useSearchParams();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [checkIn, setCheckIn] = useState(search.checkIn);
-  const [checkOut, setCheckOut] = useState(search.checkOut);
-  const [guests, setGuests] = useState(search.guests || "2 Adults");
-  const [roomId, setRoomId] = useState(() => matchRoomId(search.room));
+  const [checkIn, setCheckIn] = useState(searchParams.get("checkIn") ?? "");
+  const [checkOut, setCheckOut] = useState(searchParams.get("checkOut") ?? "");
+  const [guests, setGuests] = useState(searchParams.get("guests") || "2 Adults");
+  const [roomId, setRoomId] = useState(() => matchRoomId(searchParams.get("room") ?? ""));
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [arrivalTime, setArrivalTime] = useState("");
   const [specialRequest, setSpecialRequest] = useState("");
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [bookingId] = useState(
-    () => "LDV-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
-  );
+  const [bookingId] = useState(() => "LDV-" + Math.random().toString(36).slice(2, 8).toUpperCase());
 
   const step2Ref = useRef<HTMLDivElement>(null);
   const step3Ref = useRef<HTMLDivElement>(null);
@@ -791,15 +683,10 @@ function BookingPage() {
   const total = subtotal + gst;
 
   const step1Valid = !!checkIn && !!checkOut && nights > 0;
-  const step3Valid =
-    guestName.trim() !== "" && guestEmail.trim() !== "";
+  const step3Valid = guestName.trim() !== "" && guestEmail.trim() !== "";
 
   function scrollTo(ref: React.RefObject<HTMLDivElement | null>) {
-    setTimeout(
-      () =>
-        ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-      200,
-    );
+    setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
   }
 
   function continueFromStep1() {
@@ -853,8 +740,7 @@ function BookingPage() {
             Reserve Your <span className="italic">Stay</span>
           </h1>
           <p className="text-ivory/55 text-sm lg:text-base max-w-md leading-relaxed">
-            Choose your dates, select your room, and we'll take care of the
-            rest.
+            Choose your dates, select your room, and we'll take care of the rest.
           </p>
         </div>
         {/* Trust strip */}
@@ -866,10 +752,7 @@ function BookingPage() {
               "No Hidden Charges",
               "Concierge Support",
             ].map((t) => (
-              <span
-                key={t}
-                className="eyebrow text-gold/65 text-[10px] flex items-center gap-1.5"
-              >
+              <span key={t} className="eyebrow text-gold/65 text-[10px] flex items-center gap-1.5">
                 <span className="text-gold">✓</span>
                 {t}
               </span>
@@ -884,10 +767,8 @@ function BookingPage() {
       {currentStep < 5 ? (
         <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 xl:px-20 py-10 lg:py-14 pb-36 lg:pb-20">
           <div className="lg:grid lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px] lg:gap-10 xl:gap-14 lg:items-start">
-
             {/* Left: Progressive steps */}
             <div className="flex flex-col gap-5 lg:gap-7">
-
               {/* ── Step 1: Stay Details ── */}
               {currentStep > 1 ? (
                 <CompletedStepRow
@@ -904,12 +785,7 @@ function BookingPage() {
                     subtitle="Best Rate Guaranteed when you book direct."
                   />
                   <div className="grid grid-cols-2 gap-3 mb-3">
-                    <DateCard
-                      label="CHECK-IN"
-                      value={checkIn}
-                      onChange={setCheckIn}
-                      min={today}
-                    />
+                    <DateCard label="CHECK-IN" value={checkIn} onChange={setCheckIn} min={today} />
                     <DateCard
                       label="CHECK-OUT"
                       value={checkOut}
@@ -918,17 +794,13 @@ function BookingPage() {
                     />
                   </div>
                   <div className="bg-white border border-brown/12 px-5 py-4 mb-6 focus-within:border-gold/60 transition-colors">
-                    <span className="eyebrow text-brown/35 text-[10px] block mb-2">
-                      GUESTS
-                    </span>
+                    <span className="eyebrow text-brown/35 text-[10px] block mb-2">GUESTS</span>
                     <select
                       value={guests}
                       onChange={(e) => setGuests(e.target.value)}
                       className="w-full bg-transparent font-display text-brown text-lg outline-none cursor-pointer appearance-none"
                     >
-                      {(
-                        BOOKING_GUEST_OPTIONS as unknown as readonly string[]
-                      ).map((o) => (
+                      {(BOOKING_GUEST_OPTIONS as unknown as readonly string[]).map((o) => (
                         <option key={o} value={o}>
                           {o}
                         </option>
@@ -950,9 +822,7 @@ function BookingPage() {
                         : "bg-brown/15 text-brown/30 cursor-not-allowed"
                     }`}
                   >
-                    {roomId
-                      ? "Continue to Guest Details"
-                      : "Continue to Rooms →"}
+                    {roomId ? "Continue to Guest Details" : "Continue to Rooms →"}
                   </button>
                 </section>
               )}
@@ -1089,11 +959,7 @@ function BookingPage() {
 
               {/* ── Step 4: Review & Confirm ── */}
               {currentStep >= 4 && (
-                <div
-                  ref={step4Ref}
-                  style={{ scrollMarginTop: "96px" }}
-                  className="animate-fade-up"
-                >
+                <div ref={step4Ref} style={{ scrollMarginTop: "96px" }} className="animate-fade-up">
                   <section>
                     <SectionHeader n="04" title="Review & Confirm" />
 
@@ -1108,10 +974,7 @@ function BookingPage() {
                             [
                               ["CHECK-IN", fmtDate(checkIn)],
                               ["CHECK-OUT", fmtDate(checkOut)],
-                              [
-                                "DURATION",
-                                `${nights} night${nights !== 1 ? "s" : ""}`,
-                              ],
+                              ["DURATION", `${nights} night${nights !== 1 ? "s" : ""}`],
                               ["GUESTS", guests],
                             ] as [string, string][]
                           ).map(([l, v]) => (
@@ -1141,9 +1004,7 @@ function BookingPage() {
                               <span className="eyebrow text-gold text-[10px] block mb-0.5">
                                 {room.category}
                               </span>
-                              <span className="font-display text-brown text-xl">
-                                {room.name}
-                              </span>
+                              <span className="font-display text-brown text-xl">{room.name}</span>
                               <span className="text-taupe text-xs block mt-0.5">
                                 {"size" in room ? `${room.size} · ` : ""}
                                 {room.capacity}
@@ -1164,9 +1025,7 @@ function BookingPage() {
                               ["NAME", guestName],
                               ["EMAIL", guestEmail],
                               guestPhone ? ["PHONE", guestPhone] : null,
-                              arrivalTime
-                                ? ["ARRIVAL TIME", arrivalTime]
-                                : null,
+                              arrivalTime ? ["ARRIVAL TIME", arrivalTime] : null,
                             ].filter(Boolean) as [string, string][]
                           ).map(([l, v]) => (
                             <div key={l}>
@@ -1181,9 +1040,7 @@ function BookingPage() {
                               <span className="eyebrow text-brown/30 text-[9px] block mb-1">
                                 SPECIAL REQUESTS
                               </span>
-                              <span className="text-brown text-sm">
-                                {specialRequest}
-                              </span>
+                              <span className="text-brown text-sm">{specialRequest}</span>
                             </div>
                           )}
                         </div>
@@ -1197,21 +1054,16 @@ function BookingPage() {
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-taupe">
-                              {room?.name} ×{" "}
-                              {nights} night{nights !== 1 ? "s" : ""}
+                              {room?.name} × {nights} night{nights !== 1 ? "s" : ""}
                             </span>
-                            <span className="text-brown">
-                              {fmtMoney(subtotal)}
-                            </span>
+                            <span className="text-brown">{fmtMoney(subtotal)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-taupe">GST (18%)</span>
                             <span className="text-brown">{fmtMoney(gst)}</span>
                           </div>
                           <div className="flex justify-between pt-3 border-t border-brown/8">
-                            <span className="font-display text-brown text-base">
-                              Grand Total
-                            </span>
+                            <span className="font-display text-brown text-base">Grand Total</span>
                             <span className="font-display text-brown text-2xl">
                               {fmtMoney(total)}
                             </span>
@@ -1221,8 +1073,8 @@ function BookingPage() {
                     </div>
 
                     <p className="text-taupe text-sm mb-7 leading-relaxed max-w-md">
-                      Our reservations team will contact you within 24 hours to
-                      confirm your booking and arrange payment.
+                      Our reservations team will contact you within 24 hours to confirm your booking
+                      and arrange payment.
                     </p>
 
                     <button
@@ -1291,5 +1143,13 @@ function BookingPage() {
 
       <Footer />
     </main>
+  );
+}
+
+export function BookingPageClient() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-ivory" />}>
+      <BookingPageInner />
+    </Suspense>
   );
 }

@@ -5,7 +5,12 @@ export function AboutSection() {
   return (
     <section className="bg-brown text-ivory py-16 lg:py-32 px-5 sm:px-8 lg:px-20 grid grid-cols-12 gap-8 lg:gap-12 items-center">
       <div className="col-span-12 lg:col-span-5">
-        <img src={lobby} alt={ABOUT.imgAlt} className="w-full aspect-[4/5] object-cover" loading="lazy" />
+        <img
+          src={lobby.src}
+          alt={ABOUT.imgAlt}
+          className="w-full aspect-[4/5] object-cover"
+          loading="lazy"
+        />
       </div>
       <div className="col-span-12 lg:col-span-6 lg:col-start-7">
         <span className="eyebrow text-gold text-[10px] lg:text-[11px]">{ABOUT.eyebrow}</span>

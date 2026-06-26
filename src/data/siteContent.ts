@@ -22,9 +22,9 @@ export const CONTACT = {
 // ─── Navigation ──────────────────────────────────────────────────────────────
 
 export const NAV_LINKS = [
-  { label: "Home",    to: "/" as const,      enabled: true },
-  { label: "Rooms",   to: "/rooms" as const, enabled: true },
-  { label: "About",   to: "/about" as const,    enabled: true },
+  { label: "Home", to: "/" as const, enabled: true },
+  { label: "Rooms", to: "/rooms" as const, enabled: true },
+  { label: "About", to: "/about" as const, enabled: true },
   { label: "Contact", to: "/contact" as const, enabled: true },
 ] as const;
 
@@ -38,7 +38,8 @@ export const NAV = {
 
 export const META = {
   title: "Lotus Divine — Luxury Hotel Near Golden Temple, Amritsar",
-  description: "Premium hotel in Amritsar, minutes from the Golden Temple. Spacious rooms, warm hospitality, and easy direct booking.",
+  description:
+    "Premium hotel in Amritsar, minutes from the Golden Temple. Spacious rooms, warm hospitality, and easy direct booking.",
   ogTitle: "Lotus Divine — Luxury Hotel Near Golden Temple, Amritsar",
   ogDescription: "Spacious rooms and warm hospitality, just minutes from Sri Harmandir Sahib.",
 } as const;
@@ -60,8 +61,10 @@ export const HERO = {
 export const ABOUT = {
   eyebrow: "Our Story",
   heading: "Designed for a Comfortable Stay",
-  body1: "Every room at Lotus Divine is thoughtfully designed with elegant interiors, modern comforts, and warm hospitality to make every stay relaxing.",
-  body2: "Whether you are visiting the Golden Temple, exploring the city, or here on business — we are here to make your experience simple and memorable.",
+  body1:
+    "Every room at Lotus Divine is thoughtfully designed with elegant interiors, modern comforts, and warm hospitality to make every stay relaxing.",
+  body2:
+    "Whether you are visiting the Golden Temple, exploring the city, or here on business — we are here to make your experience simple and memorable.",
   cta: "Our Story →",
   imgAlt: "Hotel lobby interior",
 } as const;
@@ -98,11 +101,17 @@ export const AMENITIES_SECTION = {
 } as const;
 
 export const AMENITIES = [
-  { label: "Golden Temple",   desc: "Minutes from Sri Harmandir Sahib and the city's top attractions." },
-  { label: "Spacious Rooms",  desc: "Well-designed rooms with modern amenities for a comfortable stay." },
-  { label: "Free Wi-Fi",      desc: "Complimentary high-speed Wi-Fi throughout the hotel." },
-  { label: "Secure Parking",  desc: "On-site secured parking available for all guests." },
-  { label: "Housekeeping",    desc: "Daily housekeeping service included with every room." },
+  {
+    label: "Golden Temple",
+    desc: "Minutes from Sri Harmandir Sahib and the city's top attractions.",
+  },
+  {
+    label: "Spacious Rooms",
+    desc: "Well-designed rooms with modern amenities for a comfortable stay.",
+  },
+  { label: "Free Wi-Fi", desc: "Complimentary high-speed Wi-Fi throughout the hotel." },
+  { label: "Secure Parking", desc: "On-site secured parking available for all guests." },
+  { label: "Housekeeping", desc: "Daily housekeeping service included with every room." },
 ] as const;
 
 // ─── Gallery ─────────────────────────────────────────────────────────────────
@@ -134,12 +143,7 @@ export const LOCATION_SECTION = {
   headingLine2: "of Amritsar",
   body: "Located just minutes from the Golden Temple, Lotus Divine provides easy access to the city's most popular attractions while offering a peaceful place to relax.",
   attractionsLabel: "Nearby Attractions",
-  attractions: [
-    "Golden Temple",
-    "Jallianwala Bagh",
-    "Partition Museum",
-    "Hall Bazaar",
-  ],
+  attractions: ["Golden Temple", "Jallianwala Bagh", "Partition Museum", "Hall Bazaar"],
   cta: "Get Directions →",
 } as const;
 
@@ -157,10 +161,10 @@ export const CTA = {
 // ─── Footer ──────────────────────────────────────────────────────────────────
 
 export const FOOTER_QUICK_LINKS = [
-  { label: "Home",          to: "/" as const,      enabled: true },
-  { label: "Rooms",         to: "/rooms" as const, enabled: true },
-  { label: "About",         to: "/about" as const, enabled: true },
-  { label: "Contact",       to: "/contact" as const, enabled: true },
+  { label: "Home", to: "/" as const, enabled: true },
+  { label: "Rooms", to: "/rooms" as const, enabled: true },
+  { label: "About", to: "/about" as const, enabled: true },
+  { label: "Contact", to: "/contact" as const, enabled: true },
   { label: "Book Your Stay", to: "/booking" as const, enabled: true },
 ] as const;
 
@@ -172,8 +176,8 @@ export const FOOTER_NEWSLETTER = {
 
 export const FOOTER_SOCIAL = [
   { label: "Instagram", href: "#" },
-  { label: "Privacy",   href: "#" },
-  { label: "Terms",     href: "#" },
+  { label: "Privacy", href: "#" },
+  { label: "Terms", href: "#" },
 ] as const;
 
 // ─── Rooms page ──────────────────────────────────────────────────────────────
@@ -251,21 +255,26 @@ export const ABOUT_PAGE = {
   story: {
     eyebrow: "Our Story",
     heading: "A Comfortable Stay in the Heart of Amritsar",
-    body1: "Whether you're visiting the Golden Temple, travelling with family, or staying for business, Lotus Divine offers a peaceful place to relax after your day.",
-    body2: "Our spacious rooms, modern comforts, and welcoming team are here to make every stay comfortable from the moment you arrive.",
+    body1:
+      "Whether you're visiting the Golden Temple, travelling with family, or staying for business, Lotus Divine offers a peaceful place to relax after your day.",
+    body2:
+      "Our spacious rooms, modern comforts, and welcoming team are here to make every stay comfortable from the moment you arrive.",
     imgAlt: "Lotus Divine hotel interior",
   },
   stats: [
-    { value: "5 min",  label: "Golden Temple" },
-    { value: "36",     label: "Guest Rooms"   },
-    { value: "24×7",   label: "Reception"     },
-    { value: "Free",   label: "Wi-Fi"         },
+    { value: "5 min", label: "Golden Temple" },
+    { value: "36", label: "Guest Rooms" },
+    { value: "24×7", label: "Reception" },
+    { value: "Free", label: "Wi-Fi" },
   ],
   features: [
-    { label: "Minutes from the Golden Temple", desc: "Walk or take a short drive to Sri Harmandir Sahib." },
-    { label: "Spacious Rooms",                 desc: "Thoughtfully designed rooms with modern comforts." },
-    { label: "Peaceful Location",              desc: "A quiet place to relax away from busy streets." },
-    { label: "Warm Hospitality",               desc: "Friendly service to make every stay comfortable." },
+    {
+      label: "Minutes from the Golden Temple",
+      desc: "Walk or take a short drive to Sri Harmandir Sahib.",
+    },
+    { label: "Spacious Rooms", desc: "Thoughtfully designed rooms with modern comforts." },
+    { label: "Peaceful Location", desc: "A quiet place to relax away from busy streets." },
+    { label: "Warm Hospitality", desc: "Friendly service to make every stay comfortable." },
   ],
   quote: "Comfort isn't only about the room.\nIt's about how you feel while you're here.",
   promise: {
@@ -284,16 +293,13 @@ export const ABOUT_PAGE = {
 // ─── Booking widget ──────────────────────────────────────────────────────────
 
 export const BOOKING_DEFAULTS = {
-  checkIn:  "2026-10-12",
+  checkIn: "2026-10-12",
   checkOut: "2026-10-18",
-  room:     "Lotus Suite",
-  guests:   "2 Adults",
+  room: "Lotus Suite",
+  guests: "2 Adults",
 } as const;
 
-export const BOOKING_ROOM_OPTIONS = [
-  "Deluxe Room",
-  "Family Suite",
-] as const;
+export const BOOKING_ROOM_OPTIONS = ["Deluxe Room", "Family Suite"] as const;
 
 export const BOOKING_GUEST_OPTIONS = [
   "1 Adult",
@@ -304,37 +310,37 @@ export const BOOKING_GUEST_OPTIONS = [
 
 export const BOOKING_LABELS = {
   luxury: {
-    eyebrow:         "Reserve Your Room",
-    guarantee:       "Best Price When You Book Directly",
+    eyebrow: "Reserve Your Room",
+    guarantee: "Best Price When You Book Directly",
     guaranteeMobile: "Best Price When You Book Directly",
-    button:          "Check Availability",
-    buttonSticky:    "Book Now",
+    button: "Check Availability",
+    buttonSticky: "Book Now",
   },
   serenity: {
-    eyebrow:      "Begin Your Journey",
-    guarantee:    "Free cancellation · Personal concierge welcome",
-    button:       "Reserve My Stillness",
+    eyebrow: "Begin Your Journey",
+    guarantee: "Free cancellation · Personal concierge welcome",
+    button: "Reserve My Stillness",
     buttonSticky: "Book Now",
   },
   modern: {
-    eyebrow:      "Reserve Your Stay",
-    rating:       "★ 4.96 · 1,400+ reviews",
-    perks:        ["✓ Free cancellation", "✓ Best rate guarantee", "✓ Direct-only perks"],
-    button:       "Search Availability →",
+    eyebrow: "Reserve Your Stay",
+    rating: "★ 4.96 · 1,400+ reviews",
+    perks: ["✓ Free cancellation", "✓ Best rate guarantee", "✓ Direct-only perks"],
+    button: "Search Availability →",
     buttonSticky: "Book Now",
   },
   mobileBar: {
-    label:  "Your Stay",
+    label: "Your Stay",
     button: "Book",
   },
   fieldLabels: {
-    arrival:   "Arrival",
+    arrival: "Arrival",
     departure: "Departure",
-    checkIn:   "Check In",
-    checkOut:  "Check Out",
-    suite:     "Suite",
+    checkIn: "Check In",
+    checkOut: "Check Out",
+    suite: "Suite",
     sanctuary: "Sanctuary",
-    room:      "Room",
-    guests:    "Guests",
+    room: "Room",
+    guests: "Guests",
   },
 } as const;

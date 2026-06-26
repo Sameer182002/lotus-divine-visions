@@ -8,19 +8,19 @@ type Props = {
 };
 
 const heights: Record<NonNullable<Props["size"]>, string> = {
-  sm:  "h-8",   // 32px  — mobile nav bar
-  md:  "h-11",  // 44px  — legacy / small contexts
-  lg:  "h-14",  // 56px  — mobile drawer
-  xl:  "h-16",  // 64px  — desktop header
-  "2xl": "h-20",// 80px  — footer
-  "3xl": "h-24",// 96px  — footer (large)
+  sm: "h-8",
+  md: "h-11",
+  lg: "h-14",
+  xl: "h-16",
+  "2xl": "h-20",
+  "3xl": "h-24",
 };
 
 export function BrandLogo({ size = "md", align = "center" }: Props) {
   return (
     <div className={`flex ${align === "center" ? "justify-center" : "justify-start"}`}>
       <img
-        src={logoSrc}
+        src={logoSrc.src}
         alt="Lotus Divine Luxury Hotel"
         className={`${heights[size]} w-auto object-contain`}
         draggable={false}
@@ -32,8 +32,12 @@ export function BrandLogo({ size = "md", align = "center" }: Props) {
 export function LotusMark({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg viewBox="0 0 40 32" fill="none" className={className} aria-hidden>
-      <path d="M20 28 C8 26 2 18 2 10 C6 12 10 14 14 18 C12 12 14 6 20 2 C26 6 28 12 26 18 C30 14 34 12 38 10 C38 18 32 26 20 28 Z"
-        stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+      <path
+        d="M20 28 C8 26 2 18 2 10 C6 12 10 14 14 18 C12 12 14 6 20 2 C26 6 28 12 26 18 C30 14 34 12 38 10 C38 18 32 26 20 28 Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
       <path d="M20 28 L20 18" stroke="currentColor" strokeWidth="1.2" />
     </svg>
   );

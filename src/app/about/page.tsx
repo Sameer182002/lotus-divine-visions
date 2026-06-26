@@ -1,29 +1,22 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import type { Metadata } from "next";
+import Link from "next/link";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ABOUT_PAGE } from "@/data/siteContent";
+import { bookingHref } from "@/lib/booking-url";
 import lobby from "@/assets/lobby.jpg";
 
-export const Route = createFileRoute("/about")({
-  head: () => ({
-    meta: [
-      { title: "About — Lotus Divine" },
-      {
-        name: "description",
-        content:
-          "Learn about Lotus Divine, a peaceful luxury hotel just minutes from the Golden Temple in Amritsar.",
-      },
-    ],
-  }),
-  component: AboutPage,
-});
+export const metadata: Metadata = {
+  title: "About — Lotus Divine",
+  description:
+    "Learn about Lotus Divine, a peaceful luxury hotel just minutes from the Golden Temple in Amritsar.",
+};
 
-function AboutPage() {
+export default function AboutPage() {
   return (
     <main className="bg-ivory text-brown overflow-x-hidden">
       <Header />
 
-      {/* ── Hero (dark) ── */}
       <section className="bg-brown text-ivory pt-36 pb-20 lg:pt-48 lg:pb-28 px-5 sm:px-8 lg:px-20 text-center">
         <span className="eyebrow text-gold text-[10px] lg:text-[11px] block mb-5">
           {ABOUT_PAGE.hero.eyebrow}
@@ -39,10 +32,7 @@ function AboutPage() {
         </p>
       </section>
 
-      {/* ── Light sections ── */}
       <div className="bg-ivory">
-
-        {/* Our Story */}
         <section className="py-16 lg:py-24 px-5 sm:px-8 lg:px-20 grid grid-cols-12 gap-10 lg:gap-16 items-center">
           <div className="col-span-12 lg:col-span-6">
             <span className="eyebrow text-gold text-[10px] lg:text-[11px] block mb-5">
@@ -61,7 +51,7 @@ function AboutPage() {
           </div>
           <div className="col-span-12 lg:col-span-5 lg:col-start-8">
             <img
-              src={lobby}
+              src={lobby.src}
               alt={ABOUT_PAGE.story.imgAlt}
               className="w-full aspect-[4/5] object-cover"
               loading="lazy"
@@ -69,7 +59,6 @@ function AboutPage() {
           </div>
         </section>
 
-        {/* Hotel Highlights — stats row */}
         <section className="border-t border-brown/8 py-14 lg:py-20 px-5 sm:px-8 lg:px-20">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 max-w-3xl mx-auto">
             {ABOUT_PAGE.stats.map((s, i) => (
@@ -86,7 +75,6 @@ function AboutPage() {
           </div>
         </section>
 
-        {/* Why Guests Choose Lotus Divine */}
         <section className="border-t border-brown/8 py-14 lg:py-20 px-5 sm:px-8 lg:px-20">
           <span className="eyebrow text-gold text-[10px] lg:text-[11px] block mb-8 text-center">
             Why Guests Choose Lotus Divine
@@ -102,7 +90,6 @@ function AboutPage() {
           </div>
         </section>
 
-        {/* Premium Quote */}
         <section className="border-t border-brown/8 py-16 lg:py-24 px-5 sm:px-8 lg:px-20 text-center">
           <p className="font-display text-[1.6rem] sm:text-3xl lg:text-4xl leading-[1.25] text-brown/80 max-w-2xl mx-auto italic">
             {ABOUT_PAGE.quote.split("\n").map((line, i, arr) => (
@@ -114,7 +101,6 @@ function AboutPage() {
           </p>
         </section>
 
-        {/* Our Promise */}
         <section className="border-t border-brown/8 py-14 lg:py-20 px-5 sm:px-8 lg:px-20 text-center">
           <span className="eyebrow text-gold text-[10px] lg:text-[11px] block mb-5">
             {ABOUT_PAGE.promise.eyebrow}
@@ -128,7 +114,6 @@ function AboutPage() {
         </section>
       </div>
 
-      {/* ── Booking CTA (dark) ── */}
       <section className="bg-brown text-ivory py-24 lg:py-36 px-5 sm:px-8 lg:px-10 text-center">
         <span className="eyebrow text-gold text-[10px] lg:text-[11px] block mb-5">
           {ABOUT_PAGE.cta.eyebrow}
@@ -141,14 +126,13 @@ function AboutPage() {
         </p>
         <div className="mt-10 lg:mt-14 flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Link
-            to="/booking"
-            search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
+            href={bookingHref()}
             className="bg-gold text-brown px-10 py-4 eyebrow hover:bg-ivory transition-colors w-full sm:w-auto max-w-xs text-center"
           >
             {ABOUT_PAGE.cta.primaryBtn}
           </Link>
           <Link
-            to="/rooms"
+            href="/rooms"
             className="border border-ivory/40 text-ivory px-10 py-4 eyebrow hover:border-gold hover:text-gold transition-colors w-full sm:w-auto max-w-xs text-center"
           >
             {ABOUT_PAGE.cta.secondaryBtn}
