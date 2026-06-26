@@ -5,26 +5,30 @@ export const BRAND = {
   tagline: "Luxury Hotel",
   established: "Est. 1924",
   membership: "Member, The Leading Hotels of the World.",
-  description: "An estate of uncompromised luxury. Member, The Leading Hotels of the World.",
+  description: "A premium hotel in Amritsar, just minutes from the Golden Temple.",
   copyright: "© 2026 Lotus Divine · All rights reserved",
 } as const;
 
 // ─── Contact ─────────────────────────────────────────────────────────────────
 
 export const CONTACT = {
-  address: "128 Divine Way, Celestial Highlands",
-  addressShort: "Celestial Highlands",
-  phone: "+1 (800) LOTUS-DIVINE",
-  phoneDisplay: "Reservations · +1 (800) LOTUS-DIVINE",
+  address: "Amritsar, Punjab, India",
+  addressShort: "Amritsar",
+  phone: "+91 98765 00000",
+  phoneDisplay: "Reservations · +91 98765 00000",
   email: "reservations@lotusdivine.com",
 } as const;
 
 // ─── Navigation ──────────────────────────────────────────────────────────────
 
-export const NAV_LINKS = ["The Estate", "Suites", "Wellness", "Dining", "Journal"] as const;
+export const NAV_LINKS = [
+  { label: "Home", to: "/" as const, enabled: true },
+  { label: "Rooms", to: "/rooms" as const, enabled: true },
+  { label: "About", to: "/about" as const, enabled: true },
+  { label: "Contact", to: "/contact" as const, enabled: true },
+] as const;
 
 export const NAV = {
-  reservations: "Reservations",
   bookCta: "Book Your Stay",
   bookMobile: "Book",
   drawerLabel: "Navigate",
@@ -33,133 +37,140 @@ export const NAV = {
 // ─── Page meta ───────────────────────────────────────────────────────────────
 
 export const META = {
-  title: "Lotus Divine — Premium Luxury Hotel",
+  title: "Lotus Divine — Luxury Hotel Near Golden Temple, Amritsar",
   description:
-    "An estate of uncompromised luxury. Lotus Divine — member, The Leading Hotels of the World.",
-  ogTitle: "Lotus Divine — Premium Luxury Hotel",
-  ogDescription: "A century of uncompromised hospitality between the mountains and the sea.",
+    "Premium hotel in Amritsar, minutes from the Golden Temple. Spacious rooms, warm hospitality, and easy direct booking.",
+  ogTitle: "Lotus Divine — Luxury Hotel Near Golden Temple, Amritsar",
+  ogDescription: "Spacious rooms and warm hospitality, just minutes from Sri Harmandir Sahib.",
 } as const;
 
 // ─── Hero ────────────────────────────────────────────────────────────────────
 
 export const HERO = {
-  eyebrow: "An Estate Reborn · Est. 1924",
-  headingLine1: "The Art of",
-  headingEmphasis: "Hushed",
-  headingLine2: "Luxury.",
-  body: "A century of uncompromised hospitality, distilled into thirty-six private sanctuaries between the mountains and the sea.",
+  eyebrow: "Amritsar, Punjab, India",
+  headingLine1: "Luxury Hotel",
+  headingEmphasis: "Near The",
+  headingLine2: "Golden Temple",
+  body: "Experience spacious rooms, warm hospitality, and a peaceful stay just minutes from Sri Harmandir Sahib.",
   scrollLabel: "Scroll",
-  imgAlt: "Lotus Divine at golden hour",
+  imgAlt: "Lotus Divine hotel exterior",
 } as const;
 
 // ─── About ───────────────────────────────────────────────────────────────────
 
 export const ABOUT = {
-  eyebrow: "Timeless Elegance",
-  heading: "A sanctuary carved from the light of the morning sun.",
+  eyebrow: "Our Story",
+  heading: "Designed for a Comfortable Stay",
   body1:
-    "Every corner of Lotus Divine is a dialogue between heritage and modernity. Our story began in 1924, when a single colonnaded villa above the bay first opened its doors to travellers seeking silence and ceremony.",
+    "Every room at Lotus Divine is thoughtfully designed with elegant interiors, modern comforts, and warm hospitality to make every stay relaxing.",
   body2:
-    "A century on, we remain quietly devoted to the same craft — the curation of moments that linger long after departure.",
+    "Whether you are visiting the Golden Temple, exploring the city, or here on business — we are here to make your experience simple and memorable.",
   cta: "Our Story →",
-  imgAlt: "Marble lobby",
+  imgAlt: "Hotel lobby interior",
 } as const;
 
 // ─── Rooms ───────────────────────────────────────────────────────────────────
 
 export const ROOMS_SECTION = {
-  eyebrow: "The Private Collection",
-  headingLine1: "Thirty-six",
-  headingEmphasis: "sanctuaries.",
-  viewAllCta: "View All →",
+  eyebrow: "Accommodation",
+  headingLine1: "Our",
+  headingEmphasis: "Rooms",
+  viewAllCta: "View All Rooms →",
+  bookBtn: "Book This Room",
+  detailsLink: "View Details →",
 } as const;
 
 export const ROOMS = [
   {
     name: "The Lotus Sanctuary",
     desc: "Private plunge pool and meditation terrace overlooking the gardens.",
-    price: "From $1,200",
+    price: "From ₹8,000",
   },
   {
     name: "Imperial Vista Suite",
-    desc: "Panoramic ocean views with floor-to-ceiling silk-draped windows.",
-    price: "From $1,850",
-  },
-  {
-    name: "Celestial Penthouse",
-    desc: "The estate's crown — private butler, terrace and gold-leaf detailing.",
-    price: "From $3,400",
+    desc: "Panoramic views with floor-to-ceiling windows.",
+    price: "From ₹15,000",
   },
 ] as const;
 
 // ─── Amenities ───────────────────────────────────────────────────────────────
 
 export const AMENITIES_SECTION = {
-  eyebrow: "The Experience",
-  heading: "Five quiet promises.",
+  eyebrow: "Hotel Amenities",
+  heading: "Why Stay With Us",
 } as const;
 
 export const AMENITIES = [
-  { label: "Wellness", desc: "Holistic spa rituals & private hammam." },
-  { label: "Hospitality", desc: "24-hour personal butler service." },
-  { label: "Luxury", desc: "Helipad arrival & chauffeur fleet." },
-  { label: "Comfort", desc: "Climate-tuned bedchambers." },
-  { label: "Serenity", desc: "Acoustically shielded suites." },
+  {
+    label: "Golden Temple",
+    desc: "Minutes from Sri Harmandir Sahib and the city's top attractions.",
+  },
+  {
+    label: "Spacious Rooms",
+    desc: "Well-designed rooms with modern amenities for a comfortable stay.",
+  },
+  { label: "Free Wi-Fi", desc: "Complimentary high-speed Wi-Fi throughout the hotel." },
+  { label: "Secure Parking", desc: "On-site secured parking available for all guests." },
+  { label: "Housekeeping", desc: "Daily housekeeping service included with every room." },
 ] as const;
 
 // ─── Gallery ─────────────────────────────────────────────────────────────────
 
+export const GALLERY_SECTION = {
+  heading: "Explore Lotus Divine",
+} as const;
+
 export const GALLERY_ALTS = {
-  pool: "Infinity pool",
-  spa: "Spa",
-  dining: "Fine dining",
-  villa: "Garden villa",
+  pool: "Hotel pool",
+  spa: "Relaxation area",
+  dining: "Restaurant",
+  villa: "Guest room",
 } as const;
 
 // ─── Testimonial ─────────────────────────────────────────────────────────────
 
 export const TESTIMONIAL = {
-  quote:
-    "A masterclass in restraint. The staff anticipate your needs before you have even thought them.",
-  attribution: "Condé Nast Traveler — Gold List, 2025",
+  stars: 5,
+  quote: "Beautiful rooms, helpful staff, and a peaceful location near the Golden Temple.",
+  attribution: "Guest Review",
 } as const;
 
 // ─── Location ────────────────────────────────────────────────────────────────
 
 export const LOCATION_SECTION = {
   eyebrow: "Location",
-  heading: "Between the mountains",
-  headingLine2: "and the sea.",
-  cta: "Plan Your Arrival →",
+  heading: "In the Heart",
+  headingLine2: "of Amritsar",
+  body: "Located just minutes from the Golden Temple, Lotus Divine provides easy access to the city's most popular attractions while offering a peaceful place to relax.",
+  attractionsLabel: "Nearby Attractions",
+  attractions: ["Golden Temple", "Jallianwala Bagh", "Partition Museum", "Hall Bazaar"],
+  cta: "Get Directions →",
 } as const;
 
 // ─── CTA ─────────────────────────────────────────────────────────────────────
 
 export const CTA = {
-  eyebrow: "Your Stay Awaits",
-  headingLine1: "Begin a",
-  headingEmphasis: "quieter",
-  headingLine2: "chapter.",
-  body: "Limited seasonal availability. Direct reservations receive a personal welcome from our concierge.",
-  button: "Check Availability",
+  eyebrow: "Book Direct",
+  headingLine1: "Ready to",
+  headingEmphasis: "Book",
+  headingLine2: "Your Stay?",
+  body: "Reserve directly with Lotus Divine for the best available rates and a smooth booking experience.",
+  button: "Book Your Stay",
 } as const;
 
 // ─── Footer ──────────────────────────────────────────────────────────────────
 
-export const FOOTER_COLS = [
-  {
-    title: "The Hotel",
-    links: ["Suites", "The Spa", "Dining", "Experiences"],
-  },
-  {
-    title: "Information",
-    links: ["Our Story", "Sustainability", "Journal", "Careers"],
-  },
+export const FOOTER_QUICK_LINKS = [
+  { label: "Home", to: "/" as const, enabled: true },
+  { label: "Rooms", to: "/rooms" as const, enabled: true },
+  { label: "About", to: "/about" as const, enabled: true },
+  { label: "Contact", to: "/contact" as const, enabled: true },
+  { label: "Book Your Stay", to: "/booking" as const, enabled: true },
 ] as const;
 
 export const FOOTER_NEWSLETTER = {
   heading: "Stay in Touch",
-  blurb: "Quarterly letters from the estate.",
+  blurb: "Sign up for offers and updates.",
   placeholder: "Your email",
 } as const;
 
@@ -173,64 +184,111 @@ export const FOOTER_SOCIAL = [
 
 export const ROOMS_PAGE = {
   hero: {
-    eyebrow: "The Private Collection · 36 Sanctuaries",
-    headingLine1: "Where Comfort",
-    headingEmphasis: "Becomes",
-    headingLine2: "Art.",
-    body: "Each suite is a private world — curated over a century of devotion to the quieter art of luxury hospitality.",
+    eyebrow: "Our Rooms",
+    headingLine1: "Comfortable Rooms",
+    headingEmphasis: "for Every",
+    headingLine2: "Guest.",
+    body: "From couples and families to business travellers — every room at Lotus Divine is designed for a relaxing and memorable stay.",
   },
   cta: {
-    eyebrow: "Reserve Your Sanctuary",
-    headingLine1: "Your perfect",
-    headingEmphasis: "escape",
-    headingLine2: "awaits.",
-    body: "Contact our personal concierge to arrange your stay. Best rates guaranteed on direct reservations.",
-    button: "Check Availability",
+    eyebrow: "Book Direct",
+    headingLine1: "Ready to",
+    headingEmphasis: "Book",
+    headingLine2: "Your Stay?",
+    body: "Reserve directly with Lotus Divine for the best available rates and a smooth booking experience.",
+    button: "Book Your Stay",
   },
 } as const;
 
 export const ROOMS_DETAIL = [
   {
     id: "lotus-sanctuary",
-    name: "The Lotus Sanctuary",
-    category: "Signature Suite",
+    name: "Deluxe Room",
+    category: "Deluxe",
     description:
-      "A private plunge pool and meditation terrace overlook our century-old gardens. Morning light falls through floor-to-ceiling shoji screens, casting gold across hand-laid marble floors. Designed for absolute stillness.",
+      "A well-appointed room with modern furnishings, a comfortable king-size bed, and garden views. Ideal for couples and solo travellers looking for a relaxing stay.",
     amenities: [
-      "Private plunge pool",
-      "Meditation terrace",
-      "King bedchamber",
-      "24-hour butler service",
-      "Walk-in dressing room",
-      "Marble soaking tub",
+      "King-size bed",
+      "Garden view",
+      "Free Wi-Fi",
+      "Smart TV",
+      "Work desk",
+      "En-suite bathroom",
     ],
-    size: "65 sq m",
+    size: "32 sq m",
     capacity: "2 Guests",
-    price: "From $1,200 / night",
+    price: "From ₹8,000 / night",
     imageKey: "room1" as const,
-    imageAlt: "The Lotus Sanctuary suite with private garden terrace",
+    imageAlt: "Deluxe room with king-size bed and garden view",
   },
   {
     id: "imperial-vista",
-    name: "Imperial Vista Suite",
-    category: "Grand Suite",
+    name: "Family Suite",
+    category: "Suite",
     description:
-      "Panoramic ocean views stretch to the horizon, framed by floor-to-ceiling silk-draped windows. The Imperial Vista is Lotus Divine's most coveted address — a study in light, silence, and effortless grandeur.",
+      "A spacious suite with a separate living area, perfect for families and groups. Includes a comfortable lounge, two bedrooms, and modern amenities throughout.",
     amenities: [
-      "Unobstructed ocean panorama",
-      "Bespoke silk furnishings",
-      "Private dining for four",
-      "Curated private bar",
-      "24-hour personal butler",
-      "Rainfall shower & steam room",
+      "Two bedrooms",
+      "Separate living area",
+      "Free Wi-Fi",
+      "Smart TV",
+      "Kitchenette",
+      "En-suite bathrooms",
     ],
-    size: "90 sq m",
+    size: "65 sq m",
     capacity: "Up to 4 Guests",
-    price: "From $1,850 / night",
+    price: "From ₹15,000 / night",
     imageKey: "room2" as const,
-    imageAlt: "Imperial Vista Suite with panoramic ocean view",
+    imageAlt: "Family suite with separate living area",
   },
 ] as const;
+
+// ─── About page ──────────────────────────────────────────────────────────────
+
+export const ABOUT_PAGE = {
+  hero: {
+    eyebrow: "Lotus Divine · Amritsar",
+    primaryHeading: "A Peaceful Stay in the Heart of Amritsar",
+    secondaryHeading: "About Lotus Divine",
+    body: "Minutes from the Golden Temple, Lotus Divine offers modern comfort, peaceful surroundings, and warm hospitality for every guest.",
+  },
+  story: {
+    eyebrow: "Our Story",
+    heading: "A Comfortable Stay in the Heart of Amritsar",
+    body1:
+      "Whether you're visiting the Golden Temple, travelling with family, or staying for business, Lotus Divine offers a peaceful place to relax after your day.",
+    body2:
+      "Our spacious rooms, modern comforts, and welcoming team are here to make every stay comfortable from the moment you arrive.",
+    imgAlt: "Lotus Divine hotel interior",
+  },
+  stats: [
+    { value: "5 min", label: "Golden Temple" },
+    { value: "36", label: "Guest Rooms" },
+    { value: "24×7", label: "Reception" },
+    { value: "Free", label: "Wi-Fi" },
+  ],
+  features: [
+    {
+      label: "Minutes from the Golden Temple",
+      desc: "Walk or take a short drive to Sri Harmandir Sahib.",
+    },
+    { label: "Spacious Rooms", desc: "Thoughtfully designed rooms with modern comforts." },
+    { label: "Peaceful Location", desc: "A quiet place to relax away from busy streets." },
+    { label: "Warm Hospitality", desc: "Friendly service to make every stay comfortable." },
+  ],
+  quote: "Comfort isn't only about the room.\nIt's about how you feel while you're here.",
+  promise: {
+    eyebrow: "Our Promise",
+    heading: "Every Stay Matters",
+    body: "From check-in to departure, we want every guest to enjoy a clean, comfortable, and relaxing stay in Amritsar.",
+  },
+  cta: {
+    eyebrow: "Book Direct",
+    body: "Book directly with Lotus Divine for the best experience and a comfortable stay in Amritsar.",
+    primaryBtn: "Book Your Stay",
+    secondaryBtn: "View Rooms",
+  },
+} as const;
 
 // ─── Booking widget ──────────────────────────────────────────────────────────
 
@@ -241,12 +299,7 @@ export const BOOKING_DEFAULTS = {
   guests: "2 Adults",
 } as const;
 
-export const BOOKING_ROOM_OPTIONS = [
-  "Lotus Suite",
-  "Garden Villa",
-  "Celestial Penthouse",
-  "Divine Sanctuary",
-] as const;
+export const BOOKING_ROOM_OPTIONS = ["Deluxe Room", "Family Suite"] as const;
 
 export const BOOKING_GUEST_OPTIONS = [
   "1 Adult",
@@ -257,9 +310,9 @@ export const BOOKING_GUEST_OPTIONS = [
 
 export const BOOKING_LABELS = {
   luxury: {
-    eyebrow: "Reserve Your Suite",
-    guarantee: "Best rate guaranteed",
-    guaranteeMobile: "Best rate guaranteed · Concierge welcome",
+    eyebrow: "Reserve Your Room",
+    guarantee: "Best Price When You Book Directly",
+    guaranteeMobile: "Best Price When You Book Directly",
     button: "Check Availability",
     buttonSticky: "Book Now",
   },

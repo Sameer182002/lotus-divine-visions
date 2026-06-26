@@ -14,13 +14,11 @@ export function RoomsSection() {
           {ROOMS_SECTION.eyebrow}
         </span>
         <h2 className="font-display text-[2.25rem] sm:text-5xl lg:text-6xl text-brown leading-[1.05]">
-          {ROOMS_SECTION.headingLine1}
-          <br />
+          {ROOMS_SECTION.headingLine1}{" "}
           <span className="italic">{ROOMS_SECTION.headingEmphasis}</span>
         </h2>
       </div>
 
-      {/* Mobile: horizontal snap carousel */}
       <div className="lg:hidden -mx-5 sm:-mx-8 px-5 sm:px-8 flex gap-5 overflow-x-auto snap-x snap-mandatory pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {ROOMS_DETAIL.map((r, i) => (
           <article key={r.id} className="snap-start shrink-0 w-[78%] sm:w-[55%]">
@@ -37,18 +35,30 @@ export function RoomsSection() {
               <span className="eyebrow text-gold text-[10px] shrink-0">{r.price}</span>
             </div>
             <p className="text-taupe text-sm mt-2 leading-relaxed line-clamp-2">{r.description}</p>
+            <div className="flex gap-3 mt-1 text-[10px] text-taupe eyebrow">
+              <span>{r.capacity}</span>
+              <span className="text-gold/40">·</span>
+              <span>{r.amenities[0]}</span>
+            </div>
             <div className="hairline w-full mt-4" />
-            <Link
-              href={bookingHref(r.id)}
-              className="inline-block mt-4 eyebrow text-[10px] border border-gold/60 text-gold px-5 py-2.5 hover:bg-gold hover:text-brown transition-colors"
-            >
-              Book Now
-            </Link>
+            <div className="flex items-center gap-3 mt-4">
+              <Link
+                href={bookingHref(r.id)}
+                className="eyebrow text-[10px] border border-gold/60 text-gold px-5 py-2.5 hover:bg-gold hover:text-brown transition-colors"
+              >
+                {ROOMS_SECTION.bookBtn}
+              </Link>
+              <Link
+                href="/rooms"
+                className="eyebrow text-[10px] text-taupe hover:text-brown transition-colors"
+              >
+                {ROOMS_SECTION.detailsLink}
+              </Link>
+            </div>
           </article>
         ))}
       </div>
 
-      {/* Desktop grid */}
       <div className="hidden lg:grid grid-cols-2 gap-8">
         {ROOMS_DETAIL.map((r, i) => (
           <article key={r.id} className="group">
@@ -65,13 +75,26 @@ export function RoomsSection() {
               <span className="eyebrow text-gold">{r.price}</span>
             </div>
             <p className="text-taupe text-sm mt-3 leading-relaxed line-clamp-2">{r.description}</p>
+            <div className="flex gap-3 mt-2 text-[10px] text-taupe eyebrow">
+              <span>{r.capacity}</span>
+              <span className="text-gold/40">·</span>
+              <span>{r.amenities[0]}</span>
+            </div>
             <div className="hairline w-full mt-4" />
-            <Link
-              href={bookingHref(r.id)}
-              className="inline-block mt-4 eyebrow text-[10px] border border-gold/60 text-gold px-6 py-3 hover:bg-gold hover:text-brown transition-colors"
-            >
-              Book Now
-            </Link>
+            <div className="flex items-center gap-4 mt-4">
+              <Link
+                href={bookingHref(r.id)}
+                className="eyebrow text-[10px] border border-gold/60 text-gold px-6 py-3 hover:bg-gold hover:text-brown transition-colors"
+              >
+                {ROOMS_SECTION.bookBtn}
+              </Link>
+              <Link
+                href="/rooms"
+                className="eyebrow text-[10px] text-taupe hover:text-brown transition-colors"
+              >
+                {ROOMS_SECTION.detailsLink}
+              </Link>
+            </div>
           </article>
         ))}
       </div>

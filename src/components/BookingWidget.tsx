@@ -30,13 +30,9 @@ function useStickyTrigger() {
   return { sentinelRef, stuck };
 }
 
-/**
- * Drop inside the hero. Renders the in-hero booking panel,
- * a sentinel for scroll detection, and a fixed sticky bar.
- */
 export function BookingExperience({
   variant,
-  stickyTop = "2.25rem", // sits below the ConceptBar (py-3 ~ 36px)
+  stickyTop = "2.25rem",
 }: {
   variant: BookingVariant;
   stickyTop?: string;
@@ -56,7 +52,6 @@ export function BookingExperience({
   return (
     <>
       <HeroPanel variant={variant} values={values} setValues={setValues} onSearch={handleSearch} />
-      {/* Sentinel placed just AFTER the panel — when it scrolls out, sticky appears */}
       <div ref={sentinelRef} aria-hidden className="h-px w-full" />
       <StickyBar
         variant={variant}
@@ -69,8 +64,6 @@ export function BookingExperience({
     </>
   );
 }
-
-/* ---------------- Hero panels (per variant) ---------------- */
 
 function HeroPanel({
   variant,
@@ -103,7 +96,6 @@ function LuxuryPanel({
   const f = BOOKING_LABELS.fieldLabels;
   return (
     <>
-      {/* Desktop */}
       <div className="hidden lg:block animate-fade-up [animation-delay:300ms] relative w-full max-w-4xl mt-10">
         <div className="backdrop-blur-xl bg-brown/30 ring-1 ring-gold/40 shadow-gold p-6 lg:p-7 text-ivory">
           <div className="flex items-center justify-between mb-5">
@@ -140,7 +132,6 @@ function LuxuryPanel({
         </div>
       </div>
 
-      {/* Mobile / tablet */}
       <div className="lg:hidden animate-fade-up [animation-delay:200ms] w-full mt-8">
         <div className="backdrop-blur-2xl bg-brown/45 ring-1 ring-gold/40 shadow-gold px-5 pt-5 pb-5 sm:px-6 sm:pt-6 text-ivory relative">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
@@ -303,8 +294,6 @@ function ModernPanel({
   );
 }
 
-/* ---------------- Sticky bar ---------------- */
-
 function StickyBar({
   variant,
   values,
@@ -331,7 +320,6 @@ function StickyBar({
 
   return (
     <>
-      {/* Desktop / tablet: top sticky */}
       <div
         aria-hidden={!visible}
         className={`hidden md:block fixed left-0 right-0 z-30 transition-all duration-500 ${
@@ -370,7 +358,6 @@ function StickyBar({
         </div>
       </div>
 
-      {/* Mobile: bottom action bar */}
       <div
         aria-hidden={!visible}
         className={`md:hidden fixed left-0 right-0 bottom-0 z-30 transition-all duration-500 ${
@@ -403,8 +390,6 @@ function StickyBar({
     </>
   );
 }
-
-/* ---------------- Fields ---------------- */
 
 function baseField(tone: "dark" | "light", rounded?: boolean, big?: boolean) {
   const bg = tone === "dark" ? "bg-brown/40 text-ivory" : "bg-ivory text-brown";
@@ -519,7 +504,6 @@ function CompactField({
 }
 
 function fmt(d: string) {
-  // Accept yyyy-mm-dd or pre-formatted
   if (!d) return "";
   const date = new Date(d);
   if (Number.isNaN(date.getTime())) return d;

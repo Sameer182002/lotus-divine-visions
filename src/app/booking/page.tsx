@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { BookingPageClient } from "./BookingPageClient";
 
 export const metadata: Metadata = {
-  title: "Reserve Your Suite — Lotus Divine",
-  description:
-    "Book your luxury suite at Lotus Divine. Direct reservations with personal concierge welcome.",
+  title: "Reserve Your Stay — Lotus Divine",
+  description: "Reserve your room at Lotus Divine. Best rate guaranteed when you book direct.",
 };
 
 export default function BookingPage() {

@@ -1,29 +1,30 @@
+import logoSrc from "@/assets/logo.png";
+
 type Props = {
   tone?: "ivory" | "brown" | "gold";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
   align?: "center" | "left";
   showTagline?: boolean;
 };
 
-export function BrandLogo({
-  tone = "brown",
-  size = "md",
-  align = "center",
-  showTagline = true,
-}: Props) {
-  const color = tone === "ivory" ? "text-ivory" : tone === "gold" ? "text-gold" : "text-brown";
-  const eyebrowColor =
-    tone === "ivory" ? "text-gold" : tone === "gold" ? "text-gold/80" : "text-taupe";
-  const ms = { sm: "text-base", md: "text-xl", lg: "text-3xl" }[size];
-  const es = { sm: "text-[8px]", md: "text-[9px]", lg: "text-[11px]" }[size];
+const heights: Record<NonNullable<Props["size"]>, string> = {
+  sm: "h-8",
+  md: "h-11",
+  lg: "h-14",
+  xl: "h-16",
+  "2xl": "h-20",
+  "3xl": "h-24",
+};
+
+export function BrandLogo({ size = "md", align = "center" }: Props) {
   return (
-    <div
-      className={`flex flex-col ${align === "center" ? "items-center" : "items-start"} leading-none`}
-    >
-      <span className={`font-display ${ms} ${color} tracking-tight`}>
-        <span className="italic">L</span>otus <span className="italic">D</span>ivine
-      </span>
-      {showTagline && <span className={`eyebrow ${es} mt-1.5 ${eyebrowColor}`}>Luxury Hotel</span>}
+    <div className={`flex ${align === "center" ? "justify-center" : "justify-start"}`}>
+      <img
+        src={logoSrc.src}
+        alt="Lotus Divine Luxury Hotel"
+        className={`${heights[size]} w-auto object-contain`}
+        draggable={false}
+      />
     </div>
   );
 }

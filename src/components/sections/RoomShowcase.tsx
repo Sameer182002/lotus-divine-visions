@@ -37,8 +37,6 @@ const BOOKING_SLUGS: Record<string, string> = {
 
 type RoomDetail = (typeof ROOMS_DETAIL)[number];
 
-// ─── Lightbox ─────────────────────────────────────────────────────────────────
-
 function Lightbox({
   images,
   current,
@@ -76,7 +74,6 @@ function Lightbox({
 
   return (
     <div className="fixed inset-0 z-50 bg-brown/96 flex flex-col" onClick={onClose}>
-      {/* Top bar */}
       <div
         className="flex items-center justify-between px-5 lg:px-8 py-4 shrink-0"
         onClick={(e) => e.stopPropagation()}
@@ -93,7 +90,6 @@ function Lightbox({
         </button>
       </div>
 
-      {/* Main image */}
       <div
         className="flex-1 flex items-center justify-center relative px-14 lg:px-20 min-h-0"
         onClick={(e) => e.stopPropagation()}
@@ -119,7 +115,6 @@ function Lightbox({
         </button>
       </div>
 
-      {/* Thumbnail strip */}
       <div
         className="shrink-0 pb-5 px-5 flex gap-2 justify-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         onClick={(e) => e.stopPropagation()}
@@ -140,8 +135,6 @@ function Lightbox({
   );
 }
 
-// ─── Room Section ──────────────────────────────────────────────────────────────
-
 function RoomSection({
   room,
   reverse,
@@ -158,18 +151,14 @@ function RoomSection({
 
   return (
     <section
-      className={`px-5 sm:px-8 lg:px-20 ${
-        index === 0 ? "pt-28 lg:pt-36 pb-14 lg:pb-20" : "py-14 lg:py-20"
-      } ${reverse ? "bg-champagne/40" : "bg-ivory"}`}
+      className={`py-14 lg:py-20 px-5 sm:px-8 lg:px-20 ${reverse ? "bg-champagne/40" : "bg-ivory"}`}
     >
       <div
         className={`max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-start gap-8 lg:gap-14 ${
           reverse ? "lg:flex-row-reverse" : ""
         }`}
       >
-        {/* ── Image + gallery column ── */}
         <div className="w-full lg:w-[52%]">
-          {/* Featured image */}
           <button
             onClick={() => setLightboxIdx(featuredIdx)}
             className="block w-full overflow-hidden group focus:outline-none"
@@ -183,7 +172,6 @@ function RoomSection({
             />
           </button>
 
-          {/* Thumbnails */}
           <div className="flex gap-1.5 mt-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {gallery.map((img, i) => (
               <button
@@ -208,7 +196,6 @@ function RoomSection({
           </div>
         </div>
 
-        {/* ── Content column ── */}
         <div className="w-full lg:w-[48%] flex flex-col justify-center lg:py-2">
           <span className="eyebrow text-gold text-[10px] lg:text-[11px] block mb-3">
             {room.category}
@@ -220,7 +207,6 @@ function RoomSection({
             {room.description}
           </p>
 
-          {/* Highlights: size + capacity */}
           <div className="flex gap-8 pb-6 mb-6 border-b border-brown/10">
             {"size" in room && (
               <div>
@@ -234,7 +220,6 @@ function RoomSection({
             </div>
           </div>
 
-          {/* Amenities */}
           <div className="grid grid-cols-2 gap-x-6 mb-8">
             {room.amenities.map((a) => (
               <div
@@ -247,7 +232,6 @@ function RoomSection({
             ))}
           </div>
 
-          {/* CTA */}
           <div>
             <Link
               href={bookingHref(bookingSlug)}
@@ -259,7 +243,6 @@ function RoomSection({
         </div>
       </div>
 
-      {/* Lightbox */}
       {lightboxIdx !== null && (
         <Lightbox
           images={gallery}
@@ -271,8 +254,6 @@ function RoomSection({
     </section>
   );
 }
-
-// ─── Export ───────────────────────────────────────────────────────────────────
 
 export function RoomShowcase() {
   return (

@@ -9,30 +9,73 @@ import { bookingHref } from "@/lib/booking-url";
 const EMPTY_BOOKING = bookingHref();
 
 export function Header() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 100);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <>
-      <nav className="hidden lg:flex absolute top-10 left-0 right-0 z-40 px-10 items-center justify-between text-ivory">
-        <div className="flex gap-8">
-          {NAV_LINKS.slice(0, 3).map((l) =>
-            l === "Suites" ? (
-              <Link key={l} href="/rooms" className="eyebrow hover:text-gold transition-colors">
-                {l}
+      <nav
+        className={`hidden lg:grid grid-cols-3 fixed top-0 left-0 right-0 z-40 px-12 items-center text-ivory transition-all duration-500 ${
+          scrolled
+            ? "bg-brown/92 backdrop-blur-xl border-b border-gold/15 py-3"
+            : "bg-transparent py-7"
+        }`}
+      >
+        <div className="flex gap-7 items-center">
+          {NAV_LINKS.slice(0, 2).map((item) =>
+            item.enabled ? (
+              <Link
+                key={item.label}
+                href={item.to!}
+                className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase hover:text-gold transition-colors"
+              >
+                {item.label}
               </Link>
             ) : (
-              <a key={l} href="#" className="eyebrow hover:text-gold transition-colors">
-                {l}
-              </a>
+              <span
+                key={item.label}
+                className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase text-ivory/40 cursor-default select-none"
+              >
+                {item.label}
+              </span>
             ),
           )}
         </div>
-        <BrandLogo tone="ivory" size="md" />
-        <div className="flex items-center gap-8">
-          <Link href={EMPTY_BOOKING} className="eyebrow hover:text-gold transition-colors">
-            {NAV.reservations}
+
+        <div className="flex justify-center">
+          <Link href="/" aria-label="Lotus Divine home">
+            <BrandLogo tone="ivory" size="xl" />
           </Link>
+        </div>
+
+        <div className="flex items-center gap-6 justify-end">
+          {NAV_LINKS.slice(2).map((item) =>
+            item.enabled ? (
+              <Link
+                key={item.label}
+                href={item.to!}
+                className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase hover:text-gold transition-colors"
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <span
+                key={item.label}
+                className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase text-ivory/40 cursor-default select-none"
+              >
+                {item.label}
+              </span>
+            ),
+          )}
           <Link
             href={EMPTY_BOOKING}
-            className="border border-gold/60 text-gold px-7 py-3 eyebrow hover:bg-gold hover:text-brown transition-all"
+            className="text-[10px] font-sans font-medium tracking-[0.14em] uppercase border border-gold/60 text-gold px-6 py-2.5 hover:bg-gold hover:text-brown transition-all whitespace-nowrap"
           >
             {NAV.bookCta}
           </Link>
@@ -81,7 +124,9 @@ function MobileNav() {
             <span className="block w-5 h-px bg-ivory" />
             <span className="block w-3 h-px bg-ivory ml-2" />
           </button>
-          <BrandLogo tone="ivory" size="sm" showTagline={false} />
+          <Link href="/" aria-label="Lotus Divine home">
+            <BrandLogo tone="ivory" size="sm" showTagline={false} />
+          </Link>
           <Link
             href={EMPTY_BOOKING}
             className="eyebrow text-[10px] border border-gold/60 text-gold px-4 py-2.5 hover:bg-gold hover:text-brown transition-all"
@@ -119,32 +164,28 @@ function MobileNav() {
           <nav className="flex-1 px-6 py-8 flex flex-col">
             <span className="eyebrow text-gold text-[10px] mb-6">{NAV.drawerLabel}</span>
             <ul className="space-y-1">
-              {NAV_LINKS.map((l, i) => (
+              {NAV_LINKS.map((item, i) => (
                 <li
-                  key={l}
+                  key={item.label}
                   className={`border-b border-ivory/8 transition-all duration-500 ${
                     open ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
                   }`}
                   style={{ transitionDelay: open ? `${120 + i * 60}ms` : "0ms" }}
                 >
-                  {l === "Suites" ? (
+                  {item.enabled ? (
                     <Link
-                      href="/rooms"
+                      href={item.to!}
                       onClick={() => setOpen(false)}
                       className="flex items-baseline justify-between py-5 font-display text-3xl hover:text-gold transition-colors"
                     >
-                      <span>{l}</span>
+                      <span>{item.label}</span>
                       <span className="eyebrow text-gold/50 text-[10px]">0{i + 1}</span>
                     </Link>
                   ) : (
-                    <a
-                      href="#"
-                      onClick={() => setOpen(false)}
-                      className="flex items-baseline justify-between py-5 font-display text-3xl hover:text-gold transition-colors"
-                    >
-                      <span>{l}</span>
-                      <span className="eyebrow text-gold/50 text-[10px]">0{i + 1}</span>
-                    </a>
+                    <div className="flex items-baseline justify-between py-5 font-display text-3xl text-ivory/30 cursor-default">
+                      <span>{item.label}</span>
+                      <span className="eyebrow text-ivory/20 text-[10px]">0{i + 1}</span>
+                    </div>
                   )}
                 </li>
               ))}

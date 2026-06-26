@@ -16,7 +16,7 @@ export function HeroSection() {
         <span className="eyebrow text-gold block mb-5 lg:mb-8 text-[10px] lg:text-[11px]">
           {HERO.eyebrow}
         </span>
-        <h1 className="font-display text-ivory text-[2.75rem] sm:text-6xl md:text-7xl lg:text-[9rem] leading-[0.95] lg:leading-[0.92] text-balance">
+        <h1 className="font-display text-ivory text-[2.4rem] sm:text-5xl md:text-[3.25rem] lg:text-[4rem] xl:text-[5rem] leading-[1.05] lg:leading-[1.0] text-balance">
           {HERO.headingLine1} <br />
           <span className="italic">{HERO.headingEmphasis}</span> {HERO.headingLine2}
         </h1>
@@ -24,10 +24,6 @@ export function HeroSection() {
           {HERO.body}
         </p>
         <BookingExperience variant="luxury" stickyTop="0" />
-      </div>
-      <div className="absolute bottom-10 right-10 z-10 text-ivory/60 eyebrow hidden lg:flex items-center gap-3">
-        <span>{HERO.scrollLabel}</span>
-        <div className="w-12 h-px bg-gold" />
       </div>
     </section>
   );
