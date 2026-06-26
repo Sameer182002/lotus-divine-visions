@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { CTA } from "@/data/siteContent";
 
 export function CTASection() {
@@ -10,9 +11,13 @@ export function CTASection() {
       <p className="text-ivory/60 max-w-xl mx-auto mt-6 lg:mt-8 text-sm lg:text-base">
         {CTA.body}
       </p>
-      <button className="mt-10 lg:mt-12 bg-gold text-brown px-10 sm:px-14 py-4 lg:py-5 eyebrow hover:bg-ivory transition-colors w-full sm:w-auto max-w-sm">
+      <Link
+        to="/booking"
+        search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
+        className="inline-block mt-10 lg:mt-12 bg-gold text-brown px-10 sm:px-14 py-4 lg:py-5 eyebrow hover:bg-ivory transition-colors w-full sm:w-auto max-w-sm text-center"
+      >
         {CTA.button}
-      </button>
+      </Link>
     </section>
   );
 }

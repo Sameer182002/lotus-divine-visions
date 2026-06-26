@@ -1,22 +1,75 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { BrandLogo } from "@/components/BrandLogo";
 import { NAV_LINKS, NAV, CONTACT } from "@/data/siteContent";
 
 export function Header() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 100);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <>
-      <nav className="hidden lg:flex absolute top-10 left-0 right-0 z-40 px-10 items-center justify-between text-ivory">
-        <div className="flex gap-8">
-          {NAV_LINKS.slice(0, 3).map((l) => (
-            <a key={l} href="#" className="eyebrow hover:text-gold transition-colors">{l}</a>
-          ))}
+      <nav
+        className={`hidden lg:grid grid-cols-3 fixed top-0 left-0 right-0 z-40 px-12 items-center text-ivory transition-all duration-500 ${
+          scrolled
+            ? "bg-brown/92 backdrop-blur-xl border-b border-gold/15 py-3"
+            : "bg-transparent py-7"
+        }`}
+      >
+        {/* Left: Home, Rooms */}
+        <div className="flex gap-7 items-center">
+          {NAV_LINKS.slice(0, 2).map((item) =>
+            item.enabled ? (
+              <Link
+                key={item.label}
+                to={item.to!}
+                className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase hover:text-gold transition-colors"
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <span key={item.label} className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase text-ivory/40 cursor-default select-none">
+                {item.label}
+              </span>
+            )
+          )}
         </div>
-        <BrandLogo tone="ivory" size="md" />
-        <div className="flex items-center gap-8">
-          <a href="#" className="eyebrow hover:text-gold transition-colors">{NAV.reservations}</a>
-          <button className="border border-gold/60 text-gold px-7 py-3 eyebrow hover:bg-gold hover:text-brown transition-all">
+
+        {/* Center: Logo (always perfectly centered) */}
+        <div className="flex justify-center">
+          <BrandLogo tone="ivory" size="xl" />
+        </div>
+
+        {/* Right: About, Contact, Book Your Stay */}
+        <div className="flex items-center gap-6 justify-end">
+          {NAV_LINKS.slice(2).map((item) =>
+            item.enabled ? (
+              <Link
+                key={item.label}
+                to={item.to!}
+                className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase hover:text-gold transition-colors"
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <span key={item.label} className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase text-ivory/40 cursor-default select-none">
+                {item.label}
+              </span>
+            )
+          )}
+          <Link
+            to="/booking"
+            search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
+            className="text-[10px] font-sans font-medium tracking-[0.14em] uppercase border border-gold/60 text-gold px-6 py-2.5 hover:bg-gold hover:text-brown transition-all whitespace-nowrap"
+          >
             {NAV.bookCta}
-          </button>
+          </Link>
         </div>
       </nav>
       <MobileNav />
@@ -63,12 +116,13 @@ function MobileNav() {
             <span className="block w-3 h-px bg-ivory ml-2" />
           </button>
           <BrandLogo tone="ivory" size="sm" showTagline={false} />
-          <a
-            href="#book"
+          <Link
+            to="/booking"
+            search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
             className="eyebrow text-[10px] border border-gold/60 text-gold px-4 py-2.5 hover:bg-gold hover:text-brown transition-all"
           >
             {NAV.bookMobile}
-          </a>
+          </Link>
         </div>
       </nav>
 
@@ -77,10 +131,7 @@ function MobileNav() {
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       >
-        <div
-          className="absolute inset-0 bg-brown/70 backdrop-blur-sm"
-          onClick={() => setOpen(false)}
-        />
+        <div className="absolute inset-0 bg-brown/70 backdrop-blur-sm" onClick={() => setOpen(false)} />
         <aside
           className={`absolute right-0 top-0 bottom-0 w-[88%] max-w-sm bg-brown text-ivory shadow-gold flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
             open ? "translate-x-0" : "translate-x-full"
@@ -100,32 +151,41 @@ function MobileNav() {
           <nav className="flex-1 px-6 py-8 flex flex-col">
             <span className="eyebrow text-gold text-[10px] mb-6">{NAV.drawerLabel}</span>
             <ul className="space-y-1">
-              {NAV_LINKS.map((l, i) => (
+              {NAV_LINKS.map((item, i) => (
                 <li
-                  key={l}
+                  key={item.label}
                   className={`border-b border-ivory/8 transition-all duration-500 ${
                     open ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
                   }`}
                   style={{ transitionDelay: open ? `${120 + i * 60}ms` : "0ms" }}
                 >
-                  <a
-                    href="#"
-                    onClick={() => setOpen(false)}
-                    className="flex items-baseline justify-between py-5 font-display text-3xl hover:text-gold transition-colors"
-                  >
-                    <span>{l}</span>
-                    <span className="eyebrow text-gold/50 text-[10px]">0{i + 1}</span>
-                  </a>
+                  {item.enabled ? (
+                    <Link
+                      to={item.to!}
+                      onClick={() => setOpen(false)}
+                      className="flex items-baseline justify-between py-5 font-display text-3xl hover:text-gold transition-colors"
+                    >
+                      <span>{item.label}</span>
+                      <span className="eyebrow text-gold/50 text-[10px]">0{i + 1}</span>
+                    </Link>
+                  ) : (
+                    <div className="flex items-baseline justify-between py-5 font-display text-3xl text-ivory/30 cursor-default">
+                      <span>{item.label}</span>
+                      <span className="eyebrow text-ivory/20 text-[10px]">0{i + 1}</span>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
             <div className="mt-auto pt-10">
-              <button
+              <Link
+                to="/booking"
+                search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
                 onClick={() => setOpen(false)}
-                className="w-full bg-gold text-brown eyebrow py-4 hover:bg-ivory transition-colors"
+                className="block w-full bg-gold text-brown eyebrow py-4 hover:bg-ivory transition-colors text-center"
               >
                 {NAV.bookCta}
-              </button>
+              </Link>
               <div className="mt-6 text-center space-y-1 text-ivory/60 text-xs">
                 <p>{CONTACT.phone}</p>
                 <p>{CONTACT.email}</p>
