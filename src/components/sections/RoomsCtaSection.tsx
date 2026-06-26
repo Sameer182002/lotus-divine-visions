@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
+import { bookingHref } from "@/lib/booking-url";
 
 export function RoomsCtaSection() {
   return (
@@ -13,8 +14,7 @@ export function RoomsCtaSection() {
         Reserve directly with Lotus Divine for the best available experience.
       </p>
       <Link
-        to="/booking"
-        search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
+        href={bookingHref()}
         className="inline-block mt-10 lg:mt-12 bg-gold text-brown px-10 sm:px-14 py-4 lg:py-5 eyebrow hover:bg-ivory transition-colors w-full sm:w-auto max-w-sm text-center"
       >
         Reserve Your Stay

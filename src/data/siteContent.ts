@@ -21,13 +21,7 @@ export const CONTACT = {
 
 // ─── Navigation ──────────────────────────────────────────────────────────────
 
-export const NAV_LINKS = [
-  "The Estate",
-  "Suites",
-  "Wellness",
-  "Dining",
-  "Journal",
-] as const;
+export const NAV_LINKS = ["The Estate", "Suites", "Wellness", "Dining", "Journal"] as const;
 
 export const NAV = {
   reservations: "Reservations",
@@ -40,7 +34,8 @@ export const NAV = {
 
 export const META = {
   title: "Lotus Divine — Premium Luxury Hotel",
-  description: "An estate of uncompromised luxury. Lotus Divine — member, The Leading Hotels of the World.",
+  description:
+    "An estate of uncompromised luxury. Lotus Divine — member, The Leading Hotels of the World.",
   ogTitle: "Lotus Divine — Premium Luxury Hotel",
   ogDescription: "A century of uncompromised hospitality between the mountains and the sea.",
 } as const;
@@ -62,8 +57,10 @@ export const HERO = {
 export const ABOUT = {
   eyebrow: "Timeless Elegance",
   heading: "A sanctuary carved from the light of the morning sun.",
-  body1: "Every corner of Lotus Divine is a dialogue between heritage and modernity. Our story began in 1924, when a single colonnaded villa above the bay first opened its doors to travellers seeking silence and ceremony.",
-  body2: "A century on, we remain quietly devoted to the same craft — the curation of moments that linger long after departure.",
+  body1:
+    "Every corner of Lotus Divine is a dialogue between heritage and modernity. Our story began in 1924, when a single colonnaded villa above the bay first opened its doors to travellers seeking silence and ceremony.",
+  body2:
+    "A century on, we remain quietly devoted to the same craft — the curation of moments that linger long after departure.",
   cta: "Our Story →",
   imgAlt: "Marble lobby",
 } as const;
@@ -103,11 +100,11 @@ export const AMENITIES_SECTION = {
 } as const;
 
 export const AMENITIES = [
-  { label: "Wellness",     desc: "Holistic spa rituals & private hammam." },
-  { label: "Hospitality",  desc: "24-hour personal butler service." },
-  { label: "Luxury",       desc: "Helipad arrival & chauffeur fleet." },
-  { label: "Comfort",      desc: "Climate-tuned bedchambers." },
-  { label: "Serenity",     desc: "Acoustically shielded suites." },
+  { label: "Wellness", desc: "Holistic spa rituals & private hammam." },
+  { label: "Hospitality", desc: "24-hour personal butler service." },
+  { label: "Luxury", desc: "Helipad arrival & chauffeur fleet." },
+  { label: "Comfort", desc: "Climate-tuned bedchambers." },
+  { label: "Serenity", desc: "Acoustically shielded suites." },
 ] as const;
 
 // ─── Gallery ─────────────────────────────────────────────────────────────────
@@ -122,7 +119,8 @@ export const GALLERY_ALTS = {
 // ─── Testimonial ─────────────────────────────────────────────────────────────
 
 export const TESTIMONIAL = {
-  quote: "A masterclass in restraint. The staff anticipate your needs before you have even thought them.",
+  quote:
+    "A masterclass in restraint. The staff anticipate your needs before you have even thought them.",
   attribution: "Condé Nast Traveler — Gold List, 2025",
 } as const;
 
@@ -167,8 +165,8 @@ export const FOOTER_NEWSLETTER = {
 
 export const FOOTER_SOCIAL = [
   { label: "Instagram", href: "#" },
-  { label: "Privacy",   href: "#" },
-  { label: "Terms",     href: "#" },
+  { label: "Privacy", href: "#" },
+  { label: "Terms", href: "#" },
 ] as const;
 
 // ─── Rooms page ──────────────────────────────────────────────────────────────
@@ -237,10 +235,10 @@ export const ROOMS_DETAIL = [
 // ─── Booking widget ──────────────────────────────────────────────────────────
 
 export const BOOKING_DEFAULTS = {
-  checkIn:  "2026-10-12",
+  checkIn: "2026-10-12",
   checkOut: "2026-10-18",
-  room:     "Lotus Suite",
-  guests:   "2 Adults",
+  room: "Lotus Suite",
+  guests: "2 Adults",
 } as const;
 
 export const BOOKING_ROOM_OPTIONS = [
@@ -259,37 +257,37 @@ export const BOOKING_GUEST_OPTIONS = [
 
 export const BOOKING_LABELS = {
   luxury: {
-    eyebrow:    "Reserve Your Suite",
-    guarantee:  "Best rate guaranteed",
+    eyebrow: "Reserve Your Suite",
+    guarantee: "Best rate guaranteed",
     guaranteeMobile: "Best rate guaranteed · Concierge welcome",
-    button:     "Check Availability",
+    button: "Check Availability",
     buttonSticky: "Book Now",
   },
   serenity: {
-    eyebrow:    "Begin Your Journey",
-    guarantee:  "Free cancellation · Personal concierge welcome",
-    button:     "Reserve My Stillness",
+    eyebrow: "Begin Your Journey",
+    guarantee: "Free cancellation · Personal concierge welcome",
+    button: "Reserve My Stillness",
     buttonSticky: "Book Now",
   },
   modern: {
-    eyebrow:    "Reserve Your Stay",
-    rating:     "★ 4.96 · 1,400+ reviews",
-    perks:      ["✓ Free cancellation", "✓ Best rate guarantee", "✓ Direct-only perks"],
-    button:     "Search Availability →",
+    eyebrow: "Reserve Your Stay",
+    rating: "★ 4.96 · 1,400+ reviews",
+    perks: ["✓ Free cancellation", "✓ Best rate guarantee", "✓ Direct-only perks"],
+    button: "Search Availability →",
     buttonSticky: "Book Now",
   },
   mobileBar: {
-    label:  "Your Stay",
+    label: "Your Stay",
     button: "Book",
   },
   fieldLabels: {
-    arrival:    "Arrival",
-    departure:  "Departure",
-    checkIn:    "Check In",
-    checkOut:   "Check Out",
-    suite:      "Suite",
-    sanctuary:  "Sanctuary",
-    room:       "Room",
-    guests:     "Guests",
+    arrival: "Arrival",
+    departure: "Departure",
+    checkIn: "Check In",
+    checkOut: "Check Out",
+    suite: "Suite",
+    sanctuary: "Sanctuary",
+    room: "Room",
+    guests: "Guests",
   },
 } as const;

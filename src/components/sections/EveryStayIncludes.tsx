@@ -13,7 +13,7 @@ const FEATURES = [
   },
   {
     label: "Smart TV",
-    desc: '55″ 4K with streaming services',
+    desc: "55″ 4K with streaming services",
   },
   {
     label: "Air Conditioning",
@@ -53,9 +53,7 @@ export function EveryStayIncludes() {
               <span className="eyebrow text-brown text-[10px] lg:text-[11px] block mb-2 group-hover:text-gold transition-colors duration-300">
                 {f.label}
               </span>
-              <p className="text-taupe text-xs lg:text-[0.8125rem] leading-relaxed">
-                {f.desc}
-              </p>
+              <p className="text-taupe text-xs lg:text-[0.8125rem] leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>

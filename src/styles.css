@@ -1,5 +1,4 @@
-@import "tailwindcss" source(none);
-@source "../src";
+@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -17,19 +16,19 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-primary: var(--gold);
   --color-primary-foreground: var(--ivory);
-  --font-display: "Playfair Display", "Times New Roman", serif;
-  --font-sans: "Montserrat", system-ui, sans-serif;
+  --font-display: var(--font-playfair), "Playfair Display", "Times New Roman", serif;
+  --font-sans: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
   --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
   --shadow-gold: 0 20px 60px -20px color-mix(in oklab, var(--gold) 35%, transparent);
 }
 
 :root {
-  --gold: oklch(0.76 0.13 87);          /* #D4AF37 */
+  --gold: oklch(0.76 0.13 87); /* #D4AF37 */
   --gold-soft: oklch(0.86 0.08 87);
-  --brown: oklch(0.18 0.02 50);         /* #1F1A16 */
-  --champagne: oklch(0.93 0.03 80);     /* #F2E7D6 */
-  --taupe: oklch(0.55 0.02 70);         /* #8B7D6B */
-  --ivory: oklch(0.975 0.008 80);       /* #FAF7F2 */
+  --brown: oklch(0.18 0.02 50); /* #1F1A16 */
+  --champagne: oklch(0.93 0.03 80); /* #F2E7D6 */
+  --taupe: oklch(0.55 0.02 70); /* #8B7D6B */
+  --ivory: oklch(0.975 0.008 80); /* #FAF7F2 */
 
   --background: var(--ivory);
   --foreground: var(--brown);
@@ -39,7 +38,9 @@
 }
 
 @layer base {
-  *, ::before, ::after {
+  *,
+  ::before,
+  ::after {
     border-color: var(--border);
   }
   html {
@@ -52,7 +53,12 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4, h5, .font-display {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
   }
@@ -75,13 +81,27 @@
     background: color-mix(in oklab, var(--gold) 50%, transparent);
   }
   @keyframes fade-up {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
-  .animate-fade-up { animation: fade-up 1s var(--ease-out-expo) both; }
+  .animate-fade-up {
+    animation: fade-up 1s var(--ease-out-expo) both;
+  }
   @keyframes kenburns {
-    from { transform: scale(1) translateY(0); }
-    to { transform: scale(1.08) translateY(-1%); }
+    from {
+      transform: scale(1) translateY(0);
+    }
+    to {
+      transform: scale(1.08) translateY(-1%);
+    }
   }
-  .animate-kenburns { animation: kenburns 14s ease-out forwards; }
+  .animate-kenburns {
+    animation: kenburns 14s ease-out forwards;
+  }
 }

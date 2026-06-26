@@ -5,7 +5,7 @@ export function RoomsHero() {
   return (
     <section className="relative min-h-[560px] md:min-h-[680px] h-[80svh] flex items-end overflow-hidden bg-brown">
       <img
-        src={hero}
+        src={hero.src}
         alt="Lotus Divine suites"
         className="absolute inset-0 w-full h-full object-cover opacity-75 animate-kenburns"
         fetchPriority="high"

@@ -1,9 +1,10 @@
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { ROOMS_DETAIL, ROOMS_SECTION } from "@/data/siteContent";
+import { bookingHref } from "@/lib/booking-url";
 import room1 from "@/assets/room-1.jpg";
 import room2 from "@/assets/room-2.jpg";
 
-const ROOM_IMAGES = [room1, room2];
+const ROOM_IMAGES = [room1.src, room2.src];
 
 export function RoomsSection() {
   return (
@@ -13,7 +14,9 @@ export function RoomsSection() {
           {ROOMS_SECTION.eyebrow}
         </span>
         <h2 className="font-display text-[2.25rem] sm:text-5xl lg:text-6xl text-brown leading-[1.05]">
-          {ROOMS_SECTION.headingLine1}<br /><span className="italic">{ROOMS_SECTION.headingEmphasis}</span>
+          {ROOMS_SECTION.headingLine1}
+          <br />
+          <span className="italic">{ROOMS_SECTION.headingEmphasis}</span>
         </h2>
       </div>
 
@@ -22,7 +25,12 @@ export function RoomsSection() {
         {ROOMS_DETAIL.map((r, i) => (
           <article key={r.id} className="snap-start shrink-0 w-[78%] sm:w-[55%]">
             <div className="overflow-hidden mb-4">
-              <img src={ROOM_IMAGES[i]} alt={r.imageAlt} className="w-full aspect-[4/5] object-cover" loading="lazy" />
+              <img
+                src={ROOM_IMAGES[i]}
+                alt={r.imageAlt}
+                className="w-full aspect-[4/5] object-cover"
+                loading="lazy"
+              />
             </div>
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="font-display text-xl text-brown truncate">{r.name}</h3>
@@ -31,8 +39,7 @@ export function RoomsSection() {
             <p className="text-taupe text-sm mt-2 leading-relaxed line-clamp-2">{r.description}</p>
             <div className="hairline w-full mt-4" />
             <Link
-              to="/booking"
-              search={{ room: r.id, checkIn: "", checkOut: "", guests: "" }}
+              href={bookingHref(r.id)}
               className="inline-block mt-4 eyebrow text-[10px] border border-gold/60 text-gold px-5 py-2.5 hover:bg-gold hover:text-brown transition-colors"
             >
               Book Now
@@ -60,8 +67,7 @@ export function RoomsSection() {
             <p className="text-taupe text-sm mt-3 leading-relaxed line-clamp-2">{r.description}</p>
             <div className="hairline w-full mt-4" />
             <Link
-              to="/booking"
-              search={{ room: r.id, checkIn: "", checkOut: "", guests: "" }}
+              href={bookingHref(r.id)}
               className="inline-block mt-4 eyebrow text-[10px] border border-gold/60 text-gold px-6 py-3 hover:bg-gold hover:text-brown transition-colors"
             >
               Book Now

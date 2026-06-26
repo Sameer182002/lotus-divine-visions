@@ -1,11 +1,10 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useRouter } from "next/navigation";
 import { LotusMark } from "@/components/BrandLogo";
-import {
-  BOOKING_DEFAULTS,
-  BOOKING_GUEST_OPTIONS,
-  BOOKING_LABELS,
-} from "@/data/siteContent";
+import { BOOKING_DEFAULTS, BOOKING_GUEST_OPTIONS, BOOKING_LABELS } from "@/data/siteContent";
+import { bookingHref } from "@/lib/booking-url";
 
 export type BookingVariant = "luxury" | "serenity" | "modern";
 
@@ -48,18 +47,10 @@ export function BookingExperience({
     guests: BOOKING_DEFAULTS.guests,
   });
   const { sentinelRef, stuck } = useStickyTrigger();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   function handleSearch() {
-    navigate({
-      to: "/booking",
-      search: {
-        checkIn: values.checkIn,
-        checkOut: values.checkOut,
-        guests: values.guests,
-        room: "",
-      },
-    });
+    router.push(bookingHref("", values.checkIn, values.checkOut, values.guests));
   }
 
   return (
@@ -67,7 +58,14 @@ export function BookingExperience({
       <HeroPanel variant={variant} values={values} setValues={setValues} onSearch={handleSearch} />
       {/* Sentinel placed just AFTER the panel — when it scrolls out, sticky appears */}
       <div ref={sentinelRef} aria-hidden className="h-px w-full" />
-      <StickyBar variant={variant} values={values} setValues={setValues} visible={stuck} stickyTop={stickyTop} onSearch={handleSearch} />
+      <StickyBar
+        variant={variant}
+        values={values}
+        setValues={setValues}
+        visible={stuck}
+        stickyTop={stickyTop}
+        onSearch={handleSearch}
+      />
     </>
   );
 }
@@ -85,12 +83,22 @@ function HeroPanel({
   setValues: (v: Values) => void;
   onSearch: () => void;
 }) {
-  if (variant === "luxury") return <LuxuryPanel values={values} setValues={setValues} onSearch={onSearch} />;
-  if (variant === "serenity") return <SerenityPanel values={values} setValues={setValues} onSearch={onSearch} />;
+  if (variant === "luxury")
+    return <LuxuryPanel values={values} setValues={setValues} onSearch={onSearch} />;
+  if (variant === "serenity")
+    return <SerenityPanel values={values} setValues={setValues} onSearch={onSearch} />;
   return <ModernPanel values={values} setValues={setValues} onSearch={onSearch} />;
 }
 
-function LuxuryPanel({ values, setValues, onSearch }: { values: Values; setValues: (v: Values) => void; onSearch: () => void }) {
+function LuxuryPanel({
+  values,
+  setValues,
+  onSearch,
+}: {
+  values: Values;
+  setValues: (v: Values) => void;
+  onSearch: () => void;
+}) {
   const l = BOOKING_LABELS.luxury;
   const f = BOOKING_LABELS.fieldLabels;
   return (
@@ -103,10 +111,29 @@ function LuxuryPanel({ values, setValues, onSearch }: { values: Values; setValue
             <span className="eyebrow text-ivory/60 hidden md:inline">{l.guarantee}</span>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-gold/30">
-            <FieldDate tone="dark" label={f.arrival} value={values.checkIn} onChange={(v) => setValues({ ...values, checkIn: v })} />
-            <FieldDate tone="dark" label={f.departure} value={values.checkOut} onChange={(v) => setValues({ ...values, checkOut: v })} />
-            <FieldSelect tone="dark" label={f.guests} value={values.guests} options={BOOKING_GUEST_OPTIONS as unknown as string[]} onChange={(v) => setValues({ ...values, guests: v })} />
-            <button onClick={onSearch} className="bg-gold text-brown eyebrow px-6 py-5 hover:bg-ivory transition-colors">
+            <FieldDate
+              tone="dark"
+              label={f.arrival}
+              value={values.checkIn}
+              onChange={(v) => setValues({ ...values, checkIn: v })}
+            />
+            <FieldDate
+              tone="dark"
+              label={f.departure}
+              value={values.checkOut}
+              onChange={(v) => setValues({ ...values, checkOut: v })}
+            />
+            <FieldSelect
+              tone="dark"
+              label={f.guests}
+              value={values.guests}
+              options={BOOKING_GUEST_OPTIONS as unknown as string[]}
+              onChange={(v) => setValues({ ...values, guests: v })}
+            />
+            <button
+              onClick={onSearch}
+              className="bg-gold text-brown eyebrow px-6 py-5 hover:bg-ivory transition-colors"
+            >
               {l.button}
             </button>
           </div>
@@ -122,13 +149,35 @@ function LuxuryPanel({ values, setValues, onSearch }: { values: Values; setValue
             <LotusMark className="w-4 h-4 text-gold" />
           </div>
           <div className="grid grid-cols-2 gap-px bg-gold/25 mb-px">
-            <FieldDate tone="dark" label={f.arrival} value={values.checkIn} onChange={(v) => setValues({ ...values, checkIn: v })} big />
-            <FieldDate tone="dark" label={f.departure} value={values.checkOut} onChange={(v) => setValues({ ...values, checkOut: v })} big />
+            <FieldDate
+              tone="dark"
+              label={f.arrival}
+              value={values.checkIn}
+              onChange={(v) => setValues({ ...values, checkIn: v })}
+              big
+            />
+            <FieldDate
+              tone="dark"
+              label={f.departure}
+              value={values.checkOut}
+              onChange={(v) => setValues({ ...values, checkOut: v })}
+              big
+            />
           </div>
           <div className="grid grid-cols-1 gap-px bg-gold/25">
-            <FieldSelect tone="dark" label={f.guests} value={values.guests} options={BOOKING_GUEST_OPTIONS as unknown as string[]} onChange={(v) => setValues({ ...values, guests: v })} big />
+            <FieldSelect
+              tone="dark"
+              label={f.guests}
+              value={values.guests}
+              options={BOOKING_GUEST_OPTIONS as unknown as string[]}
+              onChange={(v) => setValues({ ...values, guests: v })}
+              big
+            />
           </div>
-          <button onClick={onSearch} className="w-full mt-5 bg-gold text-brown eyebrow py-5 hover:bg-ivory transition-colors active:scale-[0.99]">
+          <button
+            onClick={onSearch}
+            className="w-full mt-5 bg-gold text-brown eyebrow py-5 hover:bg-ivory transition-colors active:scale-[0.99]"
+          >
             {l.button}
           </button>
           <div className="mt-4 text-center text-[10px] text-ivory/55 tracking-[0.25em] uppercase">
@@ -140,7 +189,15 @@ function LuxuryPanel({ values, setValues, onSearch }: { values: Values; setValue
   );
 }
 
-function SerenityPanel({ values, setValues, onSearch }: { values: Values; setValues: (v: Values) => void; onSearch: () => void }) {
+function SerenityPanel({
+  values,
+  setValues,
+  onSearch,
+}: {
+  values: Values;
+  setValues: (v: Values) => void;
+  onSearch: () => void;
+}) {
   const l = BOOKING_LABELS.serenity;
   const f = BOOKING_LABELS.fieldLabels;
   return (
@@ -151,11 +208,33 @@ function SerenityPanel({ values, setValues, onSearch }: { values: Values; setVal
           <span className="eyebrow text-gold">{l.eyebrow}</span>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <FieldDate tone="light" label={f.checkIn} value={values.checkIn} onChange={(v) => setValues({ ...values, checkIn: v })} rounded />
-          <FieldDate tone="light" label={f.checkOut} value={values.checkOut} onChange={(v) => setValues({ ...values, checkOut: v })} rounded />
-          <FieldSelect tone="light" label={f.guests} value={values.guests} options={BOOKING_GUEST_OPTIONS as unknown as string[]} onChange={(v) => setValues({ ...values, guests: v })} rounded />
+          <FieldDate
+            tone="light"
+            label={f.checkIn}
+            value={values.checkIn}
+            onChange={(v) => setValues({ ...values, checkIn: v })}
+            rounded
+          />
+          <FieldDate
+            tone="light"
+            label={f.checkOut}
+            value={values.checkOut}
+            onChange={(v) => setValues({ ...values, checkOut: v })}
+            rounded
+          />
+          <FieldSelect
+            tone="light"
+            label={f.guests}
+            value={values.guests}
+            options={BOOKING_GUEST_OPTIONS as unknown as string[]}
+            onChange={(v) => setValues({ ...values, guests: v })}
+            rounded
+          />
         </div>
-        <button onClick={onSearch} className="w-full mt-6 bg-brown text-ivory eyebrow py-4 rounded-full hover:bg-gold hover:text-brown transition-colors">
+        <button
+          onClick={onSearch}
+          className="w-full mt-6 bg-brown text-ivory eyebrow py-4 rounded-full hover:bg-gold hover:text-brown transition-colors"
+        >
           {l.button}
         </button>
         <div className="text-center mt-4 text-[10px] text-taupe tracking-widest uppercase">
@@ -166,7 +245,15 @@ function SerenityPanel({ values, setValues, onSearch }: { values: Values; setVal
   );
 }
 
-function ModernPanel({ values, setValues, onSearch }: { values: Values; setValues: (v: Values) => void; onSearch: () => void }) {
+function ModernPanel({
+  values,
+  setValues,
+  onSearch,
+}: {
+  values: Values;
+  setValues: (v: Values) => void;
+  onSearch: () => void;
+}) {
   const l = BOOKING_LABELS.modern;
   const f = BOOKING_LABELS.fieldLabels;
   return (
@@ -177,15 +264,39 @@ function ModernPanel({ values, setValues, onSearch }: { values: Values; setValue
           <span className="eyebrow text-taupe hidden md:inline">{l.rating}</span>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          <FieldDate tone="light" label={f.checkIn} value={values.checkIn} onChange={(v) => setValues({ ...values, checkIn: v })} rounded />
-          <FieldDate tone="light" label={f.checkOut} value={values.checkOut} onChange={(v) => setValues({ ...values, checkOut: v })} rounded />
-          <FieldSelect tone="light" label={f.guests} value={values.guests} options={BOOKING_GUEST_OPTIONS as unknown as string[]} onChange={(v) => setValues({ ...values, guests: v })} rounded />
+          <FieldDate
+            tone="light"
+            label={f.checkIn}
+            value={values.checkIn}
+            onChange={(v) => setValues({ ...values, checkIn: v })}
+            rounded
+          />
+          <FieldDate
+            tone="light"
+            label={f.checkOut}
+            value={values.checkOut}
+            onChange={(v) => setValues({ ...values, checkOut: v })}
+            rounded
+          />
+          <FieldSelect
+            tone="light"
+            label={f.guests}
+            value={values.guests}
+            options={BOOKING_GUEST_OPTIONS as unknown as string[]}
+            onChange={(v) => setValues({ ...values, guests: v })}
+            rounded
+          />
         </div>
-        <button onClick={onSearch} className="w-full mt-4 bg-gold text-brown py-3.5 eyebrow rounded-xl hover:bg-brown hover:text-ivory transition-colors">
+        <button
+          onClick={onSearch}
+          className="w-full mt-4 bg-gold text-brown py-3.5 eyebrow rounded-xl hover:bg-brown hover:text-ivory transition-colors"
+        >
           {l.button}
         </button>
         <div className="flex items-center justify-between mt-3 text-[10px] text-taupe">
-          {l.perks.map((p) => <span key={p}>{p}</span>)}
+          {l.perks.map((p) => (
+            <span key={p}>{p}</span>
+          ))}
         </div>
       </div>
     </div>
@@ -224,7 +335,9 @@ function StickyBar({
       <div
         aria-hidden={!visible}
         className={`hidden md:block fixed left-0 right-0 z-30 transition-all duration-500 ${
-          visible ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-4 pointer-events-none"
+          visible
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 -translate-y-4 pointer-events-none"
         }`}
         style={{ top: stickyTop }}
       >
@@ -232,7 +345,9 @@ function StickyBar({
           <div className="flex items-stretch gap-px px-3 py-2">
             <div className="flex items-center gap-3 pr-4 pl-2">
               <LotusMark className={`w-5 h-5 ${tone === "dark" ? "text-gold" : "text-gold"}`} />
-              <span className={`font-display italic text-base ${tone === "dark" ? "text-ivory" : "text-brown"}`}>
+              <span
+                className={`font-display italic text-base ${tone === "dark" ? "text-ivory" : "text-brown"}`}
+              >
                 Lotus Divine
               </span>
             </div>
@@ -259,7 +374,9 @@ function StickyBar({
       <div
         aria-hidden={!visible}
         className={`md:hidden fixed left-0 right-0 bottom-0 z-30 transition-all duration-500 ${
-          visible ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-6 pointer-events-none"
+          visible
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 translate-y-6 pointer-events-none"
         }`}
       >
         <div className="bg-ivory/98 backdrop-blur-md border-t border-gold/30 shadow-[0_-12px_30px_-12px_rgba(0,0,0,0.25)] px-4 py-3 flex items-center gap-3">
@@ -291,7 +408,10 @@ function StickyBar({
 
 function baseField(tone: "dark" | "light", rounded?: boolean, big?: boolean) {
   const bg = tone === "dark" ? "bg-brown/40 text-ivory" : "bg-ivory text-brown";
-  const ring = tone === "dark" ? "ring-1 ring-gold/0 hover:ring-gold/40" : "ring-1 ring-brown/10 hover:ring-gold/60";
+  const ring =
+    tone === "dark"
+      ? "ring-1 ring-gold/0 hover:ring-gold/40"
+      : "ring-1 ring-brown/10 hover:ring-gold/60";
   const radius = rounded ? "rounded-xl" : "";
   const pad = big ? "px-5 py-4" : "px-4 py-3";
   return `${bg} ${ring} ${radius} ${pad} transition-all cursor-pointer text-left`;
@@ -318,7 +438,9 @@ function FieldDate({
     <label className={`group block relative ${baseField(tone, rounded, big)}`}>
       <div className={`eyebrow text-[9px] ${labelColor}`}>{label}</div>
       <div className="flex items-center justify-between mt-1">
-        <span className={`font-display ${big ? "text-lg" : "text-base"} ${valueColor}`}>{fmt(value)}</span>
+        <span className={`font-display ${big ? "text-lg" : "text-base"} ${valueColor}`}>
+          {fmt(value)}
+        </span>
         <input
           type="date"
           value={value}
@@ -355,7 +477,9 @@ function FieldSelect({
     <label className={`group block relative ${baseField(tone, rounded, big)}`}>
       <div className={`eyebrow text-[9px] ${labelColor}`}>{label}</div>
       <div className="flex items-center justify-between mt-1">
-        <span className={`font-display ${big ? "text-lg" : "text-base"} truncate ${valueColor}`}>{value}</span>
+        <span className={`font-display ${big ? "text-lg" : "text-base"} truncate ${valueColor}`}>
+          {value}
+        </span>
         <span className={`text-xs ${tone === "dark" ? "text-gold/60" : "text-gold"}`}>▾</span>
       </div>
       <select
@@ -374,7 +498,15 @@ function FieldSelect({
   );
 }
 
-function CompactField({ tone, label, value }: { tone: "dark" | "light"; label: string; value: string }) {
+function CompactField({
+  tone,
+  label,
+  value,
+}: {
+  tone: "dark" | "light";
+  label: string;
+  value: string;
+}) {
   const labelColor = tone === "dark" ? "text-gold/80" : "text-taupe";
   const valueColor = tone === "dark" ? "text-ivory" : "text-brown";
   const divide = tone === "dark" ? "border-gold/15" : "border-brown/10";

@@ -1,6 +1,9 @@
+"use client";
+
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { ROOMS_DETAIL } from "@/data/siteContent";
+import { bookingHref } from "@/lib/booking-url";
 import room1 from "@/assets/room-1.jpg";
 import room2 from "@/assets/room-2.jpg";
 import room3 from "@/assets/room-3.jpg";
@@ -14,16 +17,16 @@ type GalleryImage = { src: string; alt: string };
 
 const GALLERIES: Record<string, GalleryImage[]> = {
   "lotus-sanctuary": [
-    { src: room1, alt: "The Lotus Sanctuary — king bedchamber" },
-    { src: spa, alt: "Private spa terrace" },
-    { src: pool, alt: "Plunge pool at dusk" },
-    { src: lobby, alt: "Estate arrival lobby" },
+    { src: room1.src, alt: "The Lotus Sanctuary — king bedchamber" },
+    { src: spa.src, alt: "Private spa terrace" },
+    { src: pool.src, alt: "Plunge pool at dusk" },
+    { src: lobby.src, alt: "Estate arrival lobby" },
   ],
   "imperial-vista": [
-    { src: room2, alt: "Imperial Vista Suite — ocean panorama" },
-    { src: dining, alt: "Private dining for four" },
-    { src: room3, alt: "Suite interior details" },
-    { src: heroLuxury, alt: "The estate at golden hour" },
+    { src: room2.src, alt: "Imperial Vista Suite — ocean panorama" },
+    { src: dining.src, alt: "Private dining for four" },
+    { src: room3.src, alt: "Suite interior details" },
+    { src: heroLuxury.src, alt: "The estate at golden hour" },
   ],
 };
 
@@ -72,10 +75,7 @@ function Lightbox({
   }, [prev, next, onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-brown/96 flex flex-col"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 bg-brown/96 flex flex-col" onClick={onClose}>
       {/* Top bar */}
       <div
         className="flex items-center justify-between px-5 lg:px-8 py-4 shrink-0"
@@ -129,9 +129,7 @@ function Lightbox({
             key={i}
             onClick={() => onChange(i)}
             className={`overflow-hidden transition-all duration-300 w-16 lg:w-20 h-11 lg:h-[52px] shrink-0 focus:outline-none ${
-              i === current
-                ? "ring-2 ring-gold opacity-100"
-                : "opacity-30 hover:opacity-65"
+              i === current ? "ring-2 ring-gold opacity-100" : "opacity-30 hover:opacity-65"
             }`}
           >
             <img src={img.src} alt={img.alt} className="w-full h-full object-cover" />
@@ -164,7 +162,6 @@ function RoomSection({
         index === 0 ? "pt-28 lg:pt-36 pb-14 lg:pb-20" : "py-14 lg:py-20"
       } ${reverse ? "bg-champagne/40" : "bg-ivory"}`}
     >
-
       <div
         className={`max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-start gap-8 lg:gap-14 ${
           reverse ? "lg:flex-row-reverse" : ""
@@ -227,16 +224,12 @@ function RoomSection({
           <div className="flex gap-8 pb-6 mb-6 border-b border-brown/10">
             {"size" in room && (
               <div>
-                <span className="eyebrow text-brown/40 text-[10px] block mb-1">
-                  Room Size
-                </span>
+                <span className="eyebrow text-brown/40 text-[10px] block mb-1">Room Size</span>
                 <span className="text-sm text-brown">{room.size}</span>
               </div>
             )}
             <div>
-              <span className="eyebrow text-brown/40 text-[10px] block mb-1">
-                Guest Capacity
-              </span>
+              <span className="eyebrow text-brown/40 text-[10px] block mb-1">Guest Capacity</span>
               <span className="text-sm text-brown">{room.capacity}</span>
             </div>
           </div>
@@ -257,13 +250,7 @@ function RoomSection({
           {/* CTA */}
           <div>
             <Link
-              to="/booking"
-              search={{
-                room: bookingSlug,
-                checkIn: "",
-                checkOut: "",
-                guests: "",
-              }}
+              href={bookingHref(bookingSlug)}
               className="inline-block bg-brown text-ivory px-10 py-4 eyebrow hover:bg-gold hover:text-brown transition-all w-full sm:w-auto text-center"
             >
               Book This Room

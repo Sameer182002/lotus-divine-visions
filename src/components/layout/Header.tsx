@@ -1,7 +1,12 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { NAV_LINKS, NAV, CONTACT } from "@/data/siteContent";
+import { bookingHref } from "@/lib/booking-url";
+
+const EMPTY_BOOKING = bookingHref();
 
 export function Header() {
   return (
@@ -10,16 +15,25 @@ export function Header() {
         <div className="flex gap-8">
           {NAV_LINKS.slice(0, 3).map((l) =>
             l === "Suites" ? (
-              <Link key={l} to="/rooms" className="eyebrow hover:text-gold transition-colors">{l}</Link>
+              <Link key={l} href="/rooms" className="eyebrow hover:text-gold transition-colors">
+                {l}
+              </Link>
             ) : (
-              <a key={l} href="#" className="eyebrow hover:text-gold transition-colors">{l}</a>
-            )
+              <a key={l} href="#" className="eyebrow hover:text-gold transition-colors">
+                {l}
+              </a>
+            ),
           )}
         </div>
         <BrandLogo tone="ivory" size="md" />
         <div className="flex items-center gap-8">
-          <Link to="/booking" search={{ room: "", checkIn: "", checkOut: "", guests: "" }} className="eyebrow hover:text-gold transition-colors">{NAV.reservations}</Link>
-          <Link to="/booking" search={{ room: "", checkIn: "", checkOut: "", guests: "" }} className="border border-gold/60 text-gold px-7 py-3 eyebrow hover:bg-gold hover:text-brown transition-all">
+          <Link href={EMPTY_BOOKING} className="eyebrow hover:text-gold transition-colors">
+            {NAV.reservations}
+          </Link>
+          <Link
+            href={EMPTY_BOOKING}
+            className="border border-gold/60 text-gold px-7 py-3 eyebrow hover:bg-gold hover:text-brown transition-all"
+          >
             {NAV.bookCta}
           </Link>
         </div>
@@ -69,8 +83,7 @@ function MobileNav() {
           </button>
           <BrandLogo tone="ivory" size="sm" showTagline={false} />
           <Link
-            to="/booking"
-            search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
+            href={EMPTY_BOOKING}
             className="eyebrow text-[10px] border border-gold/60 text-gold px-4 py-2.5 hover:bg-gold hover:text-brown transition-all"
           >
             {NAV.bookMobile}
@@ -116,7 +129,7 @@ function MobileNav() {
                 >
                   {l === "Suites" ? (
                     <Link
-                      to="/rooms"
+                      href="/rooms"
                       onClick={() => setOpen(false)}
                       className="flex items-baseline justify-between py-5 font-display text-3xl hover:text-gold transition-colors"
                     >
@@ -138,8 +151,7 @@ function MobileNav() {
             </ul>
             <div className="mt-auto pt-10">
               <Link
-                to="/booking"
-                search={{ room: "", checkIn: "", checkOut: "", guests: "" }}
+                href={EMPTY_BOOKING}
                 onClick={() => setOpen(false)}
                 className="block w-full bg-gold text-brown eyebrow py-4 hover:bg-ivory transition-colors text-center"
               >
