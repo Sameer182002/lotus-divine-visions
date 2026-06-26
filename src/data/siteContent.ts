@@ -55,7 +55,7 @@ export const HERO = {
 // ─── About ───────────────────────────────────────────────────────────────────
 
 export const ABOUT = {
-  eyebrow: "01 — Timeless Elegance",
+  eyebrow: "Timeless Elegance",
   heading: "A sanctuary carved from the light of the morning sun.",
   body1:
     "Every corner of Lotus Divine is a dialogue between heritage and modernity. Our story began in 1924, when a single colonnaded villa above the bay first opened its doors to travellers seeking silence and ceremony.",
@@ -68,7 +68,7 @@ export const ABOUT = {
 // ─── Rooms ───────────────────────────────────────────────────────────────────
 
 export const ROOMS_SECTION = {
-  eyebrow: "02 — The Private Collection",
+  eyebrow: "The Private Collection",
   headingLine1: "Thirty-six",
   headingEmphasis: "sanctuaries.",
   viewAllCta: "View All →",
@@ -95,7 +95,7 @@ export const ROOMS = [
 // ─── Amenities ───────────────────────────────────────────────────────────────
 
 export const AMENITIES_SECTION = {
-  eyebrow: "03 — The Experience",
+  eyebrow: "The Experience",
   heading: "Five quiet promises.",
 } as const;
 
@@ -127,7 +127,7 @@ export const TESTIMONIAL = {
 // ─── Location ────────────────────────────────────────────────────────────────
 
 export const LOCATION_SECTION = {
-  eyebrow: "04 — Location",
+  eyebrow: "Location",
   heading: "Between the mountains",
   headingLine2: "and the sea.",
   cta: "Plan Your Arrival →",
@@ -167,6 +167,69 @@ export const FOOTER_SOCIAL = [
   { label: "Instagram", href: "#" },
   { label: "Privacy", href: "#" },
   { label: "Terms", href: "#" },
+] as const;
+
+// ─── Rooms page ──────────────────────────────────────────────────────────────
+
+export const ROOMS_PAGE = {
+  hero: {
+    eyebrow: "The Private Collection · 36 Sanctuaries",
+    headingLine1: "Where Comfort",
+    headingEmphasis: "Becomes",
+    headingLine2: "Art.",
+    body: "Each suite is a private world — curated over a century of devotion to the quieter art of luxury hospitality.",
+  },
+  cta: {
+    eyebrow: "Reserve Your Sanctuary",
+    headingLine1: "Your perfect",
+    headingEmphasis: "escape",
+    headingLine2: "awaits.",
+    body: "Contact our personal concierge to arrange your stay. Best rates guaranteed on direct reservations.",
+    button: "Check Availability",
+  },
+} as const;
+
+export const ROOMS_DETAIL = [
+  {
+    id: "lotus-sanctuary",
+    name: "The Lotus Sanctuary",
+    category: "Signature Suite",
+    description:
+      "A private plunge pool and meditation terrace overlook our century-old gardens. Morning light falls through floor-to-ceiling shoji screens, casting gold across hand-laid marble floors. Designed for absolute stillness.",
+    amenities: [
+      "Private plunge pool",
+      "Meditation terrace",
+      "King bedchamber",
+      "24-hour butler service",
+      "Walk-in dressing room",
+      "Marble soaking tub",
+    ],
+    size: "65 sq m",
+    capacity: "2 Guests",
+    price: "From $1,200 / night",
+    imageKey: "room1" as const,
+    imageAlt: "The Lotus Sanctuary suite with private garden terrace",
+  },
+  {
+    id: "imperial-vista",
+    name: "Imperial Vista Suite",
+    category: "Grand Suite",
+    description:
+      "Panoramic ocean views stretch to the horizon, framed by floor-to-ceiling silk-draped windows. The Imperial Vista is Lotus Divine's most coveted address — a study in light, silence, and effortless grandeur.",
+    amenities: [
+      "Unobstructed ocean panorama",
+      "Bespoke silk furnishings",
+      "Private dining for four",
+      "Curated private bar",
+      "24-hour personal butler",
+      "Rainfall shower & steam room",
+    ],
+    size: "90 sq m",
+    capacity: "Up to 4 Guests",
+    price: "From $1,850 / night",
+    imageKey: "room2" as const,
+    imageAlt: "Imperial Vista Suite with panoramic ocean view",
+  },
 ] as const;
 
 // ─── Booking widget ──────────────────────────────────────────────────────────

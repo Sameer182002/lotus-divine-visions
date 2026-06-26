@@ -1,28 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 import { NAV_LINKS, NAV, CONTACT } from "@/data/siteContent";
+import { bookingHref } from "@/lib/booking-url";
+
+const EMPTY_BOOKING = bookingHref();
 
 export function Header() {
   return (
     <>
       <nav className="hidden lg:flex absolute top-10 left-0 right-0 z-40 px-10 items-center justify-between text-ivory">
         <div className="flex gap-8">
-          {NAV_LINKS.slice(0, 3).map((l) => (
-            <a key={l} href="#" className="eyebrow hover:text-gold transition-colors">
-              {l}
-            </a>
-          ))}
+          {NAV_LINKS.slice(0, 3).map((l) =>
+            l === "Suites" ? (
+              <Link key={l} href="/rooms" className="eyebrow hover:text-gold transition-colors">
+                {l}
+              </Link>
+            ) : (
+              <a key={l} href="#" className="eyebrow hover:text-gold transition-colors">
+                {l}
+              </a>
+            ),
+          )}
         </div>
         <BrandLogo tone="ivory" size="md" />
         <div className="flex items-center gap-8">
-          <a href="#" className="eyebrow hover:text-gold transition-colors">
+          <Link href={EMPTY_BOOKING} className="eyebrow hover:text-gold transition-colors">
             {NAV.reservations}
-          </a>
-          <button className="border border-gold/60 text-gold px-7 py-3 eyebrow hover:bg-gold hover:text-brown transition-all">
+          </Link>
+          <Link
+            href={EMPTY_BOOKING}
+            className="border border-gold/60 text-gold px-7 py-3 eyebrow hover:bg-gold hover:text-brown transition-all"
+          >
             {NAV.bookCta}
-          </button>
+          </Link>
         </div>
       </nav>
       <MobileNav />
@@ -69,12 +82,12 @@ function MobileNav() {
             <span className="block w-3 h-px bg-ivory ml-2" />
           </button>
           <BrandLogo tone="ivory" size="sm" showTagline={false} />
-          <a
-            href="#book"
+          <Link
+            href={EMPTY_BOOKING}
             className="eyebrow text-[10px] border border-gold/60 text-gold px-4 py-2.5 hover:bg-gold hover:text-brown transition-all"
           >
             {NAV.bookMobile}
-          </a>
+          </Link>
         </div>
       </nav>
 
@@ -114,24 +127,36 @@ function MobileNav() {
                   }`}
                   style={{ transitionDelay: open ? `${120 + i * 60}ms` : "0ms" }}
                 >
-                  <a
-                    href="#"
-                    onClick={() => setOpen(false)}
-                    className="flex items-baseline justify-between py-5 font-display text-3xl hover:text-gold transition-colors"
-                  >
-                    <span>{l}</span>
-                    <span className="eyebrow text-gold/50 text-[10px]">0{i + 1}</span>
-                  </a>
+                  {l === "Suites" ? (
+                    <Link
+                      href="/rooms"
+                      onClick={() => setOpen(false)}
+                      className="flex items-baseline justify-between py-5 font-display text-3xl hover:text-gold transition-colors"
+                    >
+                      <span>{l}</span>
+                      <span className="eyebrow text-gold/50 text-[10px]">0{i + 1}</span>
+                    </Link>
+                  ) : (
+                    <a
+                      href="#"
+                      onClick={() => setOpen(false)}
+                      className="flex items-baseline justify-between py-5 font-display text-3xl hover:text-gold transition-colors"
+                    >
+                      <span>{l}</span>
+                      <span className="eyebrow text-gold/50 text-[10px]">0{i + 1}</span>
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
             <div className="mt-auto pt-10">
-              <button
+              <Link
+                href={EMPTY_BOOKING}
                 onClick={() => setOpen(false)}
-                className="w-full bg-gold text-brown eyebrow py-4 hover:bg-ivory transition-colors"
+                className="block w-full bg-gold text-brown eyebrow py-4 hover:bg-ivory transition-colors text-center"
               >
                 {NAV.bookCta}
-              </button>
+              </Link>
               <div className="mt-6 text-center space-y-1 text-ivory/60 text-xs">
                 <p>{CONTACT.phone}</p>
                 <p>{CONTACT.email}</p>
