@@ -26,8 +26,8 @@ function Home() {
     <main className="bg-ivory text-brown overflow-x-hidden">
       <Header />
       <HeroSection />
-      <AboutSection />
       <RoomsSection />
+      <AboutSection />
       <AmenitiesSection />
       <GallerySection />
       <TestimonialSection />

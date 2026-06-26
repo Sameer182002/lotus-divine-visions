@@ -3,7 +3,7 @@ import lobby from "@/assets/lobby.jpg";
 
 export function AboutSection() {
   return (
-    <section className="py-16 lg:py-32 px-5 sm:px-8 lg:px-20 grid grid-cols-12 gap-8 lg:gap-12 items-center">
+    <section className="bg-brown text-ivory py-16 lg:py-32 px-5 sm:px-8 lg:px-20 grid grid-cols-12 gap-8 lg:gap-12 items-center">
       <div className="col-span-12 lg:col-span-5">
         <img src={lobby} alt={ABOUT.imgAlt} className="w-full aspect-[4/5] object-cover" loading="lazy" />
       </div>
@@ -13,15 +13,15 @@ export function AboutSection() {
           {ABOUT.heading}
         </h2>
         <div className="hairline w-16 lg:w-24 my-6 lg:my-8" />
-        <p className="text-taupe leading-relaxed max-w-lg mb-5 text-[15px] lg:text-base">
+        <p className="text-ivory/65 leading-relaxed max-w-lg mb-5 text-[15px] lg:text-base">
           {ABOUT.body1}
         </p>
-        <p className="text-taupe leading-relaxed max-w-lg text-[15px] lg:text-base">
+        <p className="text-ivory/65 leading-relaxed max-w-lg text-[15px] lg:text-base">
           {ABOUT.body2}
         </p>
         <a
           href="#"
-          className="inline-block mt-8 lg:mt-10 eyebrow text-brown border-b border-gold pb-2 hover:text-gold transition-colors"
+          className="inline-block mt-8 lg:mt-10 eyebrow text-ivory border-b border-gold pb-2 hover:text-gold transition-colors"
         >
           {ABOUT.cta}
         </a>
