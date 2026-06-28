@@ -135,19 +135,63 @@ function Lightbox({
   );
 }
 
+interface RoomShowcaseItem {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  amenities: readonly string[];
+  size?: string;
+  capacity: string;
+  price: string;
+  imageUrl?: string;
+  imageKey?: string;
+  imageAlt?: string;
+  gallery?: string[];
+}
+
+function getRoomImageUrl(room: RoomShowcaseItem | undefined) {
+  if (!room) return "";
+  if (room.imageUrl) {
+    if (
+      room.imageUrl.startsWith("http") ||
+      room.imageUrl.startsWith("/") ||
+      room.imageUrl.startsWith("data:")
+    ) {
+      return room.imageUrl;
+    }
+    return `${process.env.NEXT_PUBLIC_API_URL}${room.imageUrl}`;
+  }
+  const key = room.imageKey || "room1";
+  const roomImages: Record<string, string> = {
+    room1: room1.src,
+    room2: room2.src,
+    room3: room3.src,
+  };
+  return roomImages[key] || room1.src;
+}
+
 function RoomSection({
   room,
   reverse,
   index,
 }: {
-  room: RoomDetail;
+  room: RoomShowcaseItem;
   reverse: boolean;
   index: number;
 }) {
   const [featuredIdx, setFeaturedIdx] = useState(0);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
-  const gallery = GALLERIES[room.id];
-  const bookingSlug = BOOKING_SLUGS[room.id];
+
+  const defaultImage = getRoomImageUrl(room);
+  const gallery =
+    room.gallery && room.gallery.length > 0
+      ? room.gallery.map((src: string, i: number) => ({
+          src,
+          alt: `${room.name} gallery image ${i + 1}`,
+        }))
+      : GALLERIES[room.id] || [{ src: defaultImage, alt: room.imageAlt || room.name }];
+  const bookingSlug = BOOKING_SLUGS[room.id] || room.id;
 
   return (
     <section
@@ -256,9 +300,26 @@ function RoomSection({
 }
 
 export function RoomShowcase() {
+  const [roomsList, setRoomsList] = useState<RoomShowcaseItem[]>([]);
+
+  useEffect(() => {
+    async function loadRooms() {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rooms`);
+        if (!res.ok) throw new Error("Failed to load rooms");
+        const data = await res.json();
+        setRoomsList(data);
+      } catch (err) {
+        console.warn("Fallback to static rooms:", err);
+        setRoomsList(ROOMS_DETAIL as unknown as RoomShowcaseItem[]);
+      }
+    }
+    loadRooms();
+  }, []);
+
   return (
     <div>
-      {ROOMS_DETAIL.map((room, i) => (
+      {roomsList.map((room, i) => (
         <RoomSection key={room.id} room={room} reverse={i % 2 === 1} index={i} />
       ))}
     </div>

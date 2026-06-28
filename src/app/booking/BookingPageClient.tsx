@@ -2,15 +2,46 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, useRef, Suspense } from "react";
+import { useState, useRef, Suspense, useEffect } from "react";
 import type { ReactNode } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ROOMS_DETAIL, BOOKING_GUEST_OPTIONS } from "@/data/siteContent";
+import { encryptPayload } from "@/lib/encryption";
 import room1 from "@/assets/room-1.jpg";
 import room2 from "@/assets/room-2.jpg";
 
+export interface RoomItem {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  amenities: readonly string[];
+  size?: string;
+  capacity: string;
+  price: string;
+  imageUrl?: string;
+  imageKey?: string;
+  imageAlt?: string;
+  gallery?: string[];
+}
+
 const ROOM_IMAGES: Record<string, string> = { room1: room1.src, room2: room2.src };
+
+function getRoomImageUrl(room: RoomItem | undefined) {
+  if (!room) return "";
+  if (room.imageUrl) {
+    if (
+      room.imageUrl.startsWith("http") ||
+      room.imageUrl.startsWith("/") ||
+      room.imageUrl.startsWith("data:")
+    ) {
+      return room.imageUrl;
+    }
+    return `${process.env.NEXT_PUBLIC_API_URL}${room.imageUrl}`;
+  }
+  return ROOM_IMAGES[room.imageKey || ""] || ROOM_IMAGES.room1;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -58,7 +89,7 @@ function matchRoomId(param: string): string {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type RoomDetail = (typeof ROOMS_DETAIL)[number];
+type RoomDetail = RoomItem;
 
 // ─── Step labels ──────────────────────────────────────────────────────────────
 
@@ -241,7 +272,7 @@ function RoomCard({
     >
       <div className="relative overflow-hidden">
         <img
-          src={ROOM_IMAGES[room.imageKey]}
+          src={getRoomImageUrl(room)}
           alt={room.imageAlt}
           className={`w-full aspect-[16/10] object-cover transition-transform duration-500 ${
             selected ? "scale-[1.03]" : "group-hover:scale-[1.02]"
@@ -349,7 +380,7 @@ function BookingSidebar({
           <div className="py-5 border-b border-ivory/10">
             <div className="flex gap-3 mb-4">
               <img
-                src={ROOM_IMAGES[room.imageKey]}
+                src={getRoomImageUrl(room)}
                 alt={room.name}
                 className="w-16 h-12 object-cover shrink-0"
               />
@@ -445,6 +476,7 @@ function MobileBottomBar({
   guests,
   subtotal,
   gst,
+  isSubmitting,
 }: {
   room: RoomDetail | undefined;
   total: number;
@@ -461,6 +493,7 @@ function MobileBottomBar({
   guests: string;
   subtotal: number;
   gst: number;
+  isSubmitting: boolean;
 }) {
   let ctaLabel = "Continue";
   let ctaEnabled = false;
@@ -475,8 +508,8 @@ function MobileBottomBar({
     ctaLabel = "Review Booking";
     ctaEnabled = step3Valid;
   } else if (currentStep === 4) {
-    ctaLabel = "Reserve Your Stay";
-    ctaEnabled = true;
+    ctaLabel = isSubmitting ? "Securing..." : "Reserve Your Stay";
+    ctaEnabled = !isSubmitting;
   }
 
   const perNight = room ? parsePrice(room.price) : 0;
@@ -671,12 +704,32 @@ function BookingPageInner() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [bookingId] = useState(() => "LDV-" + Math.random().toString(36).slice(2, 8).toUpperCase());
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const [roomsList, setRoomsList] = useState<RoomItem[]>([]);
+
+  useEffect(() => {
+    async function loadRooms() {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rooms`);
+        if (!res.ok) throw new Error("Failed to load rooms");
+        const data = await res.json();
+        setRoomsList(data);
+      } catch (err) {
+        console.warn("Falling back to static rooms:", err);
+        setRoomsList(ROOMS_DETAIL as unknown as RoomItem[]);
+      }
+    }
+    loadRooms();
+  }, []);
+
   const step2Ref = useRef<HTMLDivElement>(null);
   const step3Ref = useRef<HTMLDivElement>(null);
   const step4Ref = useRef<HTMLDivElement>(null);
 
   const nights = nightCount(checkIn, checkOut);
-  const room = ROOMS_DETAIL.find((r) => r.id === roomId);
+  const room = roomsList.find((r) => r.id === roomId);
   const basePerNight = room ? parsePrice(room.price) : 0;
   const subtotal = nights > 0 ? basePerNight * nights : basePerNight;
   const gst = Math.round(subtotal * 0.18);
@@ -712,9 +765,67 @@ function BookingPageInner() {
     scrollTo(step4Ref);
   }
 
-  function submitReservation() {
-    setCurrentStep(5);
-    setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
+  async function submitReservation() {
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // 1. Fetch public key and session nonce from backend
+      // In production, you would fetch from window.location.origin or a configured API base
+      const keyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/security/key`);
+      if (!keyRes.ok) {
+        throw new Error("Failed to establish secure connection with server");
+      }
+      const keyData = await keyRes.json();
+
+      // 2. Build payload
+      const payload = {
+        bookingId,
+        checkIn,
+        checkOut,
+        guests,
+        roomId,
+        guestName,
+        guestEmail,
+        guestPhone,
+        arrivalTime,
+        specialRequest,
+        total,
+      };
+
+      // 3. Encrypt payload on client side using imported keys
+      const envelope = await encryptPayload(payload, keyData.publicKey, keyData.nonceId);
+
+      // 4. Post encrypted envelope and the nonce ID to server
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...envelope,
+          nonceId: keyData.nonceId,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to process reservation");
+      }
+
+      // 5. Success -> transition to confirmation screen
+      setCurrentStep(5);
+      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
+    } catch (err: unknown) {
+      console.error("Reservation submit error:", err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Failed to connect to reservation service. Please try again.";
+      setSubmitError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleMobileContinue() {
@@ -849,7 +960,7 @@ function BookingPageInner() {
                         subtitle="Select your room for this stay."
                       />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                        {ROOMS_DETAIL.map((r) => (
+                        {roomsList.map((r) => (
                           <RoomCard
                             key={r.id}
                             room={r}
@@ -996,7 +1107,7 @@ function BookingPageInner() {
                           </span>
                           <div className="flex items-center gap-4">
                             <img
-                              src={ROOM_IMAGES[room.imageKey]}
+                              src={getRoomImageUrl(room)}
                               alt={room.name}
                               className="w-20 h-14 object-cover shrink-0"
                             />
@@ -1077,11 +1188,22 @@ function BookingPageInner() {
                       and arrange payment.
                     </p>
 
+                    {submitError && (
+                      <div className="bg-red-500/10 border border-red-500/20 text-red-600 p-4 mb-4 text-xs font-sans">
+                        {submitError}
+                      </div>
+                    )}
+
                     <button
                       onClick={submitReservation}
-                      className="w-full sm:w-auto bg-gold text-brown eyebrow px-12 py-5 hover:bg-brown hover:text-ivory transition-all text-[11px]"
+                      disabled={isSubmitting}
+                      className={`w-full sm:w-auto eyebrow px-12 py-5 transition-all text-[11px] ${
+                        isSubmitting
+                          ? "bg-brown/15 text-brown/40 cursor-not-allowed"
+                          : "bg-gold text-brown hover:bg-brown hover:text-ivory"
+                      }`}
                     >
-                      Reserve Your Stay
+                      {isSubmitting ? "Securing Reservation..." : "Reserve Your Stay"}
                     </button>
                   </section>
                 </div>
@@ -1138,6 +1260,7 @@ function BookingPageInner() {
           guests={guests}
           subtotal={subtotal}
           gst={gst}
+          isSubmitting={isSubmitting}
         />
       )}
 
