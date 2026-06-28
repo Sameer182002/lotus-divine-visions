@@ -1,0 +1,21 @@
+{
+  "name": "lotus-divine-backend",
+  "version": "1.0.0",
+  "description": "Backend microservice for Lotus Divine Hotel with MongoDB and End-to-End Encryption",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "helmet": "^7.1.0",
+    "mongoose": "^8.4.1",
+    "node-cache": "^5.1.2"
+  }
+}

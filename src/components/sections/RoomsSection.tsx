@@ -6,7 +6,47 @@ import room2 from "@/assets/room-2.jpg";
 
 const ROOM_IMAGES = [room1.src, room2.src];
 
-export function RoomsSection() {
+interface RoomsSectionRoom {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  amenities: readonly string[];
+  capacity: string;
+  price: string;
+  imageUrl?: string;
+  imageAlt?: string;
+  gallery?: string[];
+}
+
+function getRoomImageUrl(room: RoomsSectionRoom, index: number) {
+  if (room.imageUrl) {
+    if (
+      room.imageUrl.startsWith("http") ||
+      room.imageUrl.startsWith("/") ||
+      room.imageUrl.startsWith("data:")
+    ) {
+      return room.imageUrl;
+    }
+    return `${process.env.NEXT_PUBLIC_API_URL}${room.imageUrl}`;
+  }
+  return ROOM_IMAGES[index % ROOM_IMAGES.length] || room1.src;
+}
+
+async function fetchRooms(): Promise<RoomsSectionRoom[]> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rooms`, { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to fetch rooms");
+    return (await res.json()) as RoomsSectionRoom[];
+  } catch (err) {
+    console.warn("Falling back to static rooms:", err);
+    return ROOMS_DETAIL as unknown as RoomsSectionRoom[];
+  }
+}
+
+export async function RoomsSection() {
+  const roomsList = await fetchRooms();
+
   return (
     <section className="bg-ivory text-brown py-12 lg:py-20 px-5 sm:px-8 lg:px-20">
       <div className="mb-6 lg:mb-10">
@@ -20,12 +60,12 @@ export function RoomsSection() {
       </div>
 
       <div className="lg:hidden -mx-5 sm:-mx-8 px-5 sm:px-8 flex gap-5 overflow-x-auto snap-x snap-mandatory pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {ROOMS_DETAIL.map((r, i) => (
+        {roomsList.map((r, i) => (
           <article key={r.id} className="snap-start shrink-0 w-[78%] sm:w-[55%]">
             <div className="overflow-hidden mb-4">
               <img
-                src={ROOM_IMAGES[i]}
-                alt={r.imageAlt}
+                src={getRoomImageUrl(r, i)}
+                alt={r.imageAlt || r.name}
                 className="w-full aspect-[4/5] object-cover"
                 loading="lazy"
               />
@@ -38,7 +78,7 @@ export function RoomsSection() {
             <div className="flex gap-3 mt-1 text-[10px] text-taupe eyebrow">
               <span>{r.capacity}</span>
               <span className="text-gold/40">·</span>
-              <span>{r.amenities[0]}</span>
+              <span>{r.amenities[0] || "AC Room"}</span>
             </div>
             <div className="hairline w-full mt-4" />
             <div className="flex items-center gap-3 mt-4">
@@ -60,12 +100,12 @@ export function RoomsSection() {
       </div>
 
       <div className="hidden lg:grid grid-cols-2 gap-8">
-        {ROOMS_DETAIL.map((r, i) => (
+        {roomsList.map((r, i) => (
           <article key={r.id} className="group">
             <div className="overflow-hidden mb-4">
               <img
-                src={ROOM_IMAGES[i]}
-                alt={r.imageAlt}
+                src={getRoomImageUrl(r, i)}
+                alt={r.imageAlt || r.name}
                 className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-[1500ms] ease-out"
                 loading="lazy"
               />
@@ -78,7 +118,7 @@ export function RoomsSection() {
             <div className="flex gap-3 mt-2 text-[10px] text-taupe eyebrow">
               <span>{r.capacity}</span>
               <span className="text-gold/40">·</span>
-              <span>{r.amenities[0]}</span>
+              <span>{r.amenities[0] || "AC Room"}</span>
             </div>
             <div className="hairline w-full mt-4" />
             <div className="flex items-center gap-4 mt-4">
