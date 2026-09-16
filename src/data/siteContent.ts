@@ -12,19 +12,31 @@ export const BRAND = {
 // ─── Contact ─────────────────────────────────────────────────────────────────
 
 export const CONTACT = {
-  address: "Amritsar, Punjab, India",
+  address: "1804, Katra Ahluwalia, Amritsar, Amritsar Cantt., Punjab 143001",
+  addressLines: ["1804, Katra Ahluwalia", "Amritsar, Amritsar Cantt.", "Punjab 143001"],
   addressShort: "Amritsar",
-  phone: "+91 98765 00000",
-  phoneDisplay: "Reservations · +91 98765 00000",
-  email: "reservations@lotusdivine.com",
+  phone: "+91 84379 66966",
+  phoneDisplay: "Reservations · +91 84379 66966",
+  email: "lotusdivinehotel@gmail.com",
 } as const;
+
+// Same Maps destination used by the "Get Directions" CTA in LocationSection.
+export const CONTACT_MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+  `Lotus Divine Hotel, ${CONTACT.address}`,
+)}`;
+
+// Embeddable version of the same destination — powers the interactive map on
+// the Contact page. Needs no API key.
+export const CONTACT_MAP_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(
+  `Lotus Divine Hotel, ${CONTACT.address}`,
+)}&z=16&output=embed`;
 
 // ─── Navigation ──────────────────────────────────────────────────────────────
 
 export const NAV_LINKS = [
   { label: "Home", to: "/" as const, enabled: true },
   { label: "Rooms", to: "/rooms" as const, enabled: true },
-  { label: "About", to: "/about" as const, enabled: true },
+  { label: "About Us", to: "/about-us" as const, enabled: true },
   { label: "Contact", to: "/contact" as const, enabled: true },
 ] as const;
 
@@ -47,13 +59,23 @@ export const META = {
 // ─── Hero ────────────────────────────────────────────────────────────────────
 
 export const HERO = {
-  eyebrow: "Amritsar, Punjab, India",
-  headingLine1: "Luxury Hotel",
-  headingEmphasis: "Near The",
-  headingLine2: "Golden Temple",
-  body: "Experience spacious rooms, warm hospitality, and a peaceful stay just minutes from Sri Harmandir Sahib.",
-  scrollLabel: "Scroll",
-  imgAlt: "Lotus Divine hotel exterior",
+  headingLine1: "Stay Close to the",
+  headingLine2: "Heart of Amritsar.",
+  body: "A peaceful, comfortable stay in the heart of Amritsar, close to Sri Harmandir Sahib.",
+  // Location-proximity story: hotel → short walk → Golden Temple.
+  // The walking-time claim lives only here, so it is a one-line edit.
+  journey: {
+    walkMinutes: 5,
+    walkLabel: "min walk",
+    walkNote: "approx. on foot",
+    originName: "Hotel Lotus Divine",
+    originCaption: "Your stay",
+    destinationLabel: "Golden Temple",
+    destinationName: "Sri Harmandir Sahib",
+    ariaLabel:
+      "Hotel Lotus Divine is approximately a five-minute walk from the Golden Temple, Sri Harmandir Sahib.",
+  },
+  logoAlt: "Hotel Lotus Divine",
 } as const;
 
 // ─── About ───────────────────────────────────────────────────────────────────
@@ -65,8 +87,8 @@ export const ABOUT = {
     "Every room at Lotus Divine is thoughtfully designed with elegant interiors, modern comforts, and warm hospitality to make every stay relaxing.",
   body2:
     "Whether you are visiting the Golden Temple, exploring the city, or here on business — we are here to make your experience simple and memorable.",
-  cta: "Our Story →",
-  imgAlt: "Hotel lobby interior",
+  cta: "Read More →",
+  imgAlt: "Hotel Lotus Divine entrance, Amritsar",
 } as const;
 
 // ─── Rooms ───────────────────────────────────────────────────────────────────
@@ -76,6 +98,7 @@ export const ROOMS_SECTION = {
   headingLine1: "Our",
   headingEmphasis: "Rooms",
   viewAllCta: "View All Rooms →",
+  sizeLabel: "Size",
   bookBtn: "Book This Room",
   detailsLink: "View Details →",
 } as const;
@@ -106,12 +129,21 @@ export const AMENITIES = [
     desc: "Minutes from Sri Harmandir Sahib and the city's top attractions.",
   },
   {
+    label: "Heart of the City",
+    desc: "Markets, eateries, and everyday essentials all within walking distance.",
+  },
+  {
     label: "Spacious Rooms",
     desc: "Well-designed rooms with modern amenities for a comfortable stay.",
   },
-  { label: "Free Wi-Fi", desc: "Complimentary high-speed Wi-Fi throughout the hotel." },
-  { label: "Secure Parking", desc: "On-site secured parking available for all guests." },
-  { label: "Housekeeping", desc: "Daily housekeeping service included with every room." },
+  {
+    label: "Best-Located Hotel",
+    desc: "Among the best-located hotels near Sri Harmandir Sahib.",
+  },
+  {
+    label: "Iconic Sites Nearby",
+    desc: "Walking distance to Jallianwala Bagh and the Partition Museum.",
+  },
 ] as const;
 
 // ─── Gallery ─────────────────────────────────────────────────────────────────
@@ -121,18 +153,10 @@ export const GALLERY_SECTION = {
 } as const;
 
 export const GALLERY_ALTS = {
-  pool: "Hotel pool",
-  spa: "Relaxation area",
-  dining: "Restaurant",
-  villa: "Guest room",
-} as const;
-
-// ─── Testimonial ─────────────────────────────────────────────────────────────
-
-export const TESTIMONIAL = {
-  stars: 5,
-  quote: "Beautiful rooms, helpful staff, and a peaceful location near the Golden Temple.",
-  attribution: "Guest Review",
+  entrance: "Hotel entrance",
+  reception: "Reception area",
+  deluxe: "Deluxe room",
+  insideRoom: "Inside a guest room",
 } as const;
 
 // ─── Location ────────────────────────────────────────────────────────────────
@@ -163,7 +187,7 @@ export const CTA = {
 export const FOOTER_QUICK_LINKS = [
   { label: "Home", to: "/" as const, enabled: true },
   { label: "Rooms", to: "/rooms" as const, enabled: true },
-  { label: "About", to: "/about" as const, enabled: true },
+  { label: "About Us", to: "/about-us" as const, enabled: true },
   { label: "Contact", to: "/contact" as const, enabled: true },
   { label: "Book Your Stay", to: "/booking" as const, enabled: true },
 ] as const;
@@ -174,10 +198,10 @@ export const FOOTER_NEWSLETTER = {
   placeholder: "Your email",
 } as const;
 
-export const FOOTER_SOCIAL = [
-  { label: "Instagram", href: "#" },
-  { label: "Privacy", href: "#" },
-  { label: "Terms", href: "#" },
+export const FOOTER_LEGAL_LINKS = [
+  { label: "Terms & Conditions", to: "/terms-conditions" as const, enabled: true },
+  { label: "Cancellation Policy", to: "/terms-conditions#cancellation-policy" as const, enabled: true },
+  { label: "Privacy & Cookie Policy", to: "/privacy-policy" as const, enabled: true },
 ] as const;
 
 // ─── Rooms page ──────────────────────────────────────────────────────────────
@@ -200,48 +224,58 @@ export const ROOMS_PAGE = {
   },
 } as const;
 
+const ROOM_AMENITIES = [
+  "King-size bed",
+  "Air conditioning",
+  "Free Wi-Fi",
+  "Smart TV",
+  "Work desk & chair",
+  "Wardrobe with hangers",
+  "Blackout curtains",
+  "24-hour hot & cold water",
+] as const;
+
+// Single source of truth for room content — feeds the booking flow and the
+// room detail page. ROOMS_CARDS (below) is derived from this, so the
+// homepage "Our Rooms" section can never drift out of sync with it.
 export const ROOMS_DETAIL = [
   {
     id: "lotus-sanctuary",
-    name: "Deluxe Room",
+    name: "Deluxe",
     category: "Deluxe",
     description:
-      "A well-appointed room with modern furnishings, a comfortable king-size bed, and garden views. Ideal for couples and solo travellers looking for a relaxing stay.",
-    amenities: [
-      "King-size bed",
-      "Garden view",
-      "Free Wi-Fi",
-      "Smart TV",
-      "Work desk",
-      "En-suite bathroom",
-    ],
-    size: "32 sq m",
+      "A comfortable, well-appointed room with a king-size bed and everything you need for a relaxing stay near the Golden Temple.",
+    amenities: ROOM_AMENITIES,
+    size: "11 × 12 FT",
     capacity: "2 Guests",
-    price: "From ₹8,000 / night",
+    price: "From ₹1,500 / night",
     imageKey: "room1" as const,
-    imageAlt: "Deluxe room with king-size bed and garden view",
+    imageAlt: "Deluxe room at Lotus Divine",
   },
   {
     id: "imperial-vista",
-    name: "Family Suite",
-    category: "Suite",
+    name: "Premium",
+    category: "Premium",
     description:
-      "A spacious suite with a separate living area, perfect for families and groups. Includes a comfortable lounge, two bedrooms, and modern amenities throughout.",
-    amenities: [
-      "Two bedrooms",
-      "Separate living area",
-      "Free Wi-Fi",
-      "Smart TV",
-      "Kitchenette",
-      "En-suite bathrooms",
-    ],
-    size: "65 sq m",
+      "A more spacious room with a king-size bed, ideal if you want extra room to relax.",
+    amenities: ROOM_AMENITIES,
+    size: "15 × 12 FT",
     capacity: "Up to 4 Guests",
-    price: "From ₹15,000 / night",
+    price: "From ₹2,000 / night",
     imageKey: "room2" as const,
-    imageAlt: "Family suite with separate living area",
+    imageAlt: "Premium room at Lotus Divine",
   },
 ] as const;
+
+// Cards for the homepage "Our Rooms" section — derived from ROOMS_DETAIL
+// so renaming/re-pricing a room only ever needs to happen in one place.
+export const ROOMS_CARDS = ROOMS_DETAIL.map(({ id, name, size, price, imageAlt }) => ({
+  id,
+  name,
+  size,
+  price,
+  imageAlt,
+}));
 
 // ─── About page ──────────────────────────────────────────────────────────────
 
@@ -261,12 +295,6 @@ export const ABOUT_PAGE = {
       "Our spacious rooms, modern comforts, and welcoming team are here to make every stay comfortable from the moment you arrive.",
     imgAlt: "Lotus Divine hotel interior",
   },
-  stats: [
-    { value: "5 min", label: "Golden Temple" },
-    { value: "36", label: "Guest Rooms" },
-    { value: "24×7", label: "Reception" },
-    { value: "Free", label: "Wi-Fi" },
-  ],
   features: [
     {
       label: "Minutes from the Golden Temple",
@@ -290,11 +318,46 @@ export const ABOUT_PAGE = {
   },
 } as const;
 
+// ─── Contact page ────────────────────────────────────────────────────────────
+
+export const CONTACT_PAGE = {
+  hero: {
+    eyebrow: "Contact",
+    heading: "Contact Lotus Divine",
+    body: "Planning your stay or need help with a reservation? We're happy to assist with bookings and enquiries.",
+  },
+  location: {
+    eyebrow: "Find Us",
+    heading: "Visit Us in",
+    headingEmphasis: "Amritsar",
+    body: "Located close to Sri Harmandir Sahib and central Amritsar.",
+    cta: "Get Directions →",
+  },
+  nearby: {
+    eyebrow: "Nearby",
+    heading: "Nearby Attractions",
+    places: [
+      { label: "Golden Temple", time: "5 min", mode: "Walk" },
+      { label: "Jallianwala Bagh", time: "8 min", mode: "Walk" },
+      { label: "Partition Museum", time: "10 min", mode: "Walk" },
+      { label: "Hall Bazaar", time: "10 min", mode: "Walk" },
+      { label: "Amritsar Airport", time: "20 min", mode: "Drive" },
+    ],
+  },
+  cta: {
+    eyebrow: "Reservations",
+    heading: "Need Help With Your Booking?",
+    body: "Reserve directly with Lotus Divine for a simple booking experience.",
+    primaryBtn: "Book Your Stay",
+    secondaryBtn: "Call Hotel",
+  },
+} as const;
+
 // ─── Booking widget ──────────────────────────────────────────────────────────
 
 export const BOOKING_DEFAULTS = {
-  checkIn: "2026-10-12",
-  checkOut: "2026-10-18",
+  checkIn: "",
+  checkOut: "",
   room: "Lotus Suite",
   guests: "2 Adults",
 } as const;
@@ -309,11 +372,17 @@ export const BOOKING_GUEST_OPTIONS = [
 ] as const;
 
 export const BOOKING_LABELS = {
+  hero: {
+    eyebrow: "Reserve Your Room",
+    guarantee: "Best price when you book directly",
+    button: "Book Rooms",
+    buttonSticky: "Book Now",
+  },
   luxury: {
     eyebrow: "Reserve Your Room",
     guarantee: "Best Price When You Book Directly",
     guaranteeMobile: "Best Price When You Book Directly",
-    button: "Check Availability",
+    button: "Book Rooms",
     buttonSticky: "Book Now",
   },
   serenity: {

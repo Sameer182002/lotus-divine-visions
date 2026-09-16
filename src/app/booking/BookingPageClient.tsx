@@ -2,14 +2,27 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, useRef, Suspense, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import type { ReactNode } from "react";
+import { Calendar, BedDouble, Phone, Users, Maximize2, Clock, Plus, Minus, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { BookingCalendarIcon } from "@/components/icons/BookingCalendarIcon";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { ROOMS_DETAIL, BOOKING_GUEST_OPTIONS } from "@/data/siteContent";
+import { ROOMS_DETAIL } from "@/data/siteContent";
 import { encryptPayload } from "@/lib/encryption";
+import {
+  isCheckInValid,
+  isCheckOutValid,
+  minCheckInISO,
+  minCheckOutISO,
+  resolveCheckOutOnCheckInChange,
+  validateBookingDates,
+} from "@/lib/booking-dates";
 import room1 from "@/assets/room-1.jpg";
 import room2 from "@/assets/room-2.jpg";
+import roomDeluxe from "@/assets/room-deluxe.jpg";
+import roomPremium from "@/assets/room-premium.jpg";
 
 export interface RoomItem {
   id: string;
@@ -28,6 +41,12 @@ export interface RoomItem {
 
 const ROOM_IMAGES: Record<string, string> = { room1: room1.src, room2: room2.src };
 
+// Same photography used on the Rooms page and homepage, keyed by category.
+const CATEGORY_IMAGES: Record<string, string> = {
+  Deluxe: roomDeluxe.src,
+  Premium: roomPremium.src,
+};
+
 function getRoomImageUrl(room: RoomItem | undefined) {
   if (!room) return "";
   if (room.imageUrl) {
@@ -40,7 +59,7 @@ function getRoomImageUrl(room: RoomItem | undefined) {
     }
     return `${process.env.NEXT_PUBLIC_API_URL}${room.imageUrl}`;
   }
-  return ROOM_IMAGES[room.imageKey || ""] || ROOM_IMAGES.room1;
+  return CATEGORY_IMAGES[room.category] || ROOM_IMAGES[room.imageKey || ""] || ROOM_IMAGES.room1;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -55,13 +74,26 @@ function parsePrice(str: string) {
   return m ? parseInt(m[0].replace(/,/g, ""), 10) : 0;
 }
 
+const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 function fmtDate(iso: string) {
   if (!iso) return "—";
-  return new Date(iso + "T00:00:00").toLocaleDateString("en-IN", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const d = new Date(iso + "T00:00:00");
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}, ${WEEKDAYS_SHORT[d.getDay()]}`;
 }
 
 function fmtMoney(n: number) {
@@ -91,12 +123,38 @@ function matchRoomId(param: string): string {
 
 type RoomDetail = RoomItem;
 
+const MAX_GUESTS_PER_ROOM = 2;
+
+const ROOM_TYPE_CAPS: Record<string, number> = { Deluxe: 14, Premium: 5 };
+const OVERALL_ROOM_CAP = 5;
+const LOW_STOCK_THRESHOLDS: Record<string, number> = { Deluxe: 5, Premium: 3 };
+
+const PHONE_DIGITS = 10;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const HOTEL_CHECKIN_TIME = "12:00 PM";
+const HOTEL_CHECKOUT_TIME = "11:00 AM";
+
+interface RoomRow {
+  uid: string;
+  roomId: string;
+  guests: number;
+}
+
+function makeRowId() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+function roomAnchor(category: string) {
+  return `/rooms#${category.toLowerCase()}`;
+}
+
 // ─── Step labels ──────────────────────────────────────────────────────────────
 
 const STEP_LABELS = [
   "Stay Details",
-  "Choose Room",
-  "Guest Details",
+  "Choose Rooms",
+  "Contact Details",
   "Review & Confirm",
   "Reservation Received",
 ];
@@ -105,38 +163,31 @@ const STEP_LABELS = [
 
 function ProgressTracker({ current }: { current: number }) {
   return (
-    <div className="bg-ivory border-b border-brown/8 overflow-x-auto">
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 xl:px-20 py-4 lg:py-5">
-        <div className="flex items-center min-w-max lg:min-w-0 lg:justify-center gap-0">
+    <div className="bg-ivory border-b border-brown/8">
+      {/* Mobile: compact circular-step indicator, current step label below */}
+      <div className="lg:hidden px-5 py-4">
+        <div className="flex items-center mb-2.5">
           {STEP_LABELS.map((label, i) => {
             const n = i + 1;
             const done = n < current;
             const active = n === current;
+            const isLast = i === STEP_LABELS.length - 1;
             return (
-              <div key={label} className="flex items-center">
-                <div className="flex flex-col items-center gap-1.5 px-1">
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium transition-all duration-300 shrink-0 ${
-                      done
-                        ? "bg-gold text-brown"
-                        : active
-                          ? "bg-brown text-ivory ring-4 ring-brown/10"
-                          : "bg-ivory border border-brown/15 text-brown/30"
-                    }`}
-                  >
-                    {done ? "✓" : n}
-                  </div>
-                  <span
-                    className={`text-[9px] lg:text-[10px] eyebrow tracking-wider whitespace-nowrap transition-colors ${
-                      active ? "text-brown" : done ? "text-gold" : "text-brown/25"
-                    }`}
-                  >
-                    {label}
-                  </span>
+              <div key={label} className={`flex items-center ${isLast ? "" : "flex-1"}`}>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-medium shrink-0 transition-all duration-300 ${
+                    done
+                      ? "bg-gold text-brown"
+                      : active
+                        ? "bg-brown text-ivory ring-2 ring-brown/15"
+                        : "bg-ivory border border-brown/20 text-brown/30"
+                  }`}
+                >
+                  {done ? "✓" : n}
                 </div>
-                {i < STEP_LABELS.length - 1 && (
+                {!isLast && (
                   <div
-                    className={`h-px w-5 sm:w-8 lg:w-12 mx-0.5 mb-4 shrink-0 transition-colors duration-300 ${
+                    className={`h-px flex-1 mx-1 transition-colors duration-300 ${
                       done ? "bg-gold/50" : "bg-brown/10"
                     }`}
                   />
@@ -144,6 +195,53 @@ function ProgressTracker({ current }: { current: number }) {
               </div>
             );
           })}
+        </div>
+        <span className="eyebrow text-brown text-[10px]">
+          Step {current} of {STEP_LABELS.length} — {STEP_LABELS[current - 1]}
+        </span>
+      </div>
+
+      {/* Desktop: full step bar (unchanged) */}
+      <div className="hidden lg:block overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 xl:px-20 py-4 lg:py-5">
+          <div className="flex items-center min-w-max lg:min-w-0 lg:justify-center gap-0">
+            {STEP_LABELS.map((label, i) => {
+              const n = i + 1;
+              const done = n < current;
+              const active = n === current;
+              return (
+                <div key={label} className="flex items-center">
+                  <div className="flex flex-col items-center gap-1.5 px-1">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium transition-all duration-300 shrink-0 ${
+                        done
+                          ? "bg-gold text-brown"
+                          : active
+                            ? "bg-brown text-ivory ring-4 ring-brown/10"
+                            : "bg-ivory border border-brown/15 text-brown/30"
+                      }`}
+                    >
+                      {done ? "✓" : n}
+                    </div>
+                    <span
+                      className={`text-[10px] eyebrow tracking-wider whitespace-nowrap transition-colors ${
+                        active ? "text-brown" : done ? "text-gold" : "text-brown/25"
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                  {i < STEP_LABELS.length - 1 && (
+                    <div
+                      className={`h-px w-8 lg:w-12 mx-0.5 mb-4 shrink-0 transition-colors duration-300 ${
+                        done ? "bg-gold/50" : "bg-brown/10"
+                      }`}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -155,30 +253,43 @@ function ProgressTracker({ current }: { current: number }) {
 function CompletedStepRow({
   n,
   title,
-  summary,
+  icon: Icon,
+  mobileValue,
+  desktopLines,
   onEdit,
 }: {
   n: number;
   title: string;
-  summary: string;
+  icon: LucideIcon;
+  mobileValue: string;
+  desktopLines: string[];
   onEdit: () => void;
 }) {
   return (
-    <div className="bg-white border border-brown/10 px-5 sm:px-7 py-4 flex items-center justify-between gap-4 animate-fade-up">
-      <div className="flex items-center gap-4 min-w-0">
-        <div className="w-6 h-6 rounded-full bg-gold flex items-center justify-center text-brown text-[10px] shrink-0 font-medium">
-          ✓
+    <div className="bg-white border border-brown/10 px-5 sm:px-7 py-5 flex items-start justify-between gap-4 animate-fade-up">
+      <div className="flex items-start gap-4 min-w-0 flex-1">
+        <div className="w-6 h-6 rounded-full bg-gold flex items-center justify-center text-brown text-[10px] shrink-0 font-medium mt-0.5">
+          <Icon className="lg:hidden w-3.5 h-3.5" strokeWidth={2} />
+          <span className="hidden lg:inline">✓</span>
         </div>
-        <div className="min-w-0">
-          <span className="eyebrow text-brown/35 text-[9px] block mb-0.5">
-            {String(n).padStart(2, "0")} — {title}
+        <div className="min-w-0 flex-1">
+          <span className="eyebrow text-brown/35 text-[9px] block mb-1.5">
+            <span className="hidden lg:inline">{String(n).padStart(2, "0")} — </span>
+            {title}
           </span>
-          <span className="text-sm text-brown truncate block">{summary}</span>
+          {/* Mobile: single line, truncated rather than wrapped */}
+          <span className="lg:hidden font-display text-brown text-lg leading-snug block truncate">
+            {mobileValue}
+          </span>
+          {/* Desktop: joined into a single line */}
+          <span className="hidden lg:block font-display text-brown text-xl leading-snug">
+            {desktopLines.join(" · ")}
+          </span>
         </div>
       </div>
       <button
         onClick={onEdit}
-        className="eyebrow text-[10px] text-gold border border-gold/30 px-3 py-1.5 hover:bg-gold hover:text-brown transition-all shrink-0"
+        className="eyebrow text-[10px] text-gold border border-gold/30 px-3 py-1.5 hover:bg-gold hover:text-brown transition-all shrink-0 mt-0.5"
       >
         Edit
       </button>
@@ -235,10 +346,31 @@ function DateCard({
   onChange: (v: string) => void;
   min?: string;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function openPicker() {
+    const el = inputRef.current;
+    if (!el) return;
+    const withPicker = el as HTMLInputElement & { showPicker?: () => void };
+    try {
+      if (withPicker.showPicker) {
+        withPicker.showPicker();
+      } else {
+        el.focus();
+      }
+    } catch {
+      el.focus();
+    }
+  }
+
   return (
-    <div className="bg-white border border-brown/12 px-5 py-4 focus-within:border-gold/60 transition-colors">
+    <div
+      onClick={openPicker}
+      className="bg-white border border-brown/12 px-5 py-4 focus-within:border-gold/60 transition-colors cursor-pointer"
+    >
       <span className="eyebrow text-brown/35 text-[10px] block mb-2">{label}</span>
       <input
+        ref={inputRef}
         type="date"
         value={value}
         min={min}
@@ -250,75 +382,291 @@ function DateCard({
   );
 }
 
+// ─── Check-in / Check-out Times ────────────────────────────────────────────────
+
+function StayTimesCard() {
+  return (
+    <div className="mb-6">
+      <div className="bg-white border border-brown/12 px-5 py-5 flex flex-col sm:flex-row gap-5 sm:gap-10">
+        <div className="flex items-center gap-3">
+          <Clock className="text-gold shrink-0" size={22} strokeWidth={1.5} />
+          <div>
+            <span className="eyebrow text-brown/35 text-[10px] block mb-0.5">Check-in</span>
+            <span className="font-display text-brown text-base">{HOTEL_CHECKIN_TIME}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Clock className="text-gold shrink-0" size={22} strokeWidth={1.5} />
+          <div>
+            <span className="eyebrow text-brown/35 text-[10px] block mb-0.5">Check-out</span>
+            <span className="font-display text-brown text-base">{HOTEL_CHECKOUT_TIME}</span>
+          </div>
+        </div>
+      </div>
+      <p className="text-taupe text-xs mt-3 leading-relaxed">
+        Book directly to request early check-in / late check-out, subject to availability.
+      </p>
+    </div>
+  );
+}
+
 // ─── Room Card ────────────────────────────────────────────────────────────────
 
 function RoomCard({
   room,
-  selected,
-  onSelect,
+  count,
+  totalRooms,
+  onAttemptAdd,
+  onRemoveOne,
 }: {
   room: RoomDetail;
-  selected: boolean;
-  onSelect: () => void;
+  count: number;
+  totalRooms: number;
+  onAttemptAdd: () => string | null;
+  onRemoveOne: () => void;
 }) {
+  const [notice, setNotice] = useState<string | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 3000);
+    function onOutsideClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setNotice(null);
+      }
+    }
+    document.addEventListener("mousedown", onOutsideClick);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", onOutsideClick);
+    };
+  }, [notice]);
+
+  const cap = ROOM_TYPE_CAPS[room.category] ?? Infinity;
+  const remaining = Math.max(0, cap - count);
+  const lowStockThreshold = LOW_STOCK_THRESHOLDS[room.category] ?? 0;
+  const atCap = count >= cap || totalRooms >= OVERALL_ROOM_CAP;
+  const minusDisabled = count === 1 && totalRooms === 1;
+
+  function handleAdd() {
+    const err = onAttemptAdd();
+    if (err) setNotice(err);
+  }
+
   return (
-    <div
-      onClick={onSelect}
-      className={`cursor-pointer border-2 transition-all duration-300 ${
-        selected
-          ? "border-gold shadow-[0_8px_32px_-8px_rgba(180,150,80,0.4)] bg-champagne/20 scale-[1.01]"
-          : "border-brown/10 bg-white hover:border-brown/25 hover:shadow-md"
-      }`}
-    >
-      <div className="relative overflow-hidden">
+    <div className="border-2 border-brown/10 bg-white hover:border-brown/25 hover:shadow-md transition-all duration-300 flex flex-row sm:flex-col">
+      <div className="relative overflow-hidden w-[38%] sm:w-full shrink-0">
         <img
           src={getRoomImageUrl(room)}
           alt={room.imageAlt}
-          className={`w-full aspect-[16/10] object-cover transition-transform duration-500 ${
-            selected ? "scale-[1.03]" : "group-hover:scale-[1.02]"
-          }`}
+          className="absolute inset-0 w-full h-full sm:static sm:h-auto sm:aspect-[16/10] object-cover transition-transform duration-500 hover:scale-[1.02]"
           loading="lazy"
         />
-        {selected && (
-          <div className="absolute top-3 right-3 bg-gold text-brown eyebrow text-[9px] px-3 py-1">
-            SELECTED ✓
+        {remaining <= lowStockThreshold && (
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-brown/85 text-ivory eyebrow text-[8px] sm:text-[9px] px-2 py-1 sm:px-3 sm:py-1.5">
+            {remaining} left
           </div>
         )}
       </div>
-      <div className="p-5 lg:p-6">
-        <span className="eyebrow text-gold text-[10px] block mb-1">{room.category}</span>
-        <h3 className="font-display text-2xl text-brown mb-1">{room.name}</h3>
-        <p className="text-taupe text-xs mb-4">
-          {"size" in room ? `${room.size} · ` : ""}
-          {room.capacity}
-        </p>
-        <div className="grid grid-cols-2 gap-x-3 mb-5">
-          {room.amenities.slice(0, 6).map((a) => (
-            <span
-              key={a}
-              className="text-[11px] text-brown/55 py-1.5 border-b border-brown/8 flex items-center gap-1.5"
-            >
-              <span className="text-gold/60 shrink-0">—</span>
-              {a}
-            </span>
-          ))}
-        </div>
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <span className="eyebrow text-brown/35 text-[10px] block mb-0.5">Starting from</span>
-            <span className="font-display text-brown text-xl">
-              {room.price.replace("From ", "")}
-            </span>
-          </div>
-          <div
-            className={`eyebrow text-[10px] px-5 py-2.5 transition-all ${
-              selected ? "bg-gold text-brown" : "bg-brown text-ivory hover:bg-gold hover:text-brown"
-            }`}
+      <div className="flex-1 min-w-0 p-3 sm:p-5 lg:p-6">
+        <h3 className="mb-1">
+          <Link
+            href={roomAnchor(room.category)}
+            className="font-display text-xl sm:text-2xl text-brown hover:text-gold transition-colors"
           >
-            {selected ? "Selected ✓" : "Select Room"}
+            {room.name}
+          </Link>
+        </h3>
+        <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-5 flex-wrap">
+          {"size" in room && room.size && (
+            <span className="flex items-center gap-1 text-taupe text-[11px] sm:text-xs">
+              <Maximize2
+                className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gold shrink-0"
+                strokeWidth={1.75}
+              />
+              {room.size}
+            </span>
+          )}
+          <span className="flex items-center gap-1 text-taupe text-[11px] sm:text-xs">
+            <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gold shrink-0" strokeWidth={1.75} />
+            Up to 2 Guests
+          </span>
+        </div>
+        <div className="relative" ref={wrapRef}>
+          <span className="text-gold font-bold text-lg sm:text-xl block mb-2 sm:mb-3">
+            {room.price.replace("From ", "")}
+          </span>
+          <div className="flex items-center justify-between h-7 sm:h-8">
+            {count === 0 ? (
+              <button
+                onClick={handleAdd}
+                className="eyebrow text-[10px] h-full px-4 sm:px-5 flex items-center justify-center transition-all bg-brown text-ivory hover:bg-gold hover:text-brown"
+              >
+                Book
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 sm:gap-3 h-full">
+                <button
+                  type="button"
+                  aria-label={`Remove one ${room.name}`}
+                  disabled={minusDisabled}
+                  onClick={onRemoveOne}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center border transition-colors ${
+                    minusDisabled
+                      ? "border-brown/10 text-brown/20 cursor-not-allowed"
+                      : "border-brown/25 text-brown hover:border-gold hover:text-gold"
+                  }`}
+                >
+                  <Minus size={14} />
+                </button>
+                <span className="font-display text-brown text-sm whitespace-nowrap">
+                  {count} Room{count !== 1 ? "s" : ""}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Add another ${room.name}`}
+                  onClick={handleAdd}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center border transition-colors ${
+                    atCap
+                      ? "border-brown/10 text-brown/25"
+                      : "border-brown/25 text-brown hover:border-gold hover:text-gold"
+                  }`}
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+            )}
           </div>
+
+          {notice && (
+            <div className="absolute right-0 bottom-full mb-2 w-60 bg-brown text-ivory text-xs leading-relaxed px-3.5 py-3 shadow-lg z-20">
+              <button
+                type="button"
+                aria-label="Dismiss"
+                onClick={() => setNotice(null)}
+                className="absolute top-1.5 right-1.5 text-ivory/50 hover:text-ivory"
+              >
+                <X size={12} />
+              </button>
+              {notice}
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Guest Counter (with max-guests popup) ────────────────────────────────────
+
+function GuestCounter({ guests, onChange }: { guests: number; onChange: (next: number) => void }) {
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!noticeOpen) return;
+    const timer = setTimeout(() => setNoticeOpen(false), 3000);
+    function onOutsideClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setNoticeOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onOutsideClick);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", onOutsideClick);
+    };
+  }, [noticeOpen]);
+
+  const atMax = guests >= MAX_GUESTS_PER_ROOM;
+
+  return (
+    <div className="flex items-center gap-2 sm:gap-3 shrink-0" ref={wrapRef}>
+      <span className="eyebrow text-brown/35 text-[10px]">Guests</span>
+      <div className="flex items-center gap-1.5 sm:gap-3 relative">
+        <button
+          type="button"
+          aria-label="Decrease guests"
+          disabled={guests <= 1}
+          onClick={() => onChange(Math.max(1, guests - 1))}
+          className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border transition-colors ${
+            guests <= 1
+              ? "border-brown/10 text-brown/20 cursor-not-allowed"
+              : "border-brown/25 text-brown hover:border-gold hover:text-gold"
+          }`}
+        >
+          <Minus size={13} />
+        </button>
+        <span className="font-display text-brown text-base w-4 text-center">{guests}</span>
+        <button
+          type="button"
+          aria-label="Increase guests"
+          onClick={() => (atMax ? setNoticeOpen(true) : onChange(guests + 1))}
+          className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center border transition-colors ${
+            atMax
+              ? "border-brown/10 text-brown/25"
+              : "border-brown/25 text-brown hover:border-gold hover:text-gold"
+          }`}
+        >
+          <Plus size={13} />
+        </button>
+
+        {noticeOpen && (
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 bg-brown text-ivory text-xs leading-relaxed px-3.5 py-3 shadow-lg z-20">
+            <button
+              type="button"
+              aria-label="Dismiss"
+              onClick={() => setNoticeOpen(false)}
+              className="absolute top-1.5 right-1.5 text-ivory/50 hover:text-ivory"
+            >
+              <X size={12} />
+            </button>
+            Maximum 2 guests per room. To add more guests, add another room.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Room Row (in "Your Rooms") ────────────────────────────────────────────────
+
+function RoomRowItem({
+  row,
+  room,
+  removable,
+  onGuestsChange,
+  onRemove,
+}: {
+  row: RoomRow;
+  room: RoomDetail | undefined;
+  removable: boolean;
+  onGuestsChange: (guests: number) => void;
+  onRemove: () => void;
+}) {
+  if (!room) return null;
+  return (
+    <div className="bg-white border border-brown/10 px-4 sm:px-5 py-4 flex items-center gap-2 sm:gap-4 flex-nowrap">
+      <img
+        src={getRoomImageUrl(room)}
+        alt={room.name}
+        className="w-11 h-9 sm:w-16 sm:h-12 object-cover shrink-0"
+      />
+      <div className="min-w-0 flex-1">
+        <span className="font-display text-brown text-base block truncate">{room.name}</span>
+      </div>
+      <GuestCounter guests={row.guests} onChange={onGuestsChange} />
+      {removable && (
+        <button
+          type="button"
+          aria-label="Remove room"
+          onClick={onRemove}
+          className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-brown/40 hover:text-brown shrink-0"
+        >
+          <X size={16} />
+        </button>
+      )}
     </div>
   );
 }
@@ -336,13 +684,18 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 // ─── Booking Sidebar ──────────────────────────────────────────────────────────
 
+interface SidebarRow {
+  uid: string;
+  room: RoomDetail | undefined;
+  guests: number;
+  subtotal: number;
+}
+
 function BookingSidebar({
   checkIn,
   checkOut,
   nights,
-  guests,
-  room,
-  subtotal,
+  rows,
   gst,
   total,
   currentStep,
@@ -350,15 +703,11 @@ function BookingSidebar({
   checkIn: string;
   checkOut: string;
   nights: number;
-  guests: string;
-  room: RoomDetail | undefined;
-  subtotal: number;
+  rows: SidebarRow[];
   gst: number;
   total: number;
   currentStep: number;
 }) {
-  const perNight = room ? parsePrice(room.price) : 0;
-
   return (
     <div className="bg-brown text-ivory">
       <div className="p-6 lg:p-7">
@@ -372,87 +721,58 @@ function BookingSidebar({
             label="Duration"
             value={nights > 0 ? `${nights} night${nights !== 1 ? "s" : ""}` : "—"}
           />
-          <SummaryRow label="Guests" value={guests || "—"} />
+          {rows.length > 0 && <SummaryRow label="Total Rooms" value={String(rows.length)} />}
         </div>
 
-        {/* Room */}
-        {room ? (
-          <div className="py-5 border-b border-ivory/10">
-            <div className="flex gap-3 mb-4">
-              <img
-                src={getRoomImageUrl(room)}
-                alt={room.name}
-                className="w-16 h-12 object-cover shrink-0"
-              />
-              <div className="min-w-0">
-                <span className="eyebrow text-gold/70 text-[9px] block mb-0.5">
-                  {room.category}
-                </span>
-                <span className="font-display text-ivory text-sm leading-tight block">
-                  {room.name}
-                </span>
-                {"size" in room && <span className="text-ivory/40 text-xs">{room.size}</span>}
-              </div>
-            </div>
-
-            {nights > 0 ? (
-              <div className="space-y-2.5">
-                <SummaryRow label="Rate / night" value={`₹${perNight.toLocaleString("en-IN")}`} />
-                <SummaryRow
-                  label={`${nights} night${nights > 1 ? "s" : ""}`}
-                  value={fmtMoney(subtotal)}
-                />
-                <SummaryRow label="GST (18%)" value={fmtMoney(gst)} />
-              </div>
-            ) : (
-              <SummaryRow label="Rate / night" value={`₹${perNight.toLocaleString("en-IN")}`} />
-            )}
-
-            <div className="mt-4 pt-4 border-t border-ivory/10">
-              <div className="flex items-baseline justify-between">
-                <span className="eyebrow text-ivory/40 text-[10px]">Grand Total</span>
-                <div className="text-right">
-                  <span className="font-display text-gold text-2xl lg:text-3xl block">
-                    {nights > 0 ? fmtMoney(total) : `₹${perNight.toLocaleString("en-IN")}`}
-                  </span>
-                  {nights === 0 && (
-                    <span className="text-ivory/30 text-[10px]">per night + GST</span>
-                  )}
+        {/* Rooms */}
+        {rows.length > 0 ? (
+          <div className="py-5 border-b border-ivory/10 space-y-4">
+            {rows.map((r) =>
+              r.room ? (
+                <div key={r.uid} className="flex gap-3">
+                  <img
+                    src={getRoomImageUrl(r.room)}
+                    alt={r.room.name}
+                    className="w-16 h-12 object-cover shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-display text-ivory text-sm leading-tight truncate">
+                        {r.room.name} — {r.guests} Guest{r.guests !== 1 ? "s" : ""}
+                      </span>
+                      <span className="text-ivory/90 text-base shrink-0">
+                        {nights > 0 ? fmtMoney(r.subtotal) : `${fmtMoney(r.subtotal)}/night`}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              ) : null,
+            )}
           </div>
         ) : (
-          <div className="py-5 border-b border-ivory/10">
+          <div className="py-5">
             <div className="h-14 bg-ivory/5 flex items-center justify-center">
-              <span className="eyebrow text-ivory/20 text-[10px]">No room selected yet</span>
+              <span className="eyebrow text-ivory/20 text-[10px]">No rooms selected yet</span>
             </div>
           </div>
         )}
 
-        {/* Trust signals */}
-        <div className="pt-5 space-y-3">
-          <div className="flex items-start gap-2.5">
-            <span className="text-gold text-xs shrink-0 mt-px">✓</span>
-            <span className="text-ivory/50 text-xs leading-relaxed">
-              Free cancellation up to 48 hours before arrival
-            </span>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <span className="text-gold text-xs shrink-0 mt-px">✓</span>
-            <span className="text-ivory/50 text-xs leading-relaxed">
-              Best Rate Guarantee when booking direct
-            </span>
-          </div>
-          {currentStep <= 2 && (
-            <div className="flex items-start gap-2.5">
-              <span className="text-gold text-xs shrink-0 mt-px">✓</span>
-              <span className="text-ivory/50 text-xs leading-relaxed">
-                No payment required today
-              </span>
+        {rows.length > 0 && (
+          <div className="py-5 space-y-2.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-ivory/50 text-sm shrink-0">Taxes & Other Charges</span>
+              <span className="text-ivory/90 text-base">{fmtMoney(gst)}</span>
             </div>
-          )}
-        </div>
+            <div className="mt-2 pt-4 border-t border-ivory/10">
+              <div className="flex items-baseline justify-between">
+                <span className="eyebrow text-ivory/40 text-[10px]">Grand Total</span>
+                <span className="font-semibold text-gold text-2xl lg:text-3xl block">
+                  {fmtMoney(total)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -461,38 +781,34 @@ function BookingSidebar({
 // ─── Mobile Bottom Bar ────────────────────────────────────────────────────────
 
 function MobileBottomBar({
-  room,
+  rows,
   total,
+  gst,
   nights,
   currentStep,
   step1Valid,
+  step2Valid,
   step3Valid,
-  roomId,
   summaryOpen,
   onToggle,
   onContinue,
   checkIn,
   checkOut,
-  guests,
-  subtotal,
-  gst,
   isSubmitting,
 }: {
-  room: RoomDetail | undefined;
+  rows: SidebarRow[];
   total: number;
+  gst: number;
   nights: number;
   currentStep: number;
   step1Valid: boolean;
+  step2Valid: boolean;
   step3Valid: boolean;
-  roomId: string;
   summaryOpen: boolean;
   onToggle: () => void;
   onContinue: () => void;
   checkIn: string;
   checkOut: string;
-  guests: string;
-  subtotal: number;
-  gst: number;
   isSubmitting: boolean;
 }) {
   let ctaLabel = "Continue";
@@ -503,19 +819,54 @@ function MobileBottomBar({
     ctaEnabled = step1Valid;
   } else if (currentStep === 2) {
     ctaLabel = "Continue";
-    ctaEnabled = !!roomId;
+    ctaEnabled = step2Valid;
   } else if (currentStep === 3) {
     ctaLabel = "Review Booking";
     ctaEnabled = step3Valid;
   } else if (currentStep === 4) {
-    ctaLabel = isSubmitting ? "Securing..." : "Reserve Your Stay";
+    ctaLabel = "Pay and Book";
     ctaEnabled = !isSubmitting;
   }
 
-  const perNight = room ? parsePrice(room.price) : 0;
+  // Step 4: simplified bar — Grand Total + Pay and Book, no expandable breakdown
+  // (the full breakdown is already rendered inline on the page for this step).
+  if (currentStep === 4) {
+    return (
+      <div id="mobile-bottom-bar" className="lg:hidden fixed bottom-0 left-0 right-0 z-40">
+        <div className="bg-brown text-ivory shadow-[0_-16px_48px_-12px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center gap-3 px-5 py-4">
+            <div className="flex-1 min-w-0">
+              <div className="eyebrow text-gold/70 text-[9px] mb-0.5">Grand Total</div>
+              <span className="font-semibold text-xl text-ivory leading-none">
+                {fmtMoney(total)}
+              </span>
+            </div>
+            <button
+              onClick={ctaEnabled ? onContinue : undefined}
+              disabled={!ctaEnabled}
+              className={`shrink-0 eyebrow px-5 py-3.5 transition-all text-[10px] whitespace-nowrap ${
+                ctaEnabled
+                  ? "bg-gold text-brown hover:bg-ivory"
+                  : "bg-ivory/15 text-ivory/35 cursor-not-allowed"
+              }`}
+            >
+              {ctaLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const collapsedLabel =
+    currentStep === 1
+      ? "Select dates to continue"
+      : rows.length > 0
+        ? `${rows.length} Room${rows.length !== 1 ? "s" : ""} selected`
+        : "Select a room to continue";
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40">
+    <div id="mobile-bottom-bar" className="lg:hidden fixed bottom-0 left-0 right-0 z-40">
       {summaryOpen && (
         <div
           className="fixed inset-0 bg-brown/60 backdrop-blur-sm"
@@ -532,23 +883,31 @@ function MobileBottomBar({
               <SummaryRow label="Check-in" value={fmtDate(checkIn)} />
               <SummaryRow label="Check-out" value={fmtDate(checkOut)} />
               <SummaryRow label="Nights" value={nights > 0 ? String(nights) : "—"} />
-              <SummaryRow label="Guests" value={guests} />
+              {rows.length > 0 && <SummaryRow label="Total Rooms" value={String(rows.length)} />}
             </div>
-            {room ? (
+            {rows.length > 0 ? (
               <div className="space-y-2.5 pb-3">
-                <SummaryRow label="Room" value={room.name} />
-                <SummaryRow label="Rate / night" value={`₹${perNight.toLocaleString("en-IN")}`} />
+                {rows.map((r) =>
+                  r.room ? (
+                    <div key={r.uid} className="flex items-baseline justify-between gap-4">
+                      <span className="text-ivory/50 text-sm shrink-0">
+                        {r.room.name} — {r.guests} Guest{r.guests !== 1 ? "s" : ""}
+                      </span>
+                      <span className="text-ivory/90 text-base">
+                        {nights > 0 ? fmtMoney(r.subtotal) : `${fmtMoney(r.subtotal)}/night`}
+                      </span>
+                    </div>
+                  ) : null,
+                )}
                 {nights > 0 && (
-                  <>
-                    <SummaryRow label="Subtotal" value={fmtMoney(subtotal)} />
-                    <SummaryRow label="GST (18%)" value={fmtMoney(gst)} />
-                  </>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="text-ivory/50 text-sm shrink-0">Taxes & Other Charges</span>
+                    <span className="text-ivory/90 text-base">{fmtMoney(gst)}</span>
+                  </div>
                 )}
                 <div className="flex justify-between pt-3 border-t border-ivory/10">
                   <span className="eyebrow text-ivory/40 text-[10px]">Grand Total</span>
-                  <span className="font-display text-gold text-xl">
-                    {nights > 0 ? fmtMoney(total) : `₹${perNight.toLocaleString("en-IN")}/night`}
-                  </span>
+                  <span className="font-semibold text-gold text-xl">{fmtMoney(total)}</span>
                 </div>
               </div>
             ) : (
@@ -559,18 +918,14 @@ function MobileBottomBar({
 
         <div className="flex items-center gap-3 px-5 py-4">
           <button onClick={onToggle} className="flex-1 text-left min-w-0">
-            <div className="eyebrow text-gold/70 text-[9px] mb-0.5 truncate">
-              {room ? room.name : "Select a room to continue"}
-            </div>
+            <div className="eyebrow text-gold/70 text-[9px] mb-0.5">{collapsedLabel}</div>
             <div className="flex items-baseline gap-2">
-              <span className="font-display text-xl text-ivory leading-none">
-                {room
-                  ? nights > 0
-                    ? fmtMoney(total)
-                    : `₹${perNight.toLocaleString("en-IN")}/night`
-                  : "—"}
+              <span className="text-xl text-ivory leading-none">
+                {rows.length > 0 ? fmtMoney(total) : "—"}
               </span>
-              {room && <span className="text-ivory/40 text-xs">{summaryOpen ? "▼" : "▲"}</span>}
+              {rows.length > 0 && (
+                <span className="text-ivory/40 text-xs">{summaryOpen ? "▼" : "▲"}</span>
+              )}
             </div>
           </button>
           <button
@@ -596,23 +951,23 @@ function SuccessSection({
   bookingId,
   guestName,
   guestEmail,
-  room,
+  rows,
   checkIn,
   checkOut,
   nights,
-  guests,
   total,
 }: {
   bookingId: string;
   guestName: string;
   guestEmail: string;
-  room: RoomDetail | undefined;
+  rows: SidebarRow[];
   checkIn: string;
   checkOut: string;
   nights: number;
-  guests: string;
   total: number;
 }) {
+  const totalGuests = rows.reduce((sum, r) => sum + r.guests, 0);
+
   return (
     <div className="max-w-2xl mx-auto px-5 sm:px-8 py-16 lg:py-24">
       <div className="text-center mb-10">
@@ -635,30 +990,40 @@ function SuccessSection({
           <span className="eyebrow text-gold text-[10px]">Booking Details</span>
         </div>
         <div className="divide-y divide-ivory/8">
+          <div className="px-6 py-3.5 flex items-center justify-between gap-4">
+            <span className="eyebrow text-ivory/35 text-[10px] shrink-0">Booking ID</span>
+            <span className="font-display text-gold tracking-widest text-sm">{bookingId}</span>
+          </div>
+          {rows.map((r) =>
+            r.room ? (
+              <div key={r.uid} className="px-6 py-3.5 flex items-center justify-between gap-4">
+                <span className="eyebrow text-ivory/35 text-[10px] shrink-0">Room</span>
+                <span className="text-ivory text-sm text-right">
+                  {r.room.name} — {r.guests} Guest{r.guests !== 1 ? "s" : ""}
+                </span>
+              </div>
+            ) : null,
+          )}
           {(
             [
-              ["Booking ID", bookingId, "id"],
-              ["Room", room?.name ?? "—", ""],
-              ["Check-in", fmtDate(checkIn), ""],
-              ["Check-out", fmtDate(checkOut), ""],
-              ["Duration", nights > 0 ? `${nights} night${nights !== 1 ? "s" : ""}` : "—", ""],
-              ["Guests", guests, ""],
-              ["Guest Name", guestName, ""],
-              ["Total", fmtMoney(total), "total"],
-              ["Payment Status", "Pending — Our team will confirm", "status"],
-            ] as [string, string, string][]
-          ).map(([label, value, type]) => (
+              ["Check-in", fmtDate(checkIn)],
+              ["Check-out", fmtDate(checkOut)],
+              ["Duration", nights > 0 ? `${nights} night${nights !== 1 ? "s" : ""}` : "—"],
+              ["Guests", String(totalGuests)],
+              ["Guest Name", guestName],
+              ["Total", fmtMoney(total)],
+              ["Payment Status", "Pending — Our team will confirm"],
+            ] as [string, string][]
+          ).map(([label, value]) => (
             <div key={label} className="px-6 py-3.5 flex items-center justify-between gap-4">
               <span className="eyebrow text-ivory/35 text-[10px] shrink-0">{label}</span>
               <span
                 className={
-                  type === "id"
-                    ? "font-display text-gold tracking-widest text-sm"
-                    : type === "total"
-                      ? "font-display text-gold text-xl"
-                      : type === "status"
-                        ? "eyebrow text-gold text-[10px] text-right"
-                        : "text-ivory text-sm text-right"
+                  label === "Total"
+                    ? "text-gold text-xl"
+                    : label === "Payment Status"
+                      ? "eyebrow text-gold text-[10px] text-right"
+                      : "text-ivory text-sm text-right"
                 }
               >
                 {value}
@@ -692,16 +1057,32 @@ function BookingPageInner() {
   const searchParams = useSearchParams();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [checkIn, setCheckIn] = useState(searchParams.get("checkIn") ?? "");
-  const [checkOut, setCheckOut] = useState(searchParams.get("checkOut") ?? "");
-  const [guests, setGuests] = useState(searchParams.get("guests") || "2 Adults");
-  const [roomId, setRoomId] = useState(() => matchRoomId(searchParams.get("room") ?? ""));
+  const [checkIn, setCheckIn] = useState(() => {
+    const v = searchParams.get("checkIn") ?? "";
+    return isCheckInValid(v) ? v : "";
+  });
+  const [checkOut, setCheckOut] = useState(() => {
+    const ciRaw = searchParams.get("checkIn") ?? "";
+    const effectiveCheckIn = isCheckInValid(ciRaw) ? ciRaw : "";
+    const v = searchParams.get("checkOut") ?? "";
+    return isCheckOutValid(v, effectiveCheckIn) ? v : "";
+  });
+
+  function handleCheckInChange(v: string) {
+    setCheckIn(v);
+    setCheckOut((prev) => resolveCheckOutOnCheckInChange(v, prev));
+  }
+  const [roomRows, setRoomRows] = useState<RoomRow[]>(() => {
+    const id = matchRoomId(searchParams.get("room") ?? "");
+    return id ? [{ uid: makeRowId(), roomId: id, guests: 1 }] : [];
+  });
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
-  const [arrivalTime, setArrivalTime] = useState("");
-  const [specialRequest, setSpecialRequest] = useState("");
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [consentTimestamp, setConsentTimestamp] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [hasAutoScrolledToRooms, setHasAutoScrolledToRooms] = useState(false);
   const [bookingId] = useState(() => "LDV-" + Math.random().toString(36).slice(2, 8).toUpperCase());
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -724,45 +1105,120 @@ function BookingPageInner() {
     loadRooms();
   }, []);
 
-  const step2Ref = useRef<HTMLDivElement>(null);
-  const step3Ref = useRef<HTMLDivElement>(null);
-  const step4Ref = useRef<HTMLDivElement>(null);
+  const stepsTopRef = useRef<HTMLDivElement>(null);
+  const roomCardsRef = useRef<HTMLDivElement>(null);
+  const yourRoomsRef = useRef<HTMLDivElement>(null);
 
   const nights = nightCount(checkIn, checkOut);
-  const room = roomsList.find((r) => r.id === roomId);
-  const basePerNight = room ? parsePrice(room.price) : 0;
-  const subtotal = nights > 0 ? basePerNight * nights : basePerNight;
+
+  const rows: SidebarRow[] = roomRows.map((row) => {
+    const room = roomsList.find((r) => r.id === row.roomId);
+    const perNight = room ? parsePrice(room.price) : 0;
+    const subtotal = nights > 0 ? perNight * nights : perNight;
+    return { uid: row.uid, room, guests: row.guests, subtotal };
+  });
+
+  const subtotal = rows.reduce((sum, r) => sum + r.subtotal, 0);
   const gst = Math.round(subtotal * 0.18);
   const total = subtotal + gst;
 
-  const step1Valid = !!checkIn && !!checkOut && nights > 0;
-  const step3Valid = guestName.trim() !== "" && guestEmail.trim() !== "";
+  const step1Valid = validateBookingDates(checkIn, checkOut);
+  const step2Valid = roomRows.length > 0;
+  const phoneValid = guestPhone.length === PHONE_DIGITS;
+  const emailValid = EMAIL_REGEX.test(guestEmail.trim());
+  const step3Valid = guestName.trim() !== "" && emailValid && phoneValid && consentChecked;
 
-  function scrollTo(ref: React.RefObject<HTMLDivElement | null>) {
-    setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+  function scrollToStepsTop() {
+    setTimeout(() => {
+      stepsTopRef.current?.scrollIntoView({ behavior: "instant", block: "start" });
+    }, 0);
+  }
+
+  function goToStep(step: number) {
+    setCurrentStep(step);
+    scrollToStepsTop();
+  }
+
+  function addRoomRow(roomId: string) {
+    setRoomRows((prev) => [...prev, { uid: makeRowId(), roomId, guests: 1 }]);
+  }
+
+  function updateRowGuests(uid: string, guests: number) {
+    setRoomRows((prev) => prev.map((r) => (r.uid === uid ? { ...r, guests } : r)));
+  }
+
+  function removeRow(uid: string) {
+    setRoomRows((prev) => (prev.length > 1 ? prev.filter((r) => r.uid !== uid) : prev));
+  }
+
+  function countOfType(roomId: string) {
+    return roomRows.filter((r) => r.roomId === roomId).length;
+  }
+
+  function scrollToYourRoomsOnce() {
+    if (hasAutoScrolledToRooms) return;
+    setHasAutoScrolledToRooms(true);
+    // Scroll only as far as needed to clear the "Your Rooms" section's bottom edge past
+    // the sticky mobile footer, keeping the room cards and step heading visible above it.
+    // scrollIntoView's block:"end" ignores the fixed footer overlaying the viewport, so we
+    // compute the offset manually instead of relying on it.
+    setTimeout(() => {
+      const el = yourRoomsRef.current;
+      if (!el) return;
+      const footerEl = document.getElementById("mobile-bottom-bar");
+      const footerHeight = footerEl?.getBoundingClientRect().height ?? 0;
+      const visibleBottom = window.innerHeight - footerHeight;
+      const overshoot = el.getBoundingClientRect().bottom - visibleBottom + 16;
+      if (overshoot > 0) {
+        window.scrollBy({ top: overshoot, behavior: "instant" });
+      }
+    }, 200);
+  }
+
+  function attemptAddRoom(room: RoomItem): string | null {
+    const cap = ROOM_TYPE_CAPS[room.category] ?? Infinity;
+    if (countOfType(room.id) >= cap) {
+      return `No more ${room.category} rooms available for these dates.`;
+    }
+    if (roomRows.length >= OVERALL_ROOM_CAP) {
+      return "Maximum 5 rooms per booking. Please contact us directly for larger group bookings.";
+    }
+    addRoomRow(room.id);
+    scrollToYourRoomsOnce();
+    return null;
+  }
+
+  function removeLastRowOfType(roomId: string) {
+    setRoomRows((prev) => {
+      if (prev.length <= 1) return prev;
+      const idx = [...prev].reverse().findIndex((r) => r.roomId === roomId);
+      if (idx === -1) return prev;
+      const realIdx = prev.length - 1 - idx;
+      return prev.filter((_, i) => i !== realIdx);
+    });
   }
 
   function continueFromStep1() {
     if (!step1Valid) return;
-    if (roomId) {
-      setCurrentStep(3);
-      scrollTo(step3Ref);
-    } else {
-      setCurrentStep(2);
-      scrollTo(step2Ref);
-    }
+    setCurrentStep(roomRows.length > 0 ? 3 : 2);
+    scrollToStepsTop();
   }
 
   function continueFromStep2() {
-    if (!roomId) return;
+    if (!step2Valid) return;
     setCurrentStep(3);
-    scrollTo(step3Ref);
+    scrollToStepsTop();
   }
 
   function continueFromStep3() {
     if (!step3Valid) return;
     setCurrentStep(4);
-    scrollTo(step4Ref);
+    scrollToStepsTop();
+  }
+
+  function handleConsentChange(checked: boolean) {
+    setConsentChecked(checked);
+    setConsentTimestamp(checked ? new Date().toISOString() : null);
   }
 
   async function submitReservation() {
@@ -783,13 +1239,11 @@ function BookingPageInner() {
         bookingId,
         checkIn,
         checkOut,
-        guests,
-        roomId,
+        rooms: roomRows.map((r) => ({ roomId: r.roomId, guests: r.guests })),
         guestName,
         guestEmail,
-        guestPhone,
-        arrivalTime,
-        specialRequest,
+        guestPhone: guestPhone ? `+91${guestPhone}` : "",
+        consent: { given: consentChecked, timestamp: consentTimestamp },
         total,
       };
 
@@ -828,47 +1282,38 @@ function BookingPageInner() {
     }
   }
 
+  function handleRazorpayCheckout() {
+    // Stub: will call the Razorpay order-creation endpoint and open checkout once it exists.
+  }
+
   function handleMobileContinue() {
     if (currentStep === 1) continueFromStep1();
     else if (currentStep === 2) continueFromStep2();
     else if (currentStep === 3) continueFromStep3();
-    else if (currentStep === 4) submitReservation();
+    else if (currentStep === 4) handleRazorpayCheckout();
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const step2Summary = (() => {
+    if (rows.length === 0) return "—";
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      if (!r.room) continue;
+      counts.set(r.room.name, (counts.get(r.room.name) ?? 0) + 1);
+    }
+    return [...counts.entries()].map(([name, n]) => `${n} ${name}`).join(", ");
+  })();
 
   return (
-    <main className="bg-ivory text-brown overflow-x-hidden min-h-screen">
+    <main className="bg-ivory text-brown min-h-screen">
       <Header />
 
-      {/* Hero strip */}
+      {/* Page header */}
       <div className="bg-brown text-ivory pt-24 lg:pt-32">
-        <div className="px-5 sm:px-8 lg:px-10 xl:px-20 pb-7 lg:pb-9">
-          <span className="eyebrow text-gold text-[10px] lg:text-[11px] block mb-3">
-            Best Rate Guaranteed · Direct Reservations
-          </span>
-          <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl leading-tight mb-3">
-            Reserve Your <span className="italic">Stay</span>
+        <div className="px-5 sm:px-8 lg:px-10 xl:px-20 pb-7 lg:pb-9 flex items-center justify-between gap-6">
+          <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl leading-tight">
+            Booking Details
           </h1>
-          <p className="text-ivory/55 text-sm lg:text-base max-w-md leading-relaxed">
-            Choose your dates, select your room, and we'll take care of the rest.
-          </p>
-        </div>
-        {/* Trust strip */}
-        <div className="border-t border-ivory/10 px-5 sm:px-8 lg:px-10 xl:px-20 py-3">
-          <div className="flex flex-wrap gap-x-6 lg:gap-x-10 gap-y-1.5">
-            {[
-              "Best Rate Guarantee",
-              "Secure Reservation",
-              "No Hidden Charges",
-              "Concierge Support",
-            ].map((t) => (
-              <span key={t} className="eyebrow text-gold/65 text-[10px] flex items-center gap-1.5">
-                <span className="text-gold">✓</span>
-                {t}
-              </span>
-            ))}
-          </div>
+          <BookingCalendarIcon className="text-gold shrink-0 w-10 h-10 sm:w-14 sm:h-14" />
         </div>
       </div>
 
@@ -876,8 +1321,12 @@ function BookingPageInner() {
       <ProgressTracker current={currentStep} />
 
       {currentStep < 5 ? (
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 xl:px-20 py-10 lg:py-14 pb-36 lg:pb-20">
-          <div className="lg:grid lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px] lg:gap-10 xl:gap-14 lg:items-start">
+        <div
+          ref={stepsTopRef}
+          style={{ scrollMarginTop: "96px" }}
+          className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 xl:px-20 py-10 lg:py-14 pb-36 lg:pb-20"
+        >
+          <div className="lg:grid lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px] lg:gap-10 xl:gap-14">
             {/* Left: Progressive steps */}
             <div className="flex flex-col gap-5 lg:gap-7">
               {/* ── Step 1: Stay Details ── */}
@@ -885,8 +1334,13 @@ function BookingPageInner() {
                 <CompletedStepRow
                   n={1}
                   title="Stay Details"
-                  summary={`${fmtDate(checkIn)} → ${fmtDate(checkOut)}  ·  ${nights} night${nights !== 1 ? "s" : ""}  ·  ${guests}`}
-                  onEdit={() => setCurrentStep(1)}
+                  icon={Calendar}
+                  mobileValue={`${fmtDate(checkIn)} → ${fmtDate(checkOut)}`}
+                  desktopLines={[
+                    `${fmtDate(checkIn)} → ${fmtDate(checkOut)}`,
+                    `${nights} night${nights !== 1 ? "s" : ""}`,
+                  ]}
+                  onEdit={() => goToStep(1)}
                 />
               ) : (
                 <section className="animate-fade-up">
@@ -895,115 +1349,149 @@ function BookingPageInner() {
                     title="Stay Details"
                     subtitle="Best Rate Guaranteed when you book direct."
                   />
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <DateCard label="CHECK-IN" value={checkIn} onChange={setCheckIn} min={today} />
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <DateCard
+                      label="CHECK-IN"
+                      value={checkIn}
+                      onChange={handleCheckInChange}
+                      min={minCheckInISO()}
+                    />
                     <DateCard
                       label="CHECK-OUT"
                       value={checkOut}
                       onChange={setCheckOut}
-                      min={checkIn || today}
+                      min={minCheckOutISO(checkIn)}
                     />
                   </div>
-                  <div className="bg-white border border-brown/12 px-5 py-4 mb-6 focus-within:border-gold/60 transition-colors">
-                    <span className="eyebrow text-brown/35 text-[10px] block mb-2">GUESTS</span>
-                    <select
-                      value={guests}
-                      onChange={(e) => setGuests(e.target.value)}
-                      className="w-full bg-transparent font-display text-brown text-lg outline-none cursor-pointer appearance-none"
-                    >
-                      {(BOOKING_GUEST_OPTIONS as unknown as readonly string[]).map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   {nights > 0 && (
-                    <p className="text-taupe text-sm mb-5 flex items-center gap-2">
-                      <span className="text-gold">—</span>
-                      {nights} night{nights !== 1 ? "s" : ""} selected
-                    </p>
+                    <div className="mt-4 mb-6">
+                      <span className="inline-flex items-center gap-1.5 bg-champagne/40 border border-brown/10 text-taupe text-xs px-3 py-1.5">
+                        <span className="text-gold">—</span>
+                        {nights} night{nights !== 1 ? "s" : ""} selected
+                      </span>
+                    </div>
                   )}
+                  <StayTimesCard />
                   <button
                     onClick={continueFromStep1}
                     disabled={!step1Valid}
-                    className={`eyebrow px-10 py-4 transition-all text-[11px] ${
+                    className={`hidden lg:inline-block eyebrow px-10 py-4 transition-all text-[11px] ${
                       step1Valid
                         ? "bg-brown text-ivory hover:bg-gold hover:text-brown"
                         : "bg-brown/15 text-brown/30 cursor-not-allowed"
                     }`}
                   >
-                    {roomId ? "Continue to Guest Details" : "Continue to Rooms →"}
+                    {roomRows.length > 0 ? "Continue to Contact Details" : "Continue to Rooms →"}
                   </button>
                 </section>
               )}
 
-              {/* ── Step 2: Choose Room ── */}
+              {/* ── Step 2: Choose Rooms ── */}
               {currentStep >= 2 &&
                 (currentStep > 2 ? (
                   <CompletedStepRow
                     n={2}
-                    title="Choose Room"
-                    summary={room?.name ?? "—"}
-                    onEdit={() => setCurrentStep(2)}
+                    title="Choose Rooms"
+                    icon={BedDouble}
+                    mobileValue={step2Summary}
+                    desktopLines={[step2Summary]}
+                    onEdit={() => goToStep(2)}
                   />
                 ) : (
-                  <div
-                    ref={step2Ref}
-                    style={{ scrollMarginTop: "96px" }}
-                    className="animate-fade-up"
-                  >
+                  <div style={{ scrollMarginTop: "96px" }} className="animate-fade-up">
                     <section>
                       <SectionHeader
                         n="02"
-                        title="Choose Your Room"
-                        subtitle="Select your room for this stay."
+                        title="Choose Your Rooms"
+                        subtitle="Select a room type for each room in your stay."
                       />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                      <div ref={roomCardsRef} style={{ scrollMarginTop: "96px" }} />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
                         {roomsList.map((r) => (
                           <RoomCard
                             key={r.id}
                             room={r}
-                            selected={r.id === roomId}
-                            onSelect={() => setRoomId(r.id)}
+                            count={countOfType(r.id)}
+                            totalRooms={roomRows.length}
+                            onAttemptAdd={() => attemptAddRoom(r)}
+                            onRemoveOne={() => removeLastRowOfType(r.id)}
                           />
                         ))}
                       </div>
+
+                      {roomRows.length > 0 && (
+                        <div
+                          className="mb-6"
+                          ref={yourRoomsRef}
+                          style={{ scrollMarginTop: "96px" }}
+                        >
+                          <span className="eyebrow text-brown/35 text-[10px] block mb-3">
+                            Your Rooms
+                          </span>
+                          <div className="flex flex-col gap-3">
+                            {roomRows.map((row) => (
+                              <RoomRowItem
+                                key={row.uid}
+                                row={row}
+                                room={roomsList.find((r) => r.id === row.roomId)}
+                                removable={roomRows.length > 1}
+                                onGuestsChange={(g) => updateRowGuests(row.uid, g)}
+                                onRemove={() => removeRow(row.uid)}
+                              />
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              roomCardsRef.current?.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start",
+                              })
+                            }
+                            className="eyebrow text-gold text-[10px] mt-4 hover:text-brown transition-colors"
+                          >
+                            + Add Another Room
+                          </button>
+                        </div>
+                      )}
+
                       <button
                         onClick={continueFromStep2}
-                        disabled={!roomId}
-                        className={`eyebrow px-10 py-4 transition-all text-[11px] ${
-                          roomId
+                        disabled={!step2Valid}
+                        className={`hidden lg:inline-block eyebrow px-10 py-4 transition-all text-[11px] ${
+                          step2Valid
                             ? "bg-brown text-ivory hover:bg-gold hover:text-brown"
                             : "bg-brown/15 text-brown/30 cursor-not-allowed"
                         }`}
                       >
-                        Continue to Guest Details →
+                        Continue to Contact Details →
                       </button>
                     </section>
                   </div>
                 ))}
 
-              {/* ── Step 3: Guest Details ── */}
+              {/* ── Step 3: Contact Details ── */}
               {currentStep >= 3 &&
                 (currentStep > 3 ? (
                   <CompletedStepRow
                     n={3}
-                    title="Guest Details"
-                    summary={`${guestName}  ·  ${guestEmail}`}
-                    onEdit={() => setCurrentStep(3)}
+                    title="Contact Details"
+                    icon={Phone}
+                    mobileValue={guestName}
+                    desktopLines={[
+                      guestName,
+                      `+91 ${guestPhone.slice(0, 5)} ${guestPhone.slice(5)}`,
+                      guestEmail,
+                    ]}
+                    onEdit={() => goToStep(3)}
                   />
                 ) : (
-                  <div
-                    ref={step3Ref}
-                    style={{ scrollMarginTop: "96px" }}
-                    className="animate-fade-up"
-                  >
+                  <div style={{ scrollMarginTop: "96px" }} className="animate-fade-up">
                     <section>
                       <SectionHeader
                         n="03"
-                        title="Guest Details"
-                        subtitle="Tell us a little about who's staying."
+                        title="Contact Details"
+                        subtitle="Tell us how to reach you about this booking."
                       />
                       <div className="flex flex-col gap-6 mb-8">
                         <PremiumInput label="FULL NAME" required>
@@ -1016,47 +1504,72 @@ function BookingPageInner() {
                           />
                         </PremiumInput>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <PremiumInput label="PHONE NUMBER">
-                            <input
-                              type="tel"
-                              value={guestPhone}
-                              onChange={(e) => setGuestPhone(e.target.value)}
-                              placeholder="+91 00000 00000"
-                              className="w-full bg-transparent font-display text-brown text-lg outline-none placeholder:text-brown/20 pt-1"
-                            />
-                          </PremiumInput>
-                          <PremiumInput label="EMAIL ADDRESS" required>
-                            <input
-                              type="email"
-                              value={guestEmail}
-                              onChange={(e) => setGuestEmail(e.target.value)}
-                              placeholder="you@example.com"
-                              className="w-full bg-transparent font-display text-brown text-lg outline-none placeholder:text-brown/20 pt-1"
-                            />
-                          </PremiumInput>
+                          <div>
+                            <PremiumInput label="PHONE NUMBER" required>
+                              <div className="flex items-center gap-2">
+                                <span className="font-display text-brown text-lg shrink-0">
+                                  +91
+                                </span>
+                                <input
+                                  type="tel"
+                                  inputMode="numeric"
+                                  value={guestPhone}
+                                  onChange={(e) =>
+                                    setGuestPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+                                  }
+                                  placeholder="00000 00000"
+                                  className="w-full bg-transparent font-display text-brown text-lg outline-none placeholder:text-brown/20 pt-1"
+                                />
+                              </div>
+                            </PremiumInput>
+                            {guestPhone.length > 0 && !phoneValid && (
+                              <span className="text-red-600 text-xs mt-1.5 block">
+                                Enter a valid 10-digit phone number
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <PremiumInput label="EMAIL ADDRESS" required>
+                              <input
+                                type="email"
+                                value={guestEmail}
+                                onChange={(e) => setGuestEmail(e.target.value)}
+                                placeholder="you@example.com"
+                                className="w-full bg-transparent font-display text-brown text-lg outline-none placeholder:text-brown/20 pt-1"
+                              />
+                            </PremiumInput>
+                            {guestEmail.length > 0 && !emailValid && (
+                              <span className="text-red-600 text-xs mt-1.5 block">
+                                Enter a valid email address
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <PremiumInput label="EXPECTED ARRIVAL TIME (OPTIONAL)">
-                          <input
-                            type="time"
-                            value={arrivalTime}
-                            onChange={(e) => setArrivalTime(e.target.value)}
-                            className="w-full bg-transparent font-display text-brown text-lg outline-none cursor-pointer pt-1"
-                          />
-                        </PremiumInput>
-                        <PremiumInput label="SPECIAL REQUESTS (OPTIONAL)">
-                          <textarea
-                            value={specialRequest}
-                            onChange={(e) => setSpecialRequest(e.target.value)}
-                            placeholder="Dietary requirements, accessibility needs, special occasions…"
-                            rows={3}
-                            className="w-full bg-transparent font-display text-brown text-base outline-none placeholder:text-brown/20 resize-none pt-1"
-                          />
-                        </PremiumInput>
                       </div>
+
+                      <label className="flex items-start gap-3 mb-8 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={consentChecked}
+                          onChange={(e) => handleConsentChange(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 accent-[var(--color-gold,#b9985a)] shrink-0 cursor-pointer"
+                        />
+                        <span className="text-taupe text-xs leading-relaxed">
+                          I consent to the collection, processing, and storage of my personal data
+                          as per the{" "}
+                          <Link
+                            href="/privacy-policy"
+                            className="text-gold underline hover:text-brown"
+                          >
+                            Privacy Policy
+                          </Link>
+                        </span>
+                      </label>
+
                       <button
                         onClick={continueFromStep3}
                         disabled={!step3Valid}
-                        className={`eyebrow px-10 py-4 transition-all text-[11px] ${
+                        className={`hidden lg:inline-block eyebrow px-10 py-4 transition-all text-[11px] ${
                           step3Valid
                             ? "bg-brown text-ivory hover:bg-gold hover:text-brown"
                             : "bg-brown/15 text-brown/30 cursor-not-allowed"
@@ -1070,123 +1583,34 @@ function BookingPageInner() {
 
               {/* ── Step 4: Review & Confirm ── */}
               {currentStep >= 4 && (
-                <div ref={step4Ref} style={{ scrollMarginTop: "96px" }} className="animate-fade-up">
+                <div style={{ scrollMarginTop: "96px" }} className="animate-fade-up">
                   <section>
                     <SectionHeader n="04" title="Review & Confirm" />
 
-                    <div className="bg-white border border-brown/10 divide-y divide-brown/8 mb-6">
-                      {/* Stay */}
-                      <div className="px-5 sm:px-7 py-5">
-                        <span className="eyebrow text-brown/35 text-[10px] block mb-4">
-                          STAY DETAILS
-                        </span>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                          {(
-                            [
-                              ["CHECK-IN", fmtDate(checkIn)],
-                              ["CHECK-OUT", fmtDate(checkOut)],
-                              ["DURATION", `${nights} night${nights !== 1 ? "s" : ""}`],
-                              ["GUESTS", guests],
-                            ] as [string, string][]
-                          ).map(([l, v]) => (
-                            <div key={l}>
-                              <span className="eyebrow text-brown/30 text-[9px] block mb-1">
-                                {l}
-                              </span>
-                              <span className="text-brown text-sm">{v}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Room */}
-                      {room && (
-                        <div className="px-5 sm:px-7 py-5">
-                          <span className="eyebrow text-brown/35 text-[10px] block mb-4">
-                            SELECTED ROOM
-                          </span>
-                          <div className="flex items-center gap-4">
-                            <img
-                              src={getRoomImageUrl(room)}
-                              alt={room.name}
-                              className="w-20 h-14 object-cover shrink-0"
-                            />
-                            <div>
-                              <span className="eyebrow text-gold text-[10px] block mb-0.5">
-                                {room.category}
-                              </span>
-                              <span className="font-display text-brown text-xl">{room.name}</span>
-                              <span className="text-taupe text-xs block mt-0.5">
-                                {"size" in room ? `${room.size} · ` : ""}
-                                {room.capacity}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Guest info */}
-                      <div className="px-5 sm:px-7 py-5">
-                        <span className="eyebrow text-brown/35 text-[10px] block mb-4">
-                          GUEST INFORMATION
-                        </span>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {(
-                            [
-                              ["NAME", guestName],
-                              ["EMAIL", guestEmail],
-                              guestPhone ? ["PHONE", guestPhone] : null,
-                              arrivalTime ? ["ARRIVAL TIME", arrivalTime] : null,
-                            ].filter(Boolean) as [string, string][]
-                          ).map(([l, v]) => (
-                            <div key={l}>
-                              <span className="eyebrow text-brown/30 text-[9px] block mb-1">
-                                {l}
-                              </span>
-                              <span className="text-brown text-sm">{v}</span>
-                            </div>
-                          ))}
-                          {specialRequest && (
-                            <div className="sm:col-span-2">
-                              <span className="eyebrow text-brown/30 text-[9px] block mb-1">
-                                SPECIAL REQUESTS
-                              </span>
-                              <span className="text-brown text-sm">{specialRequest}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Price */}
-                      <div className="px-5 sm:px-7 py-5">
-                        <span className="eyebrow text-brown/35 text-[10px] block mb-4">
-                          PRICE SUMMARY
-                        </span>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-taupe">
-                              {room?.name} × {nights} night{nights !== 1 ? "s" : ""}
-                            </span>
-                            <span className="text-brown">{fmtMoney(subtotal)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-taupe">GST (18%)</span>
-                            <span className="text-brown">{fmtMoney(gst)}</span>
-                          </div>
-                          <div className="flex justify-between pt-3 border-t border-brown/8">
-                            <span className="font-display text-brown text-base">Grand Total</span>
-                            <span className="font-display text-brown text-2xl">
-                              {fmtMoney(total)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                    {/* Mobile: full inline booking summary (no persistent sidebar on mobile) */}
+                    <div className="lg:hidden mb-6">
+                      <BookingSidebar
+                        checkIn={checkIn}
+                        checkOut={checkOut}
+                        nights={nights}
+                        rows={rows}
+                        gst={gst}
+                        total={total}
+                        currentStep={currentStep}
+                      />
                     </div>
 
-                    <p className="text-taupe text-sm mb-7 leading-relaxed max-w-md">
-                      Our reservations team will contact you within 24 hours to confirm your booking
-                      and arrange payment.
-                    </p>
+                    {/* Desktop: concise confirmation (full detail already in the persistent sidebar) */}
+                    <div className="hidden lg:block mb-8">
+                      <p className="font-display text-brown text-xl leading-relaxed mb-4">
+                        You&rsquo;re booking {rows.length} room{rows.length !== 1 ? "s" : ""} for{" "}
+                        {nights} night{nights !== 1 ? "s" : ""} ({fmtDate(checkIn)} –{" "}
+                        {fmtDate(checkOut)})
+                      </p>
+                      <span className="font-semibold text-gold text-2xl lg:text-3xl block">
+                        {fmtMoney(total)}
+                      </span>
+                    </div>
 
                     {submitError && (
                       <div className="bg-red-500/10 border border-red-500/20 text-red-600 p-4 mb-4 text-xs font-sans">
@@ -1195,31 +1619,32 @@ function BookingPageInner() {
                     )}
 
                     <button
-                      onClick={submitReservation}
+                      onClick={handleRazorpayCheckout}
                       disabled={isSubmitting}
-                      className={`w-full sm:w-auto eyebrow px-12 py-5 transition-all text-[11px] ${
+                      className={`hidden lg:inline-block eyebrow px-10 py-4 transition-all text-[11px] ${
                         isSubmitting
                           ? "bg-brown/15 text-brown/40 cursor-not-allowed"
                           : "bg-gold text-brown hover:bg-brown hover:text-ivory"
                       }`}
                     >
-                      {isSubmitting ? "Securing Reservation..." : "Reserve Your Stay"}
+                      Pay and Book
                     </button>
+                    <p className="text-taupe text-xs mt-3">
+                      You&rsquo;ll receive a confirmation email once payment is complete.
+                    </p>
                   </section>
                 </div>
               )}
             </div>
 
-            {/* Right: Sticky sidebar */}
+            {/* Right: Sticky sidebar (desktop only) */}
             <div className="hidden lg:block">
-              <div className="sticky top-28">
+              <div className="sticky top-24">
                 <BookingSidebar
                   checkIn={checkIn}
                   checkOut={checkOut}
                   nights={nights}
-                  guests={guests}
-                  room={room}
-                  subtotal={subtotal}
+                  rows={rows}
                   gst={gst}
                   total={total}
                   currentStep={currentStep}
@@ -1233,11 +1658,10 @@ function BookingPageInner() {
           bookingId={bookingId}
           guestName={guestName}
           guestEmail={guestEmail}
-          room={room}
+          rows={rows}
           checkIn={checkIn}
           checkOut={checkOut}
           nights={nights}
-          guests={guests}
           total={total}
         />
       )}
@@ -1245,21 +1669,19 @@ function BookingPageInner() {
       {/* Mobile bottom bar */}
       {currentStep < 5 && (
         <MobileBottomBar
-          room={room}
+          rows={rows}
           total={total}
+          gst={gst}
           nights={nights}
           currentStep={currentStep}
           step1Valid={step1Valid}
+          step2Valid={step2Valid}
           step3Valid={step3Valid}
-          roomId={roomId}
           summaryOpen={summaryOpen}
           onToggle={() => setSummaryOpen((v) => !v)}
           onContinue={handleMobileContinue}
           checkIn={checkIn}
           checkOut={checkOut}
-          guests={guests}
-          subtotal={subtotal}
-          gst={gst}
           isSubmitting={isSubmitting}
         />
       )}

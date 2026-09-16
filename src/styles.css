@@ -46,6 +46,17 @@
   html {
     scroll-behavior: smooth;
   }
+  /* Lenis drives scrolling when active; native smooth-behavior must not fight it. */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
   body {
     background-color: var(--ivory);
     color: var(--brown);
@@ -80,6 +91,13 @@
     height: 1px;
     background: color-mix(in oklab, var(--gold) 50%, transparent);
   }
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
   @keyframes fade-up {
     from {
       opacity: 0;
@@ -103,5 +121,105 @@
   }
   .animate-kenburns {
     animation: kenburns 14s ease-out forwards;
+  }
+  @keyframes draw-check {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  .booking-icon-check {
+    animation: draw-check 0.65s var(--ease-out-expo) 0.3s forwards;
+  }
+
+  /* ─── Hero scroll story ──────────────────────────────────────────────────
+     --p (0 → 1) is written by the hero's scroll hook; every stage below is a
+     sub-range of it so tuning the choreography is a one-line change. */
+  .hero-story {
+    --p: 0;
+    --hero-gold: color-mix(in oklab, var(--gold) 78%, var(--taupe));
+    --hero-line: color-mix(in oklab, var(--gold) 65%, var(--taupe));
+    --route: clamp(0, calc(var(--p) / 0.55), 1);
+    --walk: clamp(0, calc((var(--p) - 0.26) / 0.18), 1);
+    --temple-marble: clamp(0, calc((var(--p) - 0.4) / 0.38), 1);
+    --temple-gold: clamp(0, calc((var(--p) - 0.52) / 0.4), 1);
+    --temple-label: clamp(0, calc((var(--p) - 0.7) / 0.2), 1);
+    --booking: clamp(0, calc((var(--p) - 0.72) / 0.28), 1);
+  }
+  .hero-story [data-stage] {
+    transition:
+      opacity 90ms linear,
+      transform 90ms linear,
+      stroke-dashoffset 90ms linear;
+  }
+  .hero-story [data-stage="route"] {
+    stroke-dasharray: 1;
+    stroke-dashoffset: calc(1 - var(--route));
+  }
+  /* Mobile: the route is two segments drawn one after the other. */
+  .hero-story [data-stage="route-a"] {
+    stroke-dasharray: 1;
+    stroke-dashoffset: calc(1 - clamp(0, calc(var(--route) * 2), 1));
+  }
+  .hero-story [data-stage="route-b"] {
+    stroke-dasharray: 1;
+    stroke-dashoffset: calc(1 - clamp(0, calc(var(--route) * 2 - 1), 1));
+  }
+  .hero-story [data-stage="walk"] {
+    opacity: calc(0.45 + 0.55 * var(--walk));
+    transform: translateY(calc((1 - var(--walk)) * 8px));
+  }
+  .hero-story [data-stage="temple"] {
+    transform: translateY(calc((1 - var(--temple-marble)) * 6px));
+  }
+  .hero-story [data-stage="temple-label"] {
+    opacity: calc(0.5 + 0.5 * var(--temple-label));
+    transform: translateY(calc((1 - var(--temple-label)) * 6px));
+  }
+  .hero-story [data-stage="booking"] {
+    opacity: calc(0.8 + 0.2 * var(--booking));
+    transform: translateY(calc((1 - var(--booking)) * 14px));
+  }
+  .hero-story [data-stage="intro"] {
+    transform: translateY(calc(var(--p) * -14px));
+  }
+  .hero-story path[data-stage="temple"] {
+    transition: stroke-dashoffset 90ms linear;
+  }
+  /* Tall section with a pinned canvas so the story plays in place at every size.
+     Phones use the small viewport unit so the canvas fits above browser chrome. */
+  .hero-pin {
+    height: 240svh;
+  }
+  .hero-canvas {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+  }
+  @media (min-width: 1024px) {
+    .hero-pin {
+      height: 280vh;
+    }
+    .hero-canvas {
+      height: 100vh;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-story {
+      --p: 1 !important;
+    }
+    .hero-story [data-stage] {
+      transition: none;
+    }
+    .hero-pin {
+      height: auto;
+    }
+    .hero-canvas {
+      position: relative;
+      height: auto;
+      min-height: 100vh;
+    }
+    .animate-fade-up {
+      animation: none;
+    }
   }
 }

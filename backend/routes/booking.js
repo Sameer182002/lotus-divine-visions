@@ -17,26 +17,16 @@ router.post("/", async (req, res) => {
     const payload = decryptRequest(encryptedKey, iv, ciphertext, nonceId);
 
     // Validate the decrypted booking data
-    const {
-      bookingId,
-      checkIn,
-      checkOut,
-      guests,
-      roomId,
-      guestName,
-      guestPhone,
-      guestEmail,
-      arrivalTime,
-      specialRequest,
-      total,
-    } = payload;
+    const { bookingId, checkIn, checkOut, rooms, guestName, guestPhone, guestEmail, consent, total } =
+      payload;
 
     if (
       !bookingId ||
       !checkIn ||
       !checkOut ||
-      !guests ||
-      !roomId ||
+      !Array.isArray(rooms) ||
+      rooms.length === 0 ||
+      !rooms.every((r) => r && r.roomId && Number(r.guests) >= 1) ||
       !guestName ||
       !guestEmail ||
       !total
@@ -44,6 +34,10 @@ router.post("/", async (req, res) => {
       return res
         .status(400)
         .json({ error: "Missing required booking details in decrypted payload" });
+    }
+
+    if (!consent || consent.given !== true || !consent.timestamp) {
+      return res.status(400).json({ error: "Consent to the Privacy Policy is required" });
     }
 
     // Email validation
@@ -63,13 +57,11 @@ router.post("/", async (req, res) => {
       bookingId,
       checkIn,
       checkOut,
-      guests,
-      roomId,
+      rooms,
       guestName,
       guestPhone,
       guestEmail,
-      arrivalTime,
-      specialRequest,
+      consent,
       total,
     });
 
