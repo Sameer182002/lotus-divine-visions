@@ -2,6 +2,7 @@ import express from "express";
 import { generateToken, requireAdmin } from "../utils/auth.js";
 import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
+import Settings from "../models/Settings.js";
 
 const router = express.Router();
 
@@ -49,7 +50,8 @@ router.put("/bookings/:id/cancel", requireAdmin, async (req, res) => {
 
 // POST /api/admin/rooms
 router.post("/rooms", requireAdmin, async (req, res) => {
-  const { name, category, description, amenities, size, capacity, price, imageUrl } = req.body;
+  const { name, category, description, amenities, size, capacity, price, weekendPrice, imageUrl } =
+    req.body;
 
   if (!name || !category || !description || !amenities || !capacity || !price) {
     return res.status(400).json({ error: "Missing required room fields" });
@@ -86,6 +88,7 @@ router.post("/rooms", requireAdmin, async (req, res) => {
       size,
       capacity,
       price,
+      weekendPrice,
       imageUrl,
     });
 
@@ -115,6 +118,9 @@ router.put("/rooms/:id", requireAdmin, async (req, res) => {
     if (size !== undefined) room.size = size;
     if (capacity) room.capacity = capacity;
     if (price) room.price = price;
+    if (specialPrice !== undefined) room.specialPrice = specialPrice;
+    if (specialPriceStartDate !== undefined) room.specialPriceStartDate = specialPriceStartDate;
+    if (specialPriceEndDate !== undefined) room.specialPriceEndDate = specialPriceEndDate;
     if (imageUrl !== undefined) room.imageUrl = imageUrl;
     if (gallery !== undefined) room.gallery = gallery;
 
@@ -176,6 +182,42 @@ router.post("/upload", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Image upload error:", error);
     res.status(500).json({ error: "Failed to process uploaded image" });
+  }
+});
+
+// GET /api/admin/settings
+router.get("/settings", requireAdmin, async (req, res) => {
+  try {
+    let settings = await Settings.findOne({ singletonKey: "GLOBAL_SETTINGS" });
+    if (!settings) {
+      settings = new Settings();
+      await settings.save();
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch settings" });
+  }
+});
+
+// POST /api/admin/settings
+router.post("/settings", requireAdmin, async (req, res) => {
+  try {
+    let settings = await Settings.findOne({ singletonKey: "GLOBAL_SETTINGS" });
+    if (!settings) {
+      settings = new Settings();
+    }
+
+    const { isCouponLive, couponCode, discountPercentage, marqueeText } = req.body;
+
+    if (typeof isCouponLive !== "undefined") settings.isCouponLive = isCouponLive;
+    if (typeof couponCode !== "undefined") settings.couponCode = couponCode;
+    if (typeof discountPercentage !== "undefined") settings.discountPercentage = discountPercentage;
+    if (typeof marqueeText !== "undefined") settings.marqueeText = marqueeText;
+
+    await settings.save();
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update settings" });
   }
 });
 

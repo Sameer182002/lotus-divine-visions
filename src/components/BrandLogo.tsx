@@ -2,7 +2,7 @@ import logoSrc from "@/assets/logo.png";
 
 type Props = {
   tone?: "ivory" | "brown" | "gold";
-  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "footer";
   align?: "center" | "left";
   showTagline?: boolean;
 };
@@ -14,6 +14,8 @@ const heights: Record<NonNullable<Props["size"]>, string> = {
   xl: "h-16",
   "2xl": "h-20",
   "3xl": "h-24",
+  // Matches the header logo at every breakpoint (h-8 on mobile nav, h-14 on desktop nav).
+  footer: "h-8 min-[820px]:h-14",
 };
 
 export function BrandLogo({ size = "md", align = "center" }: Props) {

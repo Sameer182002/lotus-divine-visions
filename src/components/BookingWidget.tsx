@@ -2,11 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import { LotusMark } from "@/components/BrandLogo";
 import { BOOKING_DEFAULTS, BOOKING_GUEST_OPTIONS, BOOKING_LABELS } from "@/data/siteContent";
 import { bookingHref } from "@/lib/booking-url";
+import {
+  minCheckInISO,
+  minCheckOutISO,
+  resolveCheckOutOnCheckInChange,
+  validateBookingDates,
+} from "@/lib/booking-dates";
 
-export type BookingVariant = "luxury" | "serenity" | "modern";
+export type BookingVariant = "hero" | "luxury" | "serenity" | "modern";
 
 type Values = {
   checkIn: string;
@@ -45,150 +52,225 @@ export function BookingExperience({
   const { sentinelRef, stuck } = useStickyTrigger();
   const router = useRouter();
 
+  function handleCheckInChange(v: string) {
+    setValues((prev) => ({
+      ...prev,
+      checkIn: v,
+      checkOut: resolveCheckOutOnCheckInChange(v, prev.checkOut),
+    }));
+  }
+
+  function handleCheckOutChange(v: string) {
+    setValues((prev) => ({ ...prev, checkOut: v }));
+  }
+
+  const datesValid = validateBookingDates(values.checkIn, values.checkOut);
+
   function handleSearch() {
+    if (!datesValid) return;
     router.push(bookingHref("", values.checkIn, values.checkOut, values.guests));
   }
 
   return (
     <>
-      <HeroPanel variant={variant} values={values} setValues={setValues} onSearch={handleSearch} />
+      <HeroPanel
+        variant={variant}
+        values={values}
+        setValues={setValues}
+        onCheckInChange={handleCheckInChange}
+        onCheckOutChange={handleCheckOutChange}
+        onSearch={handleSearch}
+        datesValid={datesValid}
+      />
       <div ref={sentinelRef} aria-hidden className="h-px w-full" />
       <StickyBar
         variant={variant}
         values={values}
-        setValues={setValues}
         visible={stuck}
         stickyTop={stickyTop}
         onSearch={handleSearch}
+        datesValid={datesValid}
       />
     </>
   );
 }
 
+type DateChangeProps = {
+  onCheckInChange: (v: string) => void;
+  onCheckOutChange: (v: string) => void;
+  datesValid: boolean;
+};
+
 function HeroPanel({
   variant,
   values,
   setValues,
+  onCheckInChange,
+  onCheckOutChange,
   onSearch,
+  datesValid,
 }: {
   variant: BookingVariant;
   values: Values;
   setValues: (v: Values) => void;
-  onSearch: () => void;
-}) {
+} & DateChangeProps & { onSearch: () => void }) {
+  if (variant === "hero")
+    return (
+      <HeroBar
+        values={values}
+        onCheckInChange={onCheckInChange}
+        onCheckOutChange={onCheckOutChange}
+        onSearch={onSearch}
+        datesValid={datesValid}
+      />
+    );
   if (variant === "luxury")
-    return <LuxuryPanel values={values} setValues={setValues} onSearch={onSearch} />;
+    return (
+      <LuxuryPanel
+        values={values}
+        onCheckInChange={onCheckInChange}
+        onCheckOutChange={onCheckOutChange}
+        onSearch={onSearch}
+        datesValid={datesValid}
+      />
+    );
   if (variant === "serenity")
-    return <SerenityPanel values={values} setValues={setValues} onSearch={onSearch} />;
-  return <ModernPanel values={values} setValues={setValues} onSearch={onSearch} />;
+    return (
+      <SerenityPanel
+        values={values}
+        setValues={setValues}
+        onCheckInChange={onCheckInChange}
+        onCheckOutChange={onCheckOutChange}
+        onSearch={onSearch}
+        datesValid={datesValid}
+      />
+    );
+  return (
+    <ModernPanel
+      values={values}
+      setValues={setValues}
+      onCheckInChange={onCheckInChange}
+      onCheckOutChange={onCheckOutChange}
+      onSearch={onSearch}
+      datesValid={datesValid}
+    />
+  );
+}
+
+// Light, horizontal bar used by the homepage hero: Check In · Check Out · Book.
+function HeroBar({
+  values,
+  onCheckInChange,
+  onCheckOutChange,
+  onSearch,
+  datesValid,
+}: {
+  values: Values;
+} & DateChangeProps & { onSearch: () => void }) {
+  const l = BOOKING_LABELS.hero;
+  const f = BOOKING_LABELS.fieldLabels;
+
+  return (
+    <form
+      className="relative w-full"
+      aria-label={l.eyebrow}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSearch();
+      }}
+    >
+      <div className="bg-ivory ring-1 ring-brown/10 shadow-gold grid grid-cols-2 sm:grid-cols-[1fr_1fr_auto] gap-px bg-clip-padding">
+        <FieldDate
+          tone="light"
+          label={f.checkIn}
+          value={values.checkIn}
+          onChange={onCheckInChange}
+          min={minCheckInISO()}
+          big
+        />
+        <FieldDate
+          tone="light"
+          label={f.checkOut}
+          value={values.checkOut}
+          onChange={onCheckOutChange}
+          min={minCheckOutISO(values.checkIn)}
+          big
+        />
+        <button
+          type="submit"
+          disabled={!datesValid}
+          className="col-span-2 sm:col-span-1 bg-brown text-ivory eyebrow px-8 py-3.5 sm:py-0 min-h-12 text-center hover:bg-gold hover:text-brown focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-brown disabled:hover:text-ivory"
+        >
+          {l.button}
+        </button>
+      </div>
+      <p className="mt-2.5 sm:mt-3 text-center text-[9px] sm:text-[10px] text-taupe tracking-[0.2em] uppercase">
+        {l.guarantee}
+      </p>
+    </form>
+  );
 }
 
 function LuxuryPanel({
   values,
-  setValues,
+  onCheckInChange,
+  onCheckOutChange,
   onSearch,
+  datesValid,
 }: {
   values: Values;
-  setValues: (v: Values) => void;
-  onSearch: () => void;
-}) {
+} & DateChangeProps & { onSearch: () => void }) {
   const l = BOOKING_LABELS.luxury;
   const f = BOOKING_LABELS.fieldLabels;
   return (
-    <>
-      <div className="hidden lg:block animate-fade-up [animation-delay:300ms] relative w-full max-w-4xl mt-10">
-        <div className="backdrop-blur-xl bg-brown/30 ring-1 ring-gold/40 shadow-gold p-6 lg:p-7 text-ivory">
-          <div className="flex items-center justify-between mb-5">
-            <span className="eyebrow text-gold">{l.eyebrow}</span>
-            <span className="eyebrow text-ivory/60 hidden md:inline">{l.guarantee}</span>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-gold/30">
-            <FieldDate
-              tone="dark"
-              label={f.arrival}
-              value={values.checkIn}
-              onChange={(v) => setValues({ ...values, checkIn: v })}
-            />
-            <FieldDate
-              tone="dark"
-              label={f.departure}
-              value={values.checkOut}
-              onChange={(v) => setValues({ ...values, checkOut: v })}
-            />
-            <FieldSelect
-              tone="dark"
-              label={f.guests}
-              value={values.guests}
-              options={BOOKING_GUEST_OPTIONS as unknown as string[]}
-              onChange={(v) => setValues({ ...values, guests: v })}
-            />
-            <button
-              onClick={onSearch}
-              className="bg-gold text-brown eyebrow px-6 py-5 hover:bg-ivory transition-colors"
-            >
-              {l.button}
-            </button>
-          </div>
+    <div className="animate-fade-up [animation-delay:200ms] relative w-full">
+      <div className="bg-brown shadow-gold p-4 sm:p-6 text-ivory">
+        <div className="flex items-center justify-between mb-4">
+          <span className="eyebrow text-gold text-[10px] sm:text-xs">{l.eyebrow}</span>
+          <LotusMark className="w-4 h-4 text-gold sm:hidden" />
         </div>
-      </div>
-
-      <div className="lg:hidden animate-fade-up [animation-delay:200ms] w-full mt-8">
-        <div className="backdrop-blur-2xl bg-brown/45 ring-1 ring-gold/40 shadow-gold px-5 pt-5 pb-5 sm:px-6 sm:pt-6 text-ivory relative">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
-          <div className="flex items-center justify-between mb-5">
-            <span className="eyebrow text-gold text-[10px]">{l.eyebrow}</span>
-            <LotusMark className="w-4 h-4 text-gold" />
-          </div>
-          <div className="grid grid-cols-2 gap-px bg-gold/25 mb-px">
-            <FieldDate
-              tone="dark"
-              label={f.arrival}
-              value={values.checkIn}
-              onChange={(v) => setValues({ ...values, checkIn: v })}
-              big
-            />
-            <FieldDate
-              tone="dark"
-              label={f.departure}
-              value={values.checkOut}
-              onChange={(v) => setValues({ ...values, checkOut: v })}
-              big
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-px bg-gold/25">
-            <FieldSelect
-              tone="dark"
-              label={f.guests}
-              value={values.guests}
-              options={BOOKING_GUEST_OPTIONS as unknown as string[]}
-              onChange={(v) => setValues({ ...values, guests: v })}
-              big
-            />
-          </div>
+        <div className="grid grid-cols-3 gap-px bg-gold/20 overflow-hidden">
+          <FieldDate
+            tone="dark"
+            label={f.checkIn}
+            value={values.checkIn}
+            onChange={onCheckInChange}
+            min={minCheckInISO()}
+          />
+          <FieldDate
+            tone="dark"
+            label={f.checkOut}
+            value={values.checkOut}
+            onChange={onCheckOutChange}
+            min={minCheckOutISO(values.checkIn)}
+          />
           <button
-            onClick={onSearch}
-            className="w-full mt-5 bg-gold text-brown eyebrow py-5 hover:bg-ivory transition-colors active:scale-[0.99]"
+            onClick={datesValid ? onSearch : undefined}
+            disabled={!datesValid}
+            className="bg-gold text-brown eyebrow px-2 sm:px-6 text-center hover:bg-ivory transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gold"
           >
             {l.button}
           </button>
-          <div className="mt-4 text-center text-[10px] text-ivory/55 tracking-[0.25em] uppercase">
-            {l.guaranteeMobile}
-          </div>
+        </div>
+        <div className="mt-4 text-center text-[10px] text-ivory/55 tracking-[0.2em] uppercase">
+          {l.guarantee}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
 function SerenityPanel({
   values,
   setValues,
+  onCheckInChange,
+  onCheckOutChange,
   onSearch,
+  datesValid,
 }: {
   values: Values;
   setValues: (v: Values) => void;
-  onSearch: () => void;
-}) {
+} & DateChangeProps & { onSearch: () => void }) {
   const l = BOOKING_LABELS.serenity;
   const f = BOOKING_LABELS.fieldLabels;
   return (
@@ -203,14 +285,16 @@ function SerenityPanel({
             tone="light"
             label={f.checkIn}
             value={values.checkIn}
-            onChange={(v) => setValues({ ...values, checkIn: v })}
+            onChange={onCheckInChange}
+            min={minCheckInISO()}
             rounded
           />
           <FieldDate
             tone="light"
             label={f.checkOut}
             value={values.checkOut}
-            onChange={(v) => setValues({ ...values, checkOut: v })}
+            onChange={onCheckOutChange}
+            min={minCheckOutISO(values.checkIn)}
             rounded
           />
           <FieldSelect
@@ -223,8 +307,9 @@ function SerenityPanel({
           />
         </div>
         <button
-          onClick={onSearch}
-          className="w-full mt-6 bg-brown text-ivory eyebrow py-4 rounded-full hover:bg-gold hover:text-brown transition-colors"
+          onClick={datesValid ? onSearch : undefined}
+          disabled={!datesValid}
+          className="w-full mt-6 bg-brown text-ivory eyebrow py-4 rounded-full hover:bg-gold hover:text-brown transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-brown disabled:hover:text-ivory"
         >
           {l.button}
         </button>
@@ -239,12 +324,14 @@ function SerenityPanel({
 function ModernPanel({
   values,
   setValues,
+  onCheckInChange,
+  onCheckOutChange,
   onSearch,
+  datesValid,
 }: {
   values: Values;
   setValues: (v: Values) => void;
-  onSearch: () => void;
-}) {
+} & DateChangeProps & { onSearch: () => void }) {
   const l = BOOKING_LABELS.modern;
   const f = BOOKING_LABELS.fieldLabels;
   return (
@@ -259,14 +346,16 @@ function ModernPanel({
             tone="light"
             label={f.checkIn}
             value={values.checkIn}
-            onChange={(v) => setValues({ ...values, checkIn: v })}
+            onChange={onCheckInChange}
+            min={minCheckInISO()}
             rounded
           />
           <FieldDate
             tone="light"
             label={f.checkOut}
             value={values.checkOut}
-            onChange={(v) => setValues({ ...values, checkOut: v })}
+            onChange={onCheckOutChange}
+            min={minCheckOutISO(values.checkIn)}
             rounded
           />
           <FieldSelect
@@ -279,8 +368,9 @@ function ModernPanel({
           />
         </div>
         <button
-          onClick={onSearch}
-          className="w-full mt-4 bg-gold text-brown py-3.5 eyebrow rounded-xl hover:bg-brown hover:text-ivory transition-colors"
+          onClick={datesValid ? onSearch : undefined}
+          disabled={!datesValid}
+          className="w-full mt-4 bg-gold text-brown py-3.5 eyebrow rounded-xl hover:bg-brown hover:text-ivory transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gold disabled:hover:text-brown"
         >
           {l.button}
         </button>
@@ -297,24 +387,26 @@ function ModernPanel({
 function StickyBar({
   variant,
   values,
-  setValues,
   visible,
   stickyTop,
   onSearch,
+  datesValid,
 }: {
   variant: BookingVariant;
   values: Values;
-  setValues: (v: Values) => void;
   visible: boolean;
   stickyTop: string;
   onSearch: () => void;
+  datesValid: boolean;
 }) {
   const desktopBase =
-    variant === "luxury"
-      ? "bg-brown/95 text-ivory ring-1 ring-gold/30 backdrop-blur-md"
-      : variant === "serenity"
-        ? "bg-ivory/95 text-brown ring-1 ring-gold/30 backdrop-blur-md rounded-b-3xl shadow-gold"
-        : "bg-ivory/98 text-brown ring-1 ring-brown/10 backdrop-blur-md shadow-gold";
+    variant === "hero"
+      ? "bg-ivory/95 text-brown ring-1 ring-brown/10 backdrop-blur-md shadow-gold"
+      : variant === "luxury"
+        ? "bg-brown/95 text-ivory ring-1 ring-gold/30 backdrop-blur-md"
+        : variant === "serenity"
+          ? "bg-ivory/95 text-brown ring-1 ring-gold/30 backdrop-blur-md rounded-b-3xl shadow-gold"
+          : "bg-ivory/98 text-brown ring-1 ring-brown/10 backdrop-blur-md shadow-gold";
 
   const tone: "dark" | "light" = variant === "luxury" ? "dark" : "light";
 
@@ -339,18 +431,23 @@ function StickyBar({
                 Lotus Divine
               </span>
             </div>
-            <CompactField tone={tone} label="In" value={fmt(values.checkIn)} />
-            <CompactField tone={tone} label="Out" value={fmt(values.checkOut)} />
-            <CompactField tone={tone} label="Guests" value={values.guests} />
+            <CompactField tone={tone} label="In" value={fmtOrPlaceholder(values.checkIn)} />
+            <CompactField tone={tone} label="Out" value={fmtOrPlaceholder(values.checkOut)} />
+            {variant !== "luxury" && variant !== "hero" && (
+              <CompactField tone={tone} label="Guests" value={values.guests} />
+            )}
             <button
-              onClick={onSearch}
+              onClick={datesValid ? onSearch : undefined}
+              disabled={!datesValid}
               className={`ml-auto eyebrow px-6 ${
-                variant === "modern"
-                  ? "bg-gold text-brown rounded-xl my-1 hover:bg-brown hover:text-ivory"
-                  : variant === "serenity"
-                    ? "bg-brown text-ivory rounded-full my-1 hover:bg-gold hover:text-brown"
-                    : "bg-gold text-brown hover:bg-ivory"
-              } transition-colors`}
+                variant === "hero"
+                  ? "bg-brown text-ivory my-1 hover:bg-gold hover:text-brown"
+                  : variant === "modern"
+                    ? "bg-gold text-brown rounded-xl my-1 hover:bg-brown hover:text-ivory"
+                    : variant === "serenity"
+                      ? "bg-brown text-ivory rounded-full my-1 hover:bg-gold hover:text-brown"
+                      : "bg-gold text-brown hover:bg-ivory"
+              } transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               {BOOKING_LABELS[variant].buttonSticky}
             </button>
@@ -370,18 +467,20 @@ function StickyBar({
           <div className="flex-1 min-w-0">
             <div className="eyebrow text-gold text-[9px]">{BOOKING_LABELS.mobileBar.label}</div>
             <div className="font-display text-sm text-brown truncate">
-              {fmt(values.checkIn)} → {fmt(values.checkOut)} · {values.guests}
+              {fmtOrPlaceholder(values.checkIn)} → {fmtOrPlaceholder(values.checkOut)}
+              {variant !== "luxury" && variant !== "hero" ? ` · ${values.guests}` : ""}
             </div>
           </div>
           <button
-            onClick={onSearch}
+            onClick={datesValid ? onSearch : undefined}
+            disabled={!datesValid}
             className={`shrink-0 eyebrow px-5 py-3 ${
-              variant === "luxury"
+              variant === "luxury" || variant === "hero"
                 ? "bg-brown text-ivory"
                 : variant === "serenity"
                   ? "bg-brown text-ivory rounded-full"
                   : "bg-gold text-brown rounded-xl"
-            }`}
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             {BOOKING_LABELS.mobileBar.button}
           </button>
@@ -395,10 +494,10 @@ function baseField(tone: "dark" | "light", rounded?: boolean, big?: boolean) {
   const bg = tone === "dark" ? "bg-brown/40 text-ivory" : "bg-ivory text-brown";
   const ring =
     tone === "dark"
-      ? "ring-1 ring-gold/0 hover:ring-gold/40"
-      : "ring-1 ring-brown/10 hover:ring-gold/60";
+      ? "ring-1 ring-gold/0 hover:ring-gold/40 focus-within:ring-gold/50"
+      : "ring-1 ring-brown/10 hover:ring-gold/60 focus-within:ring-gold/70";
   const radius = rounded ? "rounded-xl" : "";
-  const pad = big ? "px-5 py-4" : "px-4 py-3";
+  const pad = big ? "px-4 py-3 sm:px-5 sm:py-4" : "px-4 py-3";
   return `${bg} ${ring} ${radius} ${pad} transition-all cursor-pointer text-left`;
 }
 
@@ -409,6 +508,7 @@ function FieldDate({
   onChange,
   rounded,
   big,
+  min,
 }: {
   tone: "dark" | "light";
   label: string;
@@ -416,24 +516,56 @@ function FieldDate({
   onChange: (v: string) => void;
   rounded?: boolean;
   big?: boolean;
+  min?: string;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const labelColor = tone === "dark" ? "text-gold" : "text-taupe";
   const valueColor = tone === "dark" ? "text-ivory" : "text-brown";
+  const placeholderColor = tone === "dark" ? "text-ivory/50" : "text-brown/40";
+  const iconColor =
+    tone === "dark"
+      ? "text-gold/70 group-hover:text-gold group-focus-within:text-gold"
+      : "text-gold/80 group-hover:text-gold group-focus-within:text-gold";
+
+  function openPicker() {
+    const el = inputRef.current;
+    if (!el) return;
+    const withPicker = el as HTMLInputElement & { showPicker?: () => void };
+    try {
+      if (withPicker.showPicker) {
+        withPicker.showPicker();
+      } else {
+        el.focus();
+      }
+    } catch {
+      el.focus();
+    }
+  }
+
   return (
-    <label className={`group block relative ${baseField(tone, rounded, big)}`}>
+    <label onClick={openPicker} className={`group block relative ${baseField(tone, rounded, big)}`}>
       <div className={`eyebrow text-[9px] ${labelColor}`}>{label}</div>
-      <div className="flex items-center justify-between mt-1">
-        <span className={`font-display ${big ? "text-lg" : "text-base"} ${valueColor}`}>
-          {fmt(value)}
+      <div className="flex items-center justify-between gap-2 mt-1">
+        <span
+          className={`font-display ${big ? "text-lg" : "text-base"} ${value ? valueColor : placeholderColor}`}
+        >
+          {value ? fmt(value) : "Select date"}
         </span>
+        <ChevronDown
+          className={`shrink-0 transition-colors ${iconColor}`}
+          size={big ? 18 : 16}
+          strokeWidth={2.25}
+          aria-hidden="true"
+        />
         <input
+          ref={inputRef}
           type="date"
           value={value}
+          min={min}
           onChange={(e) => onChange(e.target.value)}
           className="absolute inset-0 opacity-0 cursor-pointer"
           aria-label={label}
         />
-        <span className={`text-xs ${tone === "dark" ? "text-gold/60" : "text-gold"}`}>▾</span>
       </div>
     </label>
   );
@@ -508,4 +640,8 @@ function fmt(d: string) {
   const date = new Date(d);
   if (Number.isNaN(date.getTime())) return d;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function fmtOrPlaceholder(d: string) {
+  return d ? fmt(d) : "Select date";
 }

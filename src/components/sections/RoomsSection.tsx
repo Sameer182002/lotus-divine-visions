@@ -1,36 +1,22 @@
 import Link from "next/link";
-import { ROOMS_DETAIL, ROOMS_SECTION } from "@/data/siteContent";
+import { ROOMS_CARDS, ROOMS_SECTION } from "@/data/siteContent";
 import { bookingHref } from "@/lib/booking-url";
-import room1 from "@/assets/room-1.jpg";
-import room2 from "@/assets/room-2.jpg";
+import roomDeluxe from "@/assets/room-deluxe.jpg";
+import roomPremium from "@/assets/room-premium.jpg";
 
-const ROOM_IMAGES = [room1.src, room2.src];
+const ROOM_IMAGES = [roomDeluxe.src, roomPremium.src];
 
 interface RoomsSectionRoom {
   id: string;
   name: string;
-  category: string;
-  description: string;
-  amenities: readonly string[];
-  capacity: string;
+  size: string;
   price: string;
   imageUrl?: string;
   imageAlt?: string;
-  gallery?: string[];
 }
 
 function getRoomImageUrl(room: RoomsSectionRoom, index: number) {
-  if (room.imageUrl) {
-    if (
-      room.imageUrl.startsWith("http") ||
-      room.imageUrl.startsWith("/") ||
-      room.imageUrl.startsWith("data:")
-    ) {
-      return room.imageUrl;
-    }
-    return `${process.env.NEXT_PUBLIC_API_URL}${room.imageUrl}`;
-  }
-  return ROOM_IMAGES[index % ROOM_IMAGES.length] || room1.src;
+  return ROOM_IMAGES[index % ROOM_IMAGES.length] || roomDeluxe.src;
 }
 
 async function fetchRooms(): Promise<RoomsSectionRoom[]> {
@@ -40,7 +26,7 @@ async function fetchRooms(): Promise<RoomsSectionRoom[]> {
     return (await res.json()) as RoomsSectionRoom[];
   } catch (err) {
     console.warn("Falling back to static rooms:", err);
-    return ROOMS_DETAIL as unknown as RoomsSectionRoom[];
+    return ROOMS_CARDS as unknown as RoomsSectionRoom[];
   }
 }
 
@@ -59,10 +45,13 @@ export async function RoomsSection() {
         </h2>
       </div>
 
-      <div className="lg:hidden -mx-5 sm:-mx-8 px-5 sm:px-8 flex gap-5 overflow-x-auto snap-x snap-mandatory pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="lg:hidden flex flex-col gap-8">
         {roomsList.map((r, i) => (
-          <article key={r.id} className="snap-start shrink-0 w-[78%] sm:w-[55%]">
-            <div className="overflow-hidden mb-4">
+          <article
+            key={r.id}
+            className="bg-white rounded-none shadow-[0_24px_48px_rgba(40,30,20,0.15)] p-4 sm:p-5"
+          >
+            <div className="overflow-hidden rounded-none mb-4">
               <img
                 src={getRoomImageUrl(r, i)}
                 alt={r.imageAlt || r.name}
@@ -72,25 +61,26 @@ export async function RoomsSection() {
             </div>
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="font-display text-xl text-brown truncate">{r.name}</h3>
-              <span className="eyebrow text-gold text-[10px] shrink-0">{r.price}</span>
+              <span className="eyebrow font-semibold! text-gold text-[10px] shrink-0">
+                {r.price}
+              </span>
             </div>
-            <p className="text-taupe text-sm mt-2 leading-relaxed line-clamp-2">{r.description}</p>
-            <div className="flex gap-3 mt-1 text-[10px] text-taupe eyebrow">
-              <span>{r.capacity}</span>
-              <span className="text-gold/40">·</span>
-              <span>{r.amenities[0] || "AC Room"}</span>
+            <div className="mt-1.5 text-[10px] text-taupe eyebrow">
+              <span className="text-gold">{ROOMS_SECTION.sizeLabel}</span>
+              {"  "}
+              {r.size}
             </div>
-            <div className="hairline w-full mt-4" />
-            <div className="flex items-center gap-3 mt-4">
+            <div className="hairline w-full mt-3" />
+            <div className="flex flex-row flex-nowrap items-center justify-between mt-4">
               <Link
                 href={bookingHref(r.id)}
-                className="eyebrow text-[10px] border border-gold/60 text-gold px-5 py-2.5 hover:bg-gold hover:text-brown transition-colors"
+                className="eyebrow text-[9px] tracking-[0.14em] whitespace-nowrap bg-gold text-brown px-2 py-2 hover:bg-ivory transition-colors"
               >
                 {ROOMS_SECTION.bookBtn}
               </Link>
               <Link
-                href="/rooms"
-                className="eyebrow text-[10px] text-taupe hover:text-brown transition-colors"
+                href={`/rooms#${r.name.toLowerCase()}`}
+                className="eyebrow text-[10px] whitespace-nowrap text-taupe hover:text-brown transition-colors"
               >
                 {ROOMS_SECTION.detailsLink}
               </Link>
@@ -112,13 +102,12 @@ export async function RoomsSection() {
             </div>
             <div className="flex items-baseline justify-between">
               <h3 className="font-display text-2xl text-brown">{r.name}</h3>
-              <span className="eyebrow text-gold">{r.price}</span>
+              <span className="eyebrow font-semibold! text-gold">{r.price}</span>
             </div>
-            <p className="text-taupe text-sm mt-3 leading-relaxed line-clamp-2">{r.description}</p>
-            <div className="flex gap-3 mt-2 text-[10px] text-taupe eyebrow">
-              <span>{r.capacity}</span>
-              <span className="text-gold/40">·</span>
-              <span>{r.amenities[0] || "AC Room"}</span>
+            <div className="mt-2 text-[10px] text-taupe eyebrow">
+              <span className="text-gold">{ROOMS_SECTION.sizeLabel}</span>
+              {"  "}
+              {r.size}
             </div>
             <div className="hairline w-full mt-4" />
             <div className="flex items-center gap-4 mt-4">
@@ -129,7 +118,7 @@ export async function RoomsSection() {
                 {ROOMS_SECTION.bookBtn}
               </Link>
               <Link
-                href="/rooms"
+                href={`/rooms#${r.name.toLowerCase()}`}
                 className="eyebrow text-[10px] text-taupe hover:text-brown transition-colors"
               >
                 {ROOMS_SECTION.detailsLink}

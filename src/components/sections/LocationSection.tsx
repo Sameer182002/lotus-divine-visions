@@ -1,4 +1,4 @@
-import { CONTACT, LOCATION_SECTION } from "@/data/siteContent";
+import { CONTACT, CONTACT_MAPS_URL, LOCATION_SECTION } from "@/data/siteContent";
 
 export function LocationSection() {
   return (
@@ -53,7 +53,7 @@ export function LocationSection() {
 
             <div className="mt-8">
               <a
-                href="https://www.google.com/maps/search/Lotus+Divine+Hotel+Amritsar"
+                href={CONTACT_MAPS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 bg-brown text-ivory text-[10px] font-sans font-medium tracking-[0.14em] uppercase px-8 py-4 hover:bg-gold hover:text-brown transition-colors"

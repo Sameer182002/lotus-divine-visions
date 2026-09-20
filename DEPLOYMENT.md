@@ -6,11 +6,11 @@
 
 ## Architecture Overview
 
-| Layer     | Technology          | Deployment Target         |
-|-----------|---------------------|---------------------------|
-| Frontend  | Next.js 15          | Vercel / Netlify / Lovable |
-| Backend   | Node.js + Express   | Railway                   |
-| Database  | MongoDB Atlas       | MongoDB Cloud (always-on)  |
+| Layer    | Technology        | Deployment Target          |
+| -------- | ----------------- | -------------------------- |
+| Frontend | Next.js 15        | Vercel / Netlify / Lovable |
+| Backend  | Node.js + Express | Railway                    |
+| Database | MongoDB Atlas     | MongoDB Cloud (always-on)  |
 
 ---
 
@@ -63,21 +63,24 @@ Railway will now look inside `backend/` for `package.json` and `server.js`.
 
 Go to your service → **Variables** tab → add each variable below:
 
-| Variable        | Value                                                    | Notes                              |
-|-----------------|----------------------------------------------------------|------------------------------------|
-| `PORT`          | `5001`                                                   | Railway may override this automatically |
-| `MONGODB_URI`   | `mongodb+srv://sameerbajaj:...@cluster.ammi5nj.mongodb.net/` | Your Atlas connection string   |
-| `CORS_ORIGIN`   | `https://your-frontend-domain.com`                       | Update after frontend deploys      |
-| `ADMIN_PASSWORD`| *(strong password)*                                      | ⚠️ Change from default before going live! |
-| `NODE_ENV`      | `production`                                             |                                    |
-| `HMAC_SECRET`   | *(random 64-char hex)*                                   | Generate with: `openssl rand -hex 32` |
+| Variable         | Value                                                        | Notes                                          |
+| ---------------- | ------------------------------------------------------------ | ---------------------------------------------- |
+| `PORT`           | `5001`                                                       | Railway may override this automatically        |
+| `MONGODB_URI`    | `mongodb+srv://sameerbajaj:...@cluster.ammi5nj.mongodb.net/` | Your Atlas connection string                   |
+| `CORS_ORIGIN`    | `https://your-frontend-domain.com`                           | Update after frontend deploys                  |
+| `ADMIN_PASSWORD` | _(strong password)_                                          | ⚠️ Change from default before going live!      |
+| `NODE_ENV`       | `production`                                                 |                                                |
+| `RESEND_API_KEY` | `re_...`                                                     | Resend API Key for Booking Confirmation Emails |
+| `HMAC_SECRET`    | _(random 64-char hex)_                                       | Generate with: `openssl rand -hex 32`          |
 
 > ⚠️ **Security Warning:** Change `ADMIN_PASSWORD` to a strong unique password. Never use `lotusadmin123` in production.
 
 ### Generate HMAC_SECRET (run once in terminal):
+
 ```bash
 openssl rand -hex 32
 ```
+
 Paste the output as the value for `HMAC_SECRET`.
 
 ---
@@ -104,6 +107,7 @@ NEXT_PUBLIC_API_URL=https://lotus-divine-backend-production.up.railway.app
 ```
 
 Also go back to Railway → Variables → update `CORS_ORIGIN` to your **live frontend URL**:
+
 ```
 CORS_ORIGIN=https://your-frontend.vercel.app
 ```
@@ -115,6 +119,7 @@ CORS_ORIGIN=https://your-frontend.vercel.app
 Run the seed script to populate rooms, images, and initial data into MongoDB:
 
 ### Option A — Via Railway Console (Recommended)
+
 1. In your Railway service, go to **Settings → Deploy**
 2. Temporarily set **Start Command** to: `node scripts/seed.js`
 3. Click **Redeploy** and wait for it to complete
@@ -122,12 +127,14 @@ Run the seed script to populate rooms, images, and initial data into MongoDB:
 5. Click **Redeploy** again
 
 ### Option B — Run Locally Against Production DB
+
 ```bash
 cd backend
 MONGODB_URI="mongodb+srv://sameerbajaj:...@cluster.ammi5nj.mongodb.net/" node scripts/seed.js
 ```
 
 ### Option C — Via MongoDB Atlas
+
 Check the `rooms` collection in Atlas Dashboard to verify data exists. If empty, run Option A or B.
 
 ---
@@ -143,6 +150,7 @@ https://your-backend.up.railway.app/api/rooms
 ✅ You should see a JSON array of room objects — deployment is successful!
 
 Also verify:
+
 ```
 https://your-backend.up.railway.app/api/security/key   → returns public key object
 ```
@@ -165,6 +173,7 @@ https://your-backend.up.railway.app/api/security/key   → returns public key ob
 ## Admin Panel Access
 
 Once live, visit:
+
 ```
 https://your-frontend.com/admin
 ```
@@ -172,6 +181,7 @@ https://your-frontend.com/admin
 Log in with your `ADMIN_PASSWORD` from Railway environment variables.
 
 **Admin Capabilities:**
+
 - View all bookings
 - Cancel bookings
 - Add new rooms with images
@@ -188,10 +198,12 @@ Log in with your `ADMIN_PASSWORD` from Railway environment variables.
 - [ ] All environment variables added in Railway
 - [ ] `ADMIN_PASSWORD` changed to a strong password
 - [ ] `HMAC_SECRET` generated with `openssl rand -hex 32`
+- [ ] `RESEND_API_KEY` added in Railway from Resend dashboard
 - [ ] Railway domain generated and copied
 - [ ] Frontend `.env.local` updated with Railway URL
 - [ ] `CORS_ORIGIN` in Railway updated with live frontend URL
 - [ ] Database seeded (rooms visible in `/api/rooms`)
+- [ ] Room inventory capacities updated in MongoDB (e.g. Deluxe=14, Premium=5)
 - [ ] Admin panel login verified
 - [ ] Frontend deployed on Vercel with `NEXT_PUBLIC_API_URL` set
 
@@ -200,11 +212,13 @@ Log in with your `ADMIN_PASSWORD` from Railway environment variables.
 ## Environment Files Reference
 
 ### Frontend — `.env.local` (project root)
+
 ```env
 NEXT_PUBLIC_API_URL=https://your-backend.up.railway.app
 ```
 
 ### Backend — Railway Variables (do NOT create backend/.env in production)
+
 ```env
 PORT=5001
 MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/<db>
@@ -212,21 +226,23 @@ CORS_ORIGIN=https://your-frontend.vercel.app
 ADMIN_PASSWORD=<strong-password>
 NODE_ENV=production
 HMAC_SECRET=<64-char-hex>
+RESEND_API_KEY=<your-resend-api-key>
 ```
 
 ---
 
 ## Troubleshooting
 
-| Problem | Likely Cause | Fix |
-|---|---|---|
-| `CORS error` | `CORS_ORIGIN` doesn't match frontend URL | Update Railway `CORS_ORIGIN` variable |
-| `Cannot connect to DB` | Wrong `MONGODB_URI` or Atlas IP whitelist | Allow `0.0.0.0/0` in Atlas Network Access |
-| `Admin login fails` | Wrong `ADMIN_PASSWORD` or `HMAC_SECRET` mismatch | Double-check Railway Variables |
-| `Rooms not showing` | DB not seeded | Run seed script (Step 7) |
-| `502 Bad Gateway` | App crashed on start | Check Railway Deploy Logs for errors |
+| Problem                | Likely Cause                                     | Fix                                       |
+| ---------------------- | ------------------------------------------------ | ----------------------------------------- |
+| `CORS error`           | `CORS_ORIGIN` doesn't match frontend URL         | Update Railway `CORS_ORIGIN` variable     |
+| `Cannot connect to DB` | Wrong `MONGODB_URI` or Atlas IP whitelist        | Allow `0.0.0.0/0` in Atlas Network Access |
+| `Admin login fails`    | Wrong `ADMIN_PASSWORD` or `HMAC_SECRET` mismatch | Double-check Railway Variables            |
+| `Rooms not showing`    | DB not seeded                                    | Run seed script (Step 7)                  |
+| `502 Bad Gateway`      | App crashed on start                             | Check Railway Deploy Logs for errors      |
 
 ### Allow All IPs in MongoDB Atlas (Required for Railway):
+
 1. Atlas Dashboard → **Network Access**
 2. Click **Add IP Address**
 3. Enter `0.0.0.0/0` → click **Confirm**

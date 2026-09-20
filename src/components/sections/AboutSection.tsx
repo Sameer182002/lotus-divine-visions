@@ -1,14 +1,15 @@
+import Link from "next/link";
 import { ABOUT } from "@/data/siteContent";
-import lobby from "@/assets/lobby.jpg";
+import hero from "@/assets/hero-entrance.jpg";
 
 export function AboutSection() {
   return (
     <section className="bg-brown text-ivory py-16 lg:py-32 px-5 sm:px-8 lg:px-20 grid grid-cols-12 gap-8 lg:gap-12 items-center">
       <div className="col-span-12 lg:col-span-5">
         <img
-          src={lobby.src}
+          src={hero.src}
           alt={ABOUT.imgAlt}
-          className="w-full aspect-[4/5] object-cover"
+          className="w-full aspect-[4/5] object-cover object-bottom"
           loading="lazy"
         />
       </div>
@@ -24,12 +25,12 @@ export function AboutSection() {
         <p className="text-ivory/65 leading-relaxed max-w-lg text-[15px] lg:text-base">
           {ABOUT.body2}
         </p>
-        <a
-          href="#"
+        <Link
+          href="/about-us"
           className="inline-block mt-8 lg:mt-10 eyebrow text-ivory border-b border-gold pb-2 hover:text-gold transition-colors"
         >
           {ABOUT.cta}
-        </a>
+        </Link>
       </div>
     </section>
   );

@@ -15,13 +15,19 @@ const BookingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  guests: {
-    type: String,
+  rooms: {
+    type: [
+      {
+        roomId: { type: String, required: true },
+        guests: { type: Number, required: true, min: 1 },
+        _id: false,
+      },
+    ],
     required: true,
-  },
-  roomId: {
-    type: String,
-    required: true,
+    validate: {
+      validator: (rooms) => Array.isArray(rooms) && rooms.length > 0,
+      message: "At least one room is required",
+    },
   },
   guestName: {
     type: String,
@@ -38,13 +44,10 @@ const BookingSchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
   },
-  arrivalTime: {
-    type: String,
-    trim: true,
-  },
-  specialRequest: {
-    type: String,
-    trim: true,
+  consent: {
+    given: { type: Boolean, required: true },
+    timestamp: { type: Date, required: true },
+    _id: false,
   },
   total: {
     type: Number,

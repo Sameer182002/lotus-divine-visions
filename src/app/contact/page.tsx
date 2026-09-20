@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Mail, Phone } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { CONTACT } from "@/data/siteContent";
+import { CONTACT, CONTACT_MAPS_URL, CONTACT_MAP_EMBED_URL, CONTACT_PAGE } from "@/data/siteContent";
 import { bookingHref } from "@/lib/booking-url";
 
 export const metadata: Metadata = {
@@ -13,17 +14,16 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <main className="overflow-x-hidden">
-      <div className="bg-brown text-ivory">
-        <Header />
-        <ContactHero />
-        <ContactDetails />
+    <main className="bg-ivory text-brown overflow-x-hidden">
+      <Header />
+
+      <ContactHero />
+
+      <div className="bg-champagne/30">
+        <LocationAndMap />
       </div>
 
-      <div className="bg-ivory text-brown">
-        <WhyChooseUs />
-        <VisitUs />
-      </div>
+      <NearbyAttractions />
 
       <div className="bg-brown text-ivory">
         <BookingHelpCTA />
@@ -35,140 +35,128 @@ export default function ContactPage() {
 
 function ContactHero() {
   return (
-    <section className="pt-28 pb-10 lg:pt-36 lg:pb-12 px-5 sm:px-8 lg:px-20 text-center">
-      <span className="eyebrow text-gold text-[10px] tracking-[0.2em] uppercase block mb-3">
-        Lotus Divine · Amritsar
-      </span>
-      <h1 className="font-display text-4xl sm:text-5xl lg:text-[3.5rem] leading-[1.1] mb-4">
+    <section className="pt-32 pb-16 lg:pt-44 lg:pb-20 px-5 sm:px-8 lg:px-20 text-center">
+      <span className="eyebrow text-gold text-[10px] block mb-4">{CONTACT_PAGE.hero.eyebrow}</span>
+      <h1 className="font-display text-4xl sm:text-5xl lg:text-[3.5rem] leading-[1.1] mb-5 text-balance">
         Contact <em className="text-gold not-italic">Lotus Divine</em>
       </h1>
-      <p className="text-ivory/70 text-sm sm:text-[15px] max-w-sm mx-auto leading-relaxed">
-        Have a question or planning your stay?{" "}
-        <span className="block mt-1 text-ivory/55">
-          We're happy to help with reservations, directions, or anything you need before your visit.
-        </span>
+      <p className="text-brown/60 text-sm sm:text-base max-w-md mx-auto leading-relaxed mb-12 lg:mb-16">
+        {CONTACT_PAGE.hero.body}
       </p>
-    </section>
-  );
-}
 
-function ContactDetails() {
-  return (
-    <section className="pb-14 lg:pb-16 px-5 sm:px-8 lg:px-20 max-w-5xl mx-auto">
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
-        <ContactCard eyebrow="Reservations">
-          <a
-            href={`tel:${CONTACT.phone}`}
-            className="text-ivory font-display text-xl hover:text-gold transition-colors block"
-          >
-            {CONTACT.phone}
-          </a>
-          <p className="text-ivory/45 text-xs mt-1.5">Available daily · 8 am – 10 pm</p>
-        </ContactCard>
+      <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-10 sm:gap-6 lg:gap-10">
+        <ContactValue
+          eyebrow="Reservations"
+          href={`tel:${CONTACT.phone}`}
+          value={CONTACT.phone}
+          icon={
+            <Phone className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={1.25} aria-hidden />
+          }
+        />
 
-        <ContactCard eyebrow="Email">
-          <a
-            href={`mailto:${CONTACT.email}`}
-            className="text-ivory font-display text-lg hover:text-gold transition-colors block break-all"
-          >
-            {CONTACT.email}
-          </a>
-          <p className="text-ivory/45 text-xs mt-1.5">We reply within 24 hours</p>
-        </ContactCard>
-
-        <ContactCard eyebrow="Address">
-          <p className="text-ivory font-display text-xl leading-snug">{CONTACT.address}</p>
-          <p className="text-ivory/45 text-xs mt-1.5">Minutes from the Golden Temple</p>
-        </ContactCard>
+        <ContactValue
+          eyebrow="Email"
+          href={`mailto:${CONTACT.email}`}
+          value={CONTACT.email}
+          icon={<Mail className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={1.25} aria-hidden />}
+        />
       </div>
     </section>
   );
 }
 
-function ContactCard({ eyebrow, children }: { eyebrow: string; children: React.ReactNode }) {
+function ContactValue({
+  eyebrow,
+  href,
+  value,
+  icon,
+}: {
+  eyebrow: string;
+  href: string;
+  value: string;
+  icon: React.ReactNode;
+}) {
   return (
-    <div className="border-t border-gold/30 pt-5">
-      <span className="eyebrow text-gold text-[10px] tracking-[0.18em] uppercase block mb-3">
-        {eyebrow}
-      </span>
-      {children}
+    <div className="border-t border-gold/30 pt-6 min-w-0">
+      <span className="eyebrow text-gold text-[10px] block mb-4">{eyebrow}</span>
+      <a
+        href={href}
+        className="group inline-flex items-center gap-2.5 sm:gap-3 max-w-full font-sans font-medium text-brown text-xl sm:text-[1.3rem] lg:text-2xl tracking-tight hover:text-gold transition-colors"
+      >
+        <span className="text-gold/70 group-hover:text-gold transition-colors shrink-0">
+          {icon}
+        </span>
+        <span className="min-w-0 sm:whitespace-nowrap">{value}</span>
+      </a>
     </div>
   );
 }
 
-function WhyChooseUs() {
-  const features = [
-    "Minutes from the Golden Temple",
-    "Peaceful location away from busy streets",
-    "Comfortable modern rooms",
-    "Easy access to Amritsar's attractions",
-  ];
-
+function LocationAndMap() {
   return (
-    <section className="pt-14 pb-10 lg:pt-20 lg:pb-12 px-5 sm:px-8 lg:px-20 max-w-5xl mx-auto">
-      <span className="eyebrow text-gold text-[10px] tracking-[0.2em] uppercase block mb-5 text-center">
-        Why Guests Choose Us
-      </span>
-      <h2 className="font-display text-2xl sm:text-3xl leading-[1.1] mb-8 text-center">
-        Why Guests Choose <em className="text-gold not-italic">Lotus Divine</em>
-      </h2>
-      <div className="grid sm:grid-cols-2 gap-4 lg:gap-5">
-        {features.map((f) => (
-          <div key={f} className="border border-gold/25 px-6 py-5 flex items-start gap-3">
-            <span className="text-gold text-sm mt-0.5 shrink-0">✓</span>
-            <p className="text-brown text-sm leading-snug">{f}</p>
+    <section className="py-16 lg:py-24 px-5 sm:px-8 lg:px-20">
+      <div className="max-w-6xl mx-auto grid lg:grid-cols-5 items-stretch">
+        <div className="lg:col-span-2 bg-brown text-ivory px-8 py-10 sm:px-10 sm:py-12 lg:p-12 flex flex-col justify-center">
+          <span className="eyebrow text-gold text-[10px] block mb-4">
+            {CONTACT_PAGE.location.eyebrow}
+          </span>
+          <h2 className="font-display text-3xl sm:text-4xl leading-[1.1] mb-5 text-balance">
+            {CONTACT_PAGE.location.heading}{" "}
+            <em className="text-gold not-italic">{CONTACT_PAGE.location.headingEmphasis}</em>
+          </h2>
+          <p className="text-ivory/65 text-sm leading-relaxed mb-8">{CONTACT_PAGE.location.body}</p>
+
+          <div className="border-t border-ivory/10">
+            <div className="py-4">
+              <span className="eyebrow text-ivory/40 text-[9px] block mb-1.5">Address</span>
+              <p className="text-sm leading-snug">{CONTACT.address}</p>
+            </div>
           </div>
-        ))}
+
+          <a
+            href={CONTACT_MAPS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="eyebrow text-[10px] bg-gold text-brown px-7 py-3.5 hover:bg-ivory transition-colors inline-block mt-8 self-start"
+          >
+            {CONTACT_PAGE.location.cta}
+          </a>
+        </div>
+
+        <div className="lg:col-span-3 h-[300px] sm:h-[340px] lg:h-auto lg:min-h-[440px]">
+          <iframe
+            src={CONTACT_MAP_EMBED_URL}
+            title="Map showing Hotel Lotus Divine location in Amritsar"
+            className="w-full h-full border-0 block"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+        </div>
       </div>
     </section>
   );
 }
 
-function VisitUs() {
-  const attractions = [
-    { label: "Golden Temple", note: "5 min" },
-    { label: "Jallianwala Bagh", note: "8 min" },
-    { label: "Partition Museum", note: "10 min" },
-    { label: "Hall Bazaar", note: "10 min" },
-    { label: "Amritsar Airport", note: "20 min" },
-  ];
-
+function NearbyAttractions() {
   return (
-    <section className="pt-10 pb-14 lg:pt-12 lg:pb-20 px-5 sm:px-8 lg:px-20">
-      <div className="max-w-4xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-        <div>
-          <span className="eyebrow text-gold text-[10px] tracking-[0.2em] uppercase block mb-4">
-            Find Us
-          </span>
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] leading-[1.1] mb-4">
-            Visit Us in <em className="text-gold not-italic">Amritsar</em>
-          </h2>
-          <p className="text-brown/65 text-sm leading-relaxed mb-6">
-            Lotus Divine is located just minutes from Sri Harmandir Sahib (Golden Temple), offering
-            a peaceful stay with convenient access to Amritsar's most popular attractions.
-          </p>
-          <a
-            href="https://www.google.com/maps/search/Lotus+Divine+Hotel+Amritsar"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="eyebrow text-[10px] tracking-[0.14em] uppercase border border-brown/40 text-brown px-6 py-2.5 hover:border-gold hover:text-gold transition-all inline-block"
-          >
-            Get Directions →
-          </a>
-        </div>
-
-        <div>
-          <span className="eyebrow text-brown/40 text-[10px] tracking-[0.18em] uppercase block mb-4">
-            Nearby Attractions
-          </span>
-          <div className="divide-y divide-brown/10">
-            {attractions.map((item) => (
-              <div key={item.label} className="flex items-baseline justify-between py-3">
-                <p className="text-brown text-sm">{item.label}</p>
-                <p className="text-brown/40 text-xs ml-4 shrink-0">{item.note}</p>
-              </div>
-            ))}
-          </div>
+    <section className="py-14 lg:py-20 px-5 sm:px-8 lg:px-20">
+      <div className="max-w-3xl mx-auto">
+        <span className="eyebrow text-gold text-[10px] block mb-3 text-center">
+          {CONTACT_PAGE.nearby.eyebrow}
+        </span>
+        <h2 className="font-display text-2xl sm:text-3xl leading-[1.1] mb-8 text-center">
+          {CONTACT_PAGE.nearby.heading}
+        </h2>
+        <div className="divide-y divide-brown/10 border-t border-b border-brown/10">
+          {CONTACT_PAGE.nearby.places.map((item) => (
+            <div key={item.label} className="flex items-center justify-between py-3.5 sm:py-4">
+              <p className="text-brown text-sm sm:text-[15px]">{item.label}</p>
+              <p className="text-brown/40 text-xs ml-4 shrink-0">
+                {item.mode} · {item.time}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -177,29 +165,25 @@ function VisitUs() {
 
 function BookingHelpCTA() {
   return (
-    <section className="py-14 lg:py-20 px-5 sm:px-8 lg:px-20 text-center border-b border-gold/10">
+    <section className="py-14 lg:py-20 px-5 sm:px-8 lg:px-20 text-center">
       <div className="max-w-xl mx-auto">
-        <span className="eyebrow text-gold text-[10px] tracking-[0.2em] uppercase block mb-3">
-          Reservations
-        </span>
+        <span className="eyebrow text-gold text-[10px] block mb-3">{CONTACT_PAGE.cta.eyebrow}</span>
         <h2 className="font-display text-3xl sm:text-4xl leading-[1.1] mb-3">
-          Need Help With Your Booking?
+          {CONTACT_PAGE.cta.heading}
         </h2>
-        <p className="text-ivory/60 text-sm leading-relaxed mb-8">
-          Reserve directly with Lotus Divine for the best experience.
-        </p>
+        <p className="text-ivory/60 text-sm leading-relaxed mb-8">{CONTACT_PAGE.cta.body}</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href={bookingHref()}
-            className="eyebrow text-[10px] tracking-[0.14em] uppercase bg-gold text-brown px-8 py-4 hover:bg-ivory transition-all"
+            className="eyebrow text-[10px] bg-gold text-brown px-8 py-4 hover:bg-ivory transition-all"
           >
-            Book Your Stay
+            {CONTACT_PAGE.cta.primaryBtn}
           </Link>
           <a
             href={`tel:${CONTACT.phone}`}
-            className="eyebrow text-[10px] tracking-[0.14em] uppercase border border-gold/50 text-gold px-8 py-4 hover:bg-gold hover:text-brown transition-all"
+            className="eyebrow text-[10px] border border-gold/50 text-gold px-8 py-4 hover:bg-gold hover:text-brown transition-all"
           >
-            Call Hotel
+            {CONTACT_PAGE.cta.secondaryBtn}
           </a>
         </div>
       </div>

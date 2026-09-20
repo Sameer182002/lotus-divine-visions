@@ -4,8 +4,9 @@
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 8081
+      "runtimeArgs": ["run", "dev:frontend"],
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

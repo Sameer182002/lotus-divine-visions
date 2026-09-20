@@ -4,10 +4,10 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ABOUT_PAGE } from "@/data/siteContent";
 import { bookingHref } from "@/lib/booking-url";
-import lobby from "@/assets/lobby.jpg";
+import hero from "@/assets/hero-entrance.jpg";
 
 export const metadata: Metadata = {
-  title: "About — Lotus Divine",
+  title: "About Us — Lotus Divine",
   description:
     "Learn about Lotus Divine, a peaceful luxury hotel just minutes from the Golden Temple in Amritsar.",
 };
@@ -51,27 +51,11 @@ export default function AboutPage() {
           </div>
           <div className="col-span-12 lg:col-span-5 lg:col-start-8">
             <img
-              src={lobby.src}
+              src={hero.src}
               alt={ABOUT_PAGE.story.imgAlt}
-              className="w-full aspect-[4/5] object-cover"
+              className="w-full aspect-[4/5] object-cover object-bottom"
               loading="lazy"
             />
-          </div>
-        </section>
-
-        <section className="border-t border-brown/8 py-14 lg:py-20 px-5 sm:px-8 lg:px-20">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 max-w-3xl mx-auto">
-            {ABOUT_PAGE.stats.map((s, i) => (
-              <div
-                key={s.label}
-                className={`text-center ${i < 3 ? "lg:border-r lg:border-brown/10" : ""}`}
-              >
-                <span className="font-display text-[2.5rem] lg:text-5xl leading-none text-brown">
-                  {s.value}
-                </span>
-                <p className="eyebrow text-[10px] lg:text-[11px] text-taupe mt-2">{s.label}</p>
-              </div>
-            ))}
           </div>
         </section>
 
