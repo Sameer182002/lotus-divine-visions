@@ -1734,9 +1734,3 @@ export function BookingPageClient() {
     </Suspense>
   );
 }
-
-
-
-
-
-
