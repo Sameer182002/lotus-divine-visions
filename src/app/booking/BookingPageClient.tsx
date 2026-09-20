@@ -49,17 +49,8 @@ const CATEGORY_IMAGES: Record<string, string> = {
 
 function getRoomImageUrl(room: RoomItem | undefined) {
   if (!room) return "";
-  if (room.imageUrl) {
-    if (
-      room.imageUrl.startsWith("http") ||
-      room.imageUrl.startsWith("/") ||
-      room.imageUrl.startsWith("data:")
-    ) {
-      return room.imageUrl;
-    }
-    return `${process.env.NEXT_PUBLIC_API_URL}${room.imageUrl}`;
-  }
-  return CATEGORY_IMAGES[room.category] || ROOM_IMAGES[room.imageKey || ""] || ROOM_IMAGES.room1;
+  // Always use static frontend images per user request
+  return CATEGORY_IMAGES[room.category] || ROOM_IMAGES.room1;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -633,12 +624,14 @@ function GuestCounter({ guests, onChange }: { guests: number; onChange: (next: n
 // ─── Room Row (in "Your Rooms") ────────────────────────────────────────────────
 
 function RoomRowItem({
+  index,
   row,
   room,
   removable,
   onGuestsChange,
   onRemove,
 }: {
+  index: number;
   row: RoomRow;
   room: RoomDetail | undefined;
   removable: boolean;
@@ -654,7 +647,9 @@ function RoomRowItem({
         className="w-11 h-9 sm:w-16 sm:h-12 object-cover shrink-0"
       />
       <div className="min-w-0 flex-1">
-        <span className="font-display text-brown text-base block truncate">{room.name}</span>
+        <span className="font-display text-brown text-base block truncate">
+          Room {index + 1}: {room.name}
+        </span>
       </div>
       <GuestCounter guests={row.guests} onChange={onGuestsChange} />
       {removable && (
@@ -828,7 +823,7 @@ function MobileBottomBar({
     ctaEnabled = !isSubmitting;
   }
 
-  // Step 4: simplified bar — Grand Total + Pay and Book, no expandable breakdown
+  // Step 4: simplified bar — Grand Total + Confirm Booking, no expandable breakdown
   // (the full breakdown is already rendered inline on the page for this step).
   if (currentStep === 4) {
     return (
@@ -1080,6 +1075,8 @@ function BookingPageInner() {
   const [guestPhone, setGuestPhone] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [consentChecked, setConsentChecked] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
   const [consentTimestamp, setConsentTimestamp] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [hasAutoScrolledToRooms, setHasAutoScrolledToRooms] = useState(false);
@@ -1103,6 +1100,14 @@ function BookingPageInner() {
       }
     }
     loadRooms();
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rooms/offer`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.isCouponLive) {
+          setCouponDiscount(data.discountPercentage || 0);
+        }
+      })
+      .catch(console.error);
   }, []);
 
   const stepsTopRef = useRef<HTMLDivElement>(null);
@@ -1113,12 +1118,42 @@ function BookingPageInner() {
 
   const rows: SidebarRow[] = roomRows.map((row) => {
     const room = roomsList.find((r) => r.id === row.roomId);
-    const perNight = room ? parsePrice(room.price) : 0;
-    const subtotal = nights > 0 ? perNight * nights : perNight;
+    if (!room) return { uid: row.uid, room, guests: row.guests, subtotal: 0 };
+
+    const basePrice = parsePrice(room.price);
+    const anyRoom = room as unknown as Record<string, string>;
+    const specialPrice = anyRoom.specialPrice ? parsePrice(anyRoom.specialPrice) : basePrice;
+
+    let subtotal = 0;
+    if (checkIn && nights > 0) {
+      for (let i = 0; i < nights; i++) {
+        const d = new Date(checkIn);
+        d.setDate(d.getDate() + i);
+        let nightPrice = basePrice;
+
+        if (anyRoom.specialPriceStartDate && anyRoom.specialPriceEndDate) {
+          const startDate = new Date(anyRoom.specialPriceStartDate).setHours(0, 0, 0, 0);
+          const endDate = new Date(anyRoom.specialPriceEndDate).setHours(23, 59, 59, 999);
+          const current = d.getTime();
+          if (current >= startDate && current <= endDate) {
+            nightPrice = specialPrice;
+          }
+        }
+        subtotal += nightPrice;
+      }
+    } else {
+      subtotal = basePrice;
+    }
     return { uid: row.uid, room, guests: row.guests, subtotal };
   });
 
-  const subtotal = rows.reduce((sum, r) => sum + r.subtotal, 0);
+  let subtotal = rows.reduce((sum, r) => sum + r.subtotal, 0);
+  let discountAmount = 0;
+  if (couponCode.trim() && couponDiscount > 0) {
+    discountAmount = Math.round(subtotal * (couponDiscount / 100));
+    subtotal = subtotal - discountAmount;
+  }
+
   const gst = Math.round(subtotal * 0.18);
   const total = subtotal + gst;
 
@@ -1290,7 +1325,7 @@ function BookingPageInner() {
     if (currentStep === 1) continueFromStep1();
     else if (currentStep === 2) continueFromStep2();
     else if (currentStep === 3) continueFromStep3();
-    else if (currentStep === 4) handleRazorpayCheckout();
+    else if (currentStep === 4) submitReservation();
   }
 
   const step2Summary = (() => {
@@ -1429,10 +1464,11 @@ function BookingPageInner() {
                             Your Rooms
                           </span>
                           <div className="flex flex-col gap-3">
-                            {roomRows.map((row) => (
+                            {roomRows.map((row, i) => (
                               <RoomRowItem
                                 key={row.uid}
                                 row={row}
+                                index={i}
                                 room={roomsList.find((r) => r.id === row.roomId)}
                                 removable={roomRows.length > 1}
                                 onGuestsChange={(g) => updateRowGuests(row.uid, g)}
@@ -1619,7 +1655,7 @@ function BookingPageInner() {
                     )}
 
                     <button
-                      onClick={handleRazorpayCheckout}
+                      onClick={submitReservation}
                       disabled={isSubmitting}
                       className={`hidden lg:inline-block eyebrow px-10 py-4 transition-all text-[11px] ${
                         isSubmitting
@@ -1630,7 +1666,7 @@ function BookingPageInner() {
                       Pay and Book
                     </button>
                     <p className="text-taupe text-xs mt-3">
-                      You&rsquo;ll receive a confirmation email once payment is complete.
+                      You&rsquo;ll receive a booking confirmation and invoice via email.
                     </p>
                   </section>
                 </div>

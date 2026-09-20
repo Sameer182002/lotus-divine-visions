@@ -16,16 +16,6 @@ interface RoomsSectionRoom {
 }
 
 function getRoomImageUrl(room: RoomsSectionRoom, index: number) {
-  if (room.imageUrl) {
-    if (
-      room.imageUrl.startsWith("http") ||
-      room.imageUrl.startsWith("/") ||
-      room.imageUrl.startsWith("data:")
-    ) {
-      return room.imageUrl;
-    }
-    return `${process.env.NEXT_PUBLIC_API_URL}${room.imageUrl}`;
-  }
   return ROOM_IMAGES[index % ROOM_IMAGES.length] || roomDeluxe.src;
 }
 

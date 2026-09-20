@@ -105,14 +105,14 @@ export const ROOMS_SECTION = {
 
 export const ROOMS = [
   {
-    name: "The Lotus Sanctuary",
+    name: "Deluxe",
     desc: "Private plunge pool and meditation terrace overlooking the gardens.",
-    price: "From ₹8,000",
+    price: "From ₹1,500",
   },
   {
-    name: "Imperial Vista Suite",
+    name: "Premium",
     desc: "Panoramic views with floor-to-ceiling windows.",
-    price: "From ₹15,000",
+    price: "From ₹2,000",
   },
 ] as const;
 
@@ -200,7 +200,11 @@ export const FOOTER_NEWSLETTER = {
 
 export const FOOTER_LEGAL_LINKS = [
   { label: "Terms & Conditions", to: "/terms-conditions" as const, enabled: true },
-  { label: "Cancellation Policy", to: "/terms-conditions#cancellation-policy" as const, enabled: true },
+  {
+    label: "Cancellation Policy",
+    to: "/terms-conditions#cancellation-policy" as const,
+    enabled: true,
+  },
   { label: "Privacy & Cookie Policy", to: "/privacy-policy" as const, enabled: true },
 ] as const;
 

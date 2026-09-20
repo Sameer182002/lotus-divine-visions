@@ -30,6 +30,9 @@ interface AdminRoom {
   size?: string;
   capacity: string;
   price: string;
+  specialPrice?: string;
+  specialPriceStartDate?: string;
+  specialPriceEndDate?: string;
   imageUrl?: string;
   imageKey?: string;
   imageAlt?: string;
@@ -61,7 +64,7 @@ const COMMON_AMENITIES = [
 ];
 
 export default function AdminDashboardPage() {
-  const [activeTab, setActiveTab] = useState<"bookings" | "rooms">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "rooms" | "settings">("bookings");
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -84,7 +87,16 @@ export default function AdminDashboardPage() {
   const [roomAmenities, setRoomAmenities] = useState("");
   const [roomSize, setRoomSize] = useState("");
   const [roomCapacity, setRoomCapacity] = useState("2 Guests");
-  const [roomPrice, setRoomPrice] = useState("From ₹8,000 / night");
+  const [roomPrice, setRoomPrice] = useState("1500");
+  const [specialPrice, setSpecialPrice] = useState("");
+  const [specialPriceStartDate, setSpecialPriceStartDate] = useState("");
+  const [specialPriceEndDate, setSpecialPriceEndDate] = useState("");
+
+  const [isCouponLive, setIsCouponLive] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [marqueeText, setMarqueeText] = useState("");
+  const [settingsStatus, setSettingsStatus] = useState("");
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -173,6 +185,42 @@ export default function AdminDashboardPage() {
   }, [token, activeTab]);
 
   // Handle logout
+  useEffect(() => {
+    if (activeTab === "settings" && token) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/settings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setIsCouponLive(data.isCouponLive || false);
+          setCouponCode(data.couponCode || "");
+          setDiscountPercentage(data.discountPercentage || 0);
+          setMarqueeText(data.marqueeText || "");
+        })
+        .catch(() => setSettingsStatus("Failed to load settings."));
+    }
+  }, [activeTab, token]);
+
+  async function handleSaveSettings(e: React.FormEvent) {
+    e.preventDefault();
+    setSettingsStatus("Saving...");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/settings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isCouponLive, couponCode, discountPercentage, marqueeText }),
+      });
+      if (res.ok) setSettingsStatus("Settings saved successfully!");
+      else setSettingsStatus("Failed to save settings.");
+    } catch {
+      setSettingsStatus("Error saving settings.");
+    }
+    setTimeout(() => setSettingsStatus(""), 3000);
+  }
+
   function handleLogout() {
     localStorage.removeItem("admin_token");
     router.push("/admin/login");
@@ -320,6 +368,17 @@ export default function AdminDashboardPage() {
     setRoomSize(room.size || "");
     setRoomCapacity(room.capacity);
     setRoomPrice(room.price);
+    setSpecialPrice(room.specialPrice || "");
+    setSpecialPriceStartDate(
+      room.specialPriceStartDate
+        ? new Date(room.specialPriceStartDate).toISOString().split("T")[0]
+        : "",
+    );
+    setSpecialPriceEndDate(
+      room.specialPriceEndDate
+        ? new Date(room.specialPriceEndDate).toISOString().split("T")[0]
+        : "",
+    );
     setUploadedImageUrl(room.imageUrl || null);
     setGalleryUrls(room.gallery || []);
     setAddRoomError(null);
@@ -335,7 +394,10 @@ export default function AdminDashboardPage() {
     setRoomAmenities("");
     setRoomSize("");
     setRoomCapacity("2 Guests");
-    setRoomPrice("From ₹8,000 / night");
+    setRoomPrice("");
+    setSpecialPrice("");
+    setSpecialPriceStartDate("");
+    setSpecialPriceEndDate("");
     setUploadedImageUrl(null);
     setGalleryUrls([]);
     setImageFile(null);
@@ -407,6 +469,9 @@ export default function AdminDashboardPage() {
           size: roomSize,
           capacity: roomCapacity,
           price: roomPrice,
+          specialPrice,
+          specialPriceStartDate: specialPriceStartDate || undefined,
+          specialPriceEndDate: specialPriceEndDate || undefined,
           imageUrl: uploadedImageUrl || "", // Optional if not uploaded
           gallery: galleryUrls,
         }),
@@ -705,12 +770,6 @@ export default function AdminDashboardPage() {
                             >
                               Edit
                             </button>
-                            <button
-                              onClick={() => handleDeleteRoom(r.id)}
-                              className="eyebrow text-[9px] text-red-500 border border-red-500/30 px-2.5 py-1 hover:bg-red-500 hover:text-white transition-colors uppercase font-medium"
-                            >
-                              Delete
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -724,7 +783,9 @@ export default function AdminDashboardPage() {
             <div className="bg-white border border-brown/10 p-6 lg:p-8 sticky top-28 shadow-sm">
               <span className="eyebrow text-gold text-[10px] block mb-2">CURATOR</span>
               <h3 className="font-display text-2xl mb-6">
-                {editingRoom ? `Edit Room: ${editingRoom.name}` : "Add New Room"}
+                {editingRoom
+                  ? `Edit Price: ${editingRoom.name}`
+                  : "Select a room to edit its price"}
               </h3>
 
               {addRoomError && (
@@ -739,238 +800,106 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              <form onSubmit={handleAddRoom} className="space-y-4 text-xs font-sans">
-                <div>
-                  <label className="eyebrow text-brown/40 text-[9px] block mb-1">ROOM NAME *</label>
-                  <input
-                    type="text"
-                    required
-                    value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
-                    placeholder="e.g. Presidential Gold Suite"
-                    className="w-full border border-brown/12 px-3 py-2 bg-transparent text-sm focus:border-gold outline-none"
-                  />
-                </div>
+              {editingRoom ? (
+                <form onSubmit={handleAddRoom} className="space-y-4 text-xs font-sans">
+                  <div className="mb-6 p-4 bg-brown/[0.02] border border-brown/10">
+                    <span className="eyebrow text-brown/40 text-[9px] block mb-3">
+                      ROOM IMAGES IN USE (FRONTEND)
+                    </span>
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      {editingRoom.category === "Deluxe" && (
+                        <>
+                          <img
+                            src="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Froom-deluxe.jpg&w=128&q=75"
+                            alt="Deluxe"
+                            className="w-16 h-12 object-cover border border-brown/10"
+                          />
+                          <img
+                            src="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Froom-deluxe-2.png&w=128&q=75"
+                            alt="Deluxe"
+                            className="w-16 h-12 object-cover border border-brown/10"
+                          />
+                          <img
+                            src="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Froom-deluxe-3.png&w=128&q=75"
+                            alt="Deluxe"
+                            className="w-16 h-12 object-cover border border-brown/10"
+                          />
+                        </>
+                      )}
+                      {editingRoom.category === "Premium" && (
+                        <>
+                          <img
+                            src="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Froom-premium.jpg&w=128&q=75"
+                            alt="Premium"
+                            className="w-16 h-12 object-cover border border-brown/10"
+                          />
+                          <img
+                            src="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Froom-premium-2.png&w=128&q=75"
+                            alt="Premium"
+                            className="w-16 h-12 object-cover border border-brown/10"
+                          />
+                          <img
+                            src="/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Froom-premium-3.png&w=128&q=75"
+                            alt="Premium"
+                            className="w-16 h-12 object-cover border border-brown/10"
+                          />
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="eyebrow text-brown/40 text-[9px] block mb-1">
-                      CATEGORY *
-                    </label>
-                    <select
-                      value={roomCategory}
-                      onChange={(e) => setRoomCategory(e.target.value)}
-                      className="w-full border border-brown/12 px-3 py-2 bg-transparent text-sm focus:border-gold outline-none cursor-pointer"
-                    >
-                      <option value="Deluxe">Deluxe Room</option>
-                      <option value="Suite">Family Suite</option>
-                      <option value="Luxury">Executive Suite</option>
-                      <option value="Penthouse">Penthouse</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="eyebrow text-brown/40 text-[9px] block mb-1">
-                      CAPACITY *
-                    </label>
-                    <select
-                      value={roomCapacity}
-                      onChange={(e) => setRoomCapacity(e.target.value)}
-                      className="w-full border border-brown/12 px-3 py-2 bg-transparent text-sm focus:border-gold outline-none cursor-pointer"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                        <option key={n} value={`${n} Guest${n > 1 ? "s" : ""}`}>
-                          {n} Guest{n > 1 ? "s" : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="eyebrow text-brown/40 text-[9px] block mb-1">SIZE</label>
-                    <input
-                      type="text"
-                      value={roomSize}
-                      onChange={(e) => setRoomSize(e.target.value)}
-                      placeholder="e.g. 42 sq m"
-                      className="w-full border border-brown/12 px-3 py-2 bg-transparent text-sm focus:border-gold outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="eyebrow text-brown/40 text-[9px] block mb-1">
-                      PRICE / NIGHT *
+                      BASE PRICE / NIGHT *
                     </label>
                     <input
                       type="text"
                       required
                       value={roomPrice}
                       onChange={(e) => setRoomPrice(e.target.value)}
-                      placeholder="e.g. From ₹10,000 / night"
+                      placeholder="e.g. 1500"
                       className="w-full border border-brown/12 px-3 py-2 bg-transparent text-sm focus:border-gold outline-none"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="eyebrow text-brown/40 text-[9px] block mb-1">AMENITIES *</label>
-                  <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto border border-brown/12 p-3 bg-brown/[0.01]">
-                    {COMMON_AMENITIES.map((amenity) => {
-                      const selectedAmenities = roomAmenities
-                        .split(",")
-                        .map((a) => a.trim())
-                        .filter(Boolean);
-                      const selected = selectedAmenities.includes(amenity);
-                      return (
-                        <button
-                          type="button"
-                          key={amenity}
-                          onClick={() => {
-                            let updated;
-                            if (selected) {
-                              updated = selectedAmenities.filter((a) => a !== amenity);
-                            } else {
-                              updated = [...selectedAmenities, amenity];
-                            }
-                            setRoomAmenities(updated.join(", "));
-                          }}
-                          className={`px-2 py-1 text-left text-[10px] border transition-colors ${
-                            selected
-                              ? "bg-gold/15 border-gold text-gold font-medium"
-                              : "border-brown/10 text-brown/60 hover:border-brown/25"
-                          }`}
-                        >
-                          {selected ? "✓ " : "+ "}
-                          {amenity}
-                        </button>
-                      );
-                    })}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="eyebrow text-brown/40 text-[9px] block mb-1">
+                        SPECIAL PRICE
+                      </label>
+                      <input
+                        type="text"
+                        value={specialPrice}
+                        onChange={(e) => setSpecialPrice(e.target.value)}
+                        placeholder="e.g. 2500"
+                        className="w-full border border-brown/12 px-3 py-2 bg-transparent text-sm focus:border-gold outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="eyebrow text-brown/40 text-[9px] block mb-1">
+                        START DATE
+                      </label>
+                      <input
+                        type="date"
+                        value={specialPriceStartDate}
+                        onChange={(e) => setSpecialPriceStartDate(e.target.value)}
+                        className="w-full border border-brown/12 px-3 py-2 bg-transparent text-sm focus:border-gold outline-none text-brown"
+                      />
+                    </div>
+                    <div>
+                      <label className="eyebrow text-brown/40 text-[9px] block mb-1">
+                        END DATE
+                      </label>
+                      <input
+                        type="date"
+                        value={specialPriceEndDate}
+                        onChange={(e) => setSpecialPriceEndDate(e.target.value)}
+                        className="w-full border border-brown/12 px-3 py-2 bg-transparent text-sm focus:border-gold outline-none text-brown"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className="eyebrow text-brown/40 text-[9px] block mb-1">
-                    DESCRIPTION *
-                  </label>
-                  <textarea
-                    required
-                    value={roomDescription}
-                    onChange={(e) => setRoomDescription(e.target.value)}
-                    placeholder="Describe the room, beds, layout, views, and unique styling elements..."
-                    rows={3}
-                    className="w-full border border-brown/12 px-3 py-2 bg-transparent text-sm focus:border-gold outline-none resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="eyebrow text-brown/40 text-[9px] block mb-1">
-                    ROOM IMAGE *
-                  </label>
-                  <div className="border border-dashed border-brown/20 p-4 text-center cursor-pointer hover:border-gold/60 transition-colors bg-brown/[0.01] relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageFileChange}
-                      disabled={uploadingImage}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    {uploadingImage ? (
-                      <div className="flex items-center justify-center gap-2 py-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-t border-gold border-r"></div>
-                        <span className="eyebrow text-gold text-[9px]">UPLOADING FILE...</span>
-                      </div>
-                    ) : uploadedImageUrl ? (
-                      <div className="relative inline-block py-1">
-                        <img
-                          src={uploadedImageUrl}
-                          alt="Primary Preview"
-                          className="w-20 h-14 object-cover mx-auto border border-gold/30"
-                        />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setUploadedImageUrl(null);
-                            setImageFile(null);
-                          }}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px] leading-none z-10"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="py-2">
-                        <span className="eyebrow text-gold/70 text-[9px] block">
-                          SELECT IMAGE FILE
-                        </span>
-                        <span className="text-[10px] text-taupe block mt-1">JPG, PNG, or WEBP</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="eyebrow text-brown/40 text-[9px] block mb-1">
-                    GALLERY IMAGES (OPTIONAL MULTIPLE UPLOAD)
-                  </label>
-                  <div className="border border-dashed border-brown/20 p-4 text-center cursor-pointer hover:border-gold/60 transition-colors bg-brown/[0.01] relative">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleGalleryFilesChange}
-                      disabled={uploadingGallery}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    {uploadingGallery ? (
-                      <div className="flex items-center justify-center gap-2 py-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-t border-gold border-r"></div>
-                        <span className="eyebrow text-gold text-[9px]">UPLOADING IMAGES...</span>
-                      </div>
-                    ) : galleryUrls.length > 0 ? (
-                      <div className="py-2">
-                        <div className="flex flex-wrap gap-2 justify-center mb-2">
-                          {galleryUrls.map((url, index) => (
-                            <div
-                              key={index}
-                              className="relative inline-block"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <img
-                                src={url}
-                                alt={`Gallery Preview ${index + 1}`}
-                                className="w-12 h-9 object-cover border border-brown/10"
-                              />
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setGalleryUrls((prev) => prev.filter((_, i) => i !== index));
-                                }}
-                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[7px] leading-none z-10"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                        <span className="text-[10px] text-taupe block">
-                          Click box to add more images
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="py-2">
-                        <span className="eyebrow text-gold/70 text-[9px] block">
-                          SELECT MULTIPLE GALLERY IMAGES
-                        </span>
-                        <span className="text-[10px] text-taupe block mt-1">JPG, PNG, or WEBP</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex gap-3 mt-4">
-                  {editingRoom && (
+                  <div className="flex gap-3 mt-4">
                     <button
                       type="button"
                       onClick={cancelEditRoom}
@@ -978,16 +907,19 @@ export default function AdminDashboardPage() {
                     >
                       Cancel Edit
                     </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={uploadingImage || uploadingGallery}
-                    className="flex-1 bg-brown text-ivory eyebrow py-4 hover:bg-gold hover:text-brown transition-colors text-[10px] disabled:opacity-50"
-                  >
-                    {editingRoom ? "Save Changes" : "Create Room"}
-                  </button>
+                    <button
+                      type="submit"
+                      className="flex-1 bg-brown text-ivory eyebrow py-4 hover:bg-gold hover:text-brown transition-colors text-[10px]"
+                    >
+                      Save Price Changes
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="text-sm text-taupe py-4">
+                  Please select a room from the list on the left to edit its prices.
                 </div>
-              </form>
+              )}
             </div>
           </section>
         )}

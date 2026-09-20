@@ -230,7 +230,10 @@ export const PRIVACY_DOC: LegalDoc = {
     {
       heading: "7. Data Sharing & Disclosure",
       blocks: [
-        { type: "paragraph", text: "We do not sell your personal information. We may share it only:" },
+        {
+          type: "paragraph",
+          text: "We do not sell your personal information. We may share it only:",
+        },
         {
           type: "list",
           items: [

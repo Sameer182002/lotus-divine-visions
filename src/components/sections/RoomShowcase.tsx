@@ -182,16 +182,6 @@ interface RoomShowcaseItem {
 
 function getRoomImageUrl(room: RoomShowcaseItem | undefined) {
   if (!room) return "";
-  if (room.imageUrl) {
-    if (
-      room.imageUrl.startsWith("http") ||
-      room.imageUrl.startsWith("/") ||
-      room.imageUrl.startsWith("data:")
-    ) {
-      return room.imageUrl;
-    }
-    return `${process.env.NEXT_PUBLIC_API_URL}${room.imageUrl}`;
-  }
   const key = room.imageKey || "room1";
   const roomImages: Record<string, string> = {
     room1: roomDeluxe.src,
@@ -215,13 +205,9 @@ function RoomSection({
   const [showThumbFade, setShowThumbFade] = useState(false);
 
   const defaultImage = getRoomImageUrl(room);
-  const gallery: GalleryImage[] =
-    room.gallery && room.gallery.length > 0
-      ? room.gallery.map((src: string, i: number) => ({
-          src,
-          alt: `${room.name} gallery image ${i + 1}`,
-        }))
-      : GALLERIES[room.id] || [{ src: defaultImage, alt: room.imageAlt || room.name }];
+  const gallery: GalleryImage[] = GALLERIES[room.id] || [
+    { src: defaultImage, alt: room.imageAlt || room.name },
+  ];
   const bookingSlug = BOOKING_SLUGS[room.id] || room.id;
 
   useEffect(() => {

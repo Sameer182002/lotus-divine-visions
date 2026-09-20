@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { MarqueeBanner } from "@/components/layout/MarqueeBanner";
 import { NAV_LINKS, NAV, CONTACT } from "@/data/siteContent";
 import { bookingHref } from "@/lib/booking-url";
 
@@ -20,43 +21,46 @@ export function Header() {
 
   return (
     <>
-      <nav className="hidden min-[820px]:grid grid-cols-[auto_1fr_auto] gap-4 min-[1024px]:gap-8 fixed top-0 left-0 right-0 z-40 px-6 min-[1024px]:px-12 py-3 items-center text-ivory bg-brown/95 backdrop-blur-xl border-b border-gold/15">
-        <Link href="/" aria-label="Lotus Divine home" className="flex items-center">
-          <BrandLogo tone="ivory" size="lg" align="left" />
-        </Link>
+      <header className="fixed top-0 left-0 right-0 z-40 flex flex-col w-full shadow-md">
+        <MarqueeBanner />
+        <nav className="hidden min-[820px]:grid grid-cols-[auto_1fr_auto] gap-4 min-[1024px]:gap-8 px-6 min-[1024px]:px-12 py-3 items-center text-ivory bg-brown/95 backdrop-blur-xl border-b border-gold/15">
+          <Link href="/" aria-label="Lotus Divine home" className="flex items-center">
+            <BrandLogo tone="ivory" size="lg" align="left" />
+          </Link>
 
-        <div className="flex justify-center gap-4 min-[1024px]:gap-7 items-center">
-          {NAV_LINKS.map((item) =>
-            item.enabled ? (
+          <div className="flex justify-center gap-4 min-[1024px]:gap-7 items-center">
+            {NAV_LINKS.map((item) =>
+              item.enabled ? (
+                <Link
+                  key={item.label}
+                  href={item.to!}
+                  className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase hover:text-gold transition-colors whitespace-nowrap"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <span
+                  key={item.label}
+                  className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase text-ivory/40 cursor-default select-none whitespace-nowrap"
+                >
+                  {item.label}
+                </span>
+              ),
+            )}
+          </div>
+
+          <div className="flex items-center justify-end">
+            {!isBookingPage && (
               <Link
-                key={item.label}
-                href={item.to!}
-                className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase hover:text-gold transition-colors whitespace-nowrap"
+                href={EMPTY_BOOKING}
+                className="text-[10px] font-sans font-medium tracking-[0.14em] uppercase border border-gold/60 text-gold px-6 py-2.5 hover:bg-gold hover:text-brown transition-all whitespace-nowrap"
               >
-                {item.label}
+                {NAV.bookCta}
               </Link>
-            ) : (
-              <span
-                key={item.label}
-                className="text-[11px] font-sans font-medium tracking-[0.14em] uppercase text-ivory/40 cursor-default select-none whitespace-nowrap"
-              >
-                {item.label}
-              </span>
-            ),
-          )}
-        </div>
-
-        <div className="flex items-center justify-end">
-          {!isBookingPage && (
-            <Link
-              href={EMPTY_BOOKING}
-              className="text-[10px] font-sans font-medium tracking-[0.14em] uppercase border border-gold/60 text-gold px-6 py-2.5 hover:bg-gold hover:text-brown transition-all whitespace-nowrap"
-            >
-              {NAV.bookCta}
-            </Link>
-          )}
-        </div>
-      </nav>
+            )}
+          </div>
+        </nav>
+      </header>
       <MobileNav isBookingPage={isBookingPage} />
     </>
   );
@@ -88,35 +92,36 @@ function MobileNav({ isBookingPage }: { isBookingPage: boolean }) {
 
   return (
     <>
-      <nav
-        className="min-[820px]:hidden fixed top-0 left-0 right-0 z-40 py-3.5 bg-brown/95 backdrop-blur-xl border-b border-gold/15"
-      >
-        <div className="flex items-center justify-between px-5 sm:px-8">
-          <Link href="/" aria-label="Lotus Divine home">
-            <BrandLogo tone="ivory" size="sm" align="left" showTagline={false} />
-          </Link>
+      <header className="min-[820px]:hidden fixed top-0 left-0 right-0 z-40 flex flex-col w-full shadow-md">
+        <MarqueeBanner />
+        <nav className="py-3.5 bg-brown/95 backdrop-blur-xl border-b border-gold/15">
+          <div className="flex items-center justify-between px-5 sm:px-8">
+            <Link href="/" aria-label="Lotus Divine home">
+              <BrandLogo tone="ivory" size="sm" align="left" showTagline={false} />
+            </Link>
 
-          <div className="flex items-center gap-3">
-            {!isBookingPage && (
-              <Link
-                href={EMPTY_BOOKING}
-                className="eyebrow text-[10px] border border-gold/60 text-gold px-4 py-2.5 hover:bg-gold hover:text-brown transition-all whitespace-nowrap"
+            <div className="flex items-center gap-3">
+              {!isBookingPage && (
+                <Link
+                  href={EMPTY_BOOKING}
+                  className="eyebrow text-[10px] border border-gold/60 text-gold px-4 py-2.5 hover:bg-gold hover:text-brown transition-all whitespace-nowrap"
+                >
+                  {NAV.bookMobile}
+                </Link>
+              )}
+              <button
+                aria-label="Open menu"
+                onClick={() => setOpen(true)}
+                className="w-11 h-11 -mr-2 flex flex-col items-center justify-center gap-1.5 text-gold"
               >
-                {NAV.bookMobile}
-              </Link>
-            )}
-            <button
-              aria-label="Open menu"
-              onClick={() => setOpen(true)}
-              className="w-11 h-11 -mr-2 flex flex-col items-center justify-center gap-1.5 text-gold"
-            >
-              <span className="block w-5 h-px bg-gold" />
-              <span className="block w-5 h-px bg-gold/80" />
-              <span className="block w-5 h-px bg-gold/60" />
-            </button>
+                <span className="block w-5 h-px bg-gold" />
+                <span className="block w-5 h-px bg-gold/80" />
+                <span className="block w-5 h-px bg-gold/60" />
+              </button>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      </header>
 
       <div
         className={`min-[820px]:hidden fixed inset-0 z-50 transition-opacity duration-500 ${
@@ -166,7 +171,11 @@ function MobileNav({ isBookingPage }: { isBookingPage: boolean }) {
                   ) : (
                     <div className="flex items-center justify-between py-5 font-display text-3xl text-ivory/30 cursor-default">
                       <span>{item.label}</span>
-                      <ArrowRight className="w-5 h-5 text-ivory/20" strokeWidth={1.25} aria-hidden />
+                      <ArrowRight
+                        className="w-5 h-5 text-ivory/20"
+                        strokeWidth={1.25}
+                        aria-hidden
+                      />
                     </div>
                   )}
                 </li>

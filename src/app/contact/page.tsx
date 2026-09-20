@@ -49,7 +49,9 @@ function ContactHero() {
           eyebrow="Reservations"
           href={`tel:${CONTACT.phone}`}
           value={CONTACT.phone}
-          icon={<Phone className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={1.25} aria-hidden />}
+          icon={
+            <Phone className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={1.25} aria-hidden />
+          }
         />
 
         <ContactValue

@@ -7,7 +7,13 @@ const LOTUS_INNER = [-42, -21, 0, 21, 42];
 
 function LotusGlyph() {
   return (
-    <g stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round" strokeLinecap="round" fill="none">
+    <g
+      stroke="currentColor"
+      strokeWidth="1.1"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      fill="none"
+    >
       {LOTUS_OUTER.map((deg) => (
         <path
           key={`outer-${deg}`}
@@ -56,7 +62,15 @@ export function HeroMotif({
               opacity="0.4"
               fill="none"
             />
-            <circle cx="17" cy="17" r="4.5" stroke="currentColor" strokeWidth="0.6" opacity="0.4" fill="none" />
+            <circle
+              cx="17"
+              cy="17"
+              r="4.5"
+              stroke="currentColor"
+              strokeWidth="0.6"
+              opacity="0.4"
+              fill="none"
+            />
           </pattern>
           <clipPath id={archId}>
             <path d="M540,240 L540,90 Q540,10 660,10 Q780,10 780,90 L780,240 Z" />
@@ -95,7 +109,15 @@ export function HeroMotif({
             opacity="0.35"
             fill="none"
           />
-          <circle cx="20" cy="20" r="5.5" stroke="currentColor" strokeWidth="0.7" opacity="0.35" fill="none" />
+          <circle
+            cx="20"
+            cy="20"
+            r="5.5"
+            stroke="currentColor"
+            strokeWidth="0.7"
+            opacity="0.35"
+            fill="none"
+          />
         </pattern>
         <clipPath id={archId}>
           <path d="M50,540 L50,240 Q50,60 200,40 Q350,60 350,240 L350,540 Z" />
@@ -104,7 +126,11 @@ export function HeroMotif({
       <g clipPath={`url(#${archId})`}>
         <rect x="0" y="0" width="400" height="560" fill={`url(#${jaliId})`} />
       </g>
-      <path d="M50,540 L50,240 Q50,60 200,40 Q350,60 350,240 L350,540" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M50,540 L50,240 Q50,60 200,40 Q350,60 350,240 L350,540"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
       <path
         d="M76,540 L76,246 Q76,90 200,72 Q324,90 324,246 L324,540"
         stroke="currentColor"
@@ -112,8 +138,18 @@ export function HeroMotif({
         opacity="0.5"
       />
       <path d="M200,362 L200,500" stroke="currentColor" strokeWidth="1.25" />
-      <path d="M200,430 C170,430 150,450 140,478" stroke="currentColor" strokeWidth="1" opacity="0.7" />
-      <path d="M200,460 C230,460 250,478 260,504" stroke="currentColor" strokeWidth="1" opacity="0.7" />
+      <path
+        d="M200,430 C170,430 150,450 140,478"
+        stroke="currentColor"
+        strokeWidth="1"
+        opacity="0.7"
+      />
+      <path
+        d="M200,460 C230,460 250,478 260,504"
+        stroke="currentColor"
+        strokeWidth="1"
+        opacity="0.7"
+      />
       <g transform="translate(200,360)">
         <LotusGlyph />
       </g>
