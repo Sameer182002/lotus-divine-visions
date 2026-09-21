@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect, Suspense } from "react";
 import type { ReactNode } from "react";
 import { Calendar, BedDouble, Phone, Users, Maximize2, Clock, Plus, Minus, X } from "lucide-react";
@@ -12,6 +12,7 @@ import { Footer } from "@/components/layout/Footer";
 import { ROOMS_DETAIL } from "@/data/siteContent";
 import { encryptPayload } from "@/lib/encryption";
 import {
+  formatBookingDate,
   isCheckInValid,
   isCheckOutValid,
   minCheckInISO,
@@ -19,6 +20,19 @@ import {
   resolveCheckOutOnCheckInChange,
   validateBookingDates,
 } from "@/lib/booking-dates";
+import {
+  clearBookingDraft,
+  earliestValidStep,
+  EMAIL_REGEX,
+  KEY_TO_STEP,
+  PHONE_DIGITS,
+  readBookingDraft,
+  STEP_TO_KEY,
+  writeBookingDraft,
+  type BookingRoomRow,
+  type BookingStepKey,
+} from "@/lib/booking-session";
+import { BookingCalendarField } from "@/components/BookingCalendarField";
 import room1 from "@/assets/room-1.jpg";
 import room2 from "@/assets/room-2.jpg";
 import roomDeluxe from "@/assets/room-deluxe.jpg";
@@ -65,26 +79,8 @@ function parsePrice(str: string) {
   return m ? parseInt(m[0].replace(/,/g, ""), 10) : 0;
 }
 
-const MONTHS_SHORT = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 function fmtDate(iso: string) {
-  if (!iso) return "—";
-  const d = new Date(iso + "T00:00:00");
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}, ${WEEKDAYS_SHORT[d.getDay()]}`;
+  return formatBookingDate(iso, "long") || "—";
 }
 
 function fmtMoney(n: number) {
@@ -120,17 +116,12 @@ const ROOM_TYPE_CAPS: Record<string, number> = { Deluxe: 14, Premium: 5 };
 const OVERALL_ROOM_CAP = 5;
 const LOW_STOCK_THRESHOLDS: Record<string, number> = { Deluxe: 5, Premium: 3 };
 
-const PHONE_DIGITS = 10;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const HOTEL_CHECKIN_TIME = "12:00 PM";
 const HOTEL_CHECKOUT_TIME = "11:00 AM";
 
-interface RoomRow {
-  uid: string;
-  roomId: string;
-  guests: number;
-}
+// Structurally identical to BookingRoomRow (src/lib/booking-session.ts) — kept as its
+// own alias so the rest of this file doesn't need renaming.
+type RoomRow = BookingRoomRow;
 
 function makeRowId() {
   return Math.random().toString(36).slice(2, 10);
@@ -335,41 +326,26 @@ function DateCard({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  min?: string;
+  min: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  function openPicker() {
-    const el = inputRef.current;
-    if (!el) return;
-    const withPicker = el as HTMLInputElement & { showPicker?: () => void };
-    try {
-      if (withPicker.showPicker) {
-        withPicker.showPicker();
-      } else {
-        el.focus();
-      }
-    } catch {
-      el.focus();
-    }
-  }
-
   return (
-    <div
-      onClick={openPicker}
-      className="bg-white border border-brown/12 px-5 py-4 focus-within:border-gold/60 transition-colors cursor-pointer"
-    >
-      <span className="eyebrow text-brown/35 text-[10px] block mb-2">{label}</span>
-      <input
-        ref={inputRef}
-        type="date"
-        value={value}
-        min={min}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-transparent font-display text-brown text-lg outline-none cursor-pointer"
-      />
-      {value && <span className="text-taupe text-xs mt-1.5 block">{fmtDate(value)}</span>}
-    </div>
+    <BookingCalendarField
+      value={value}
+      onChange={onChange}
+      min={min}
+      trigger={
+        <button
+          type="button"
+          aria-label={label}
+          className="w-full bg-white border border-brown/12 px-5 py-4 text-left transition-colors hover:border-gold/40 focus-within:border-gold/60 cursor-pointer"
+        >
+          <span className="eyebrow text-brown/35 text-[10px] block mb-2">{label}</span>
+          <span className={`block font-display text-lg ${value ? "text-brown" : "text-brown/40"}`}>
+            {value ? formatBookingDate(value, "long") : "Select date"}
+          </span>
+        </button>
+      }
+    />
   );
 }
 
@@ -1050,8 +1026,14 @@ function SuccessSection({
 
 function BookingPageInner() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const [currentStep, setCurrentStep] = useState(1);
+  // True once the sessionStorage draft has been read and (if valid) applied on top of
+  // the URL-seeded state below. Gates the persistence-write effect so it can't fire
+  // with default/empty values and stomp a real draft before restoration has run.
+  const [hydrated, setHydrated] = useState(false);
   const [checkIn, setCheckIn] = useState(() => {
     const v = searchParams.get("checkIn") ?? "";
     return isCheckInValid(v) ? v : "";
@@ -1109,6 +1091,123 @@ function BookingPageInner() {
       })
       .catch(console.error);
   }, []);
+
+  // Restore the persisted booking draft once, on mount. checkIn/checkOut/roomRows above
+  // are already seeded from the entry URL (homepage widget / room-card deep link) by
+  // their useState initializers; those explicit params always win over an older draft,
+  // since they represent the user's just-made intent. Everything else in the draft
+  // (contact details, consent) isn't date-dependent and is restored regardless.
+  useEffect(() => {
+    const hasUrlDates =
+      Boolean(searchParams.get("checkIn")) || Boolean(searchParams.get("checkOut"));
+    const hasUrlRoom = Boolean(searchParams.get("room"));
+    const stored = readBookingDraft();
+
+    if (stored) {
+      if (!hasUrlDates && !hasUrlRoom) {
+        setCheckIn(stored.checkIn);
+        setCheckOut(stored.checkOut);
+        setRoomRows(stored.roomRows);
+        setCurrentStep(KEY_TO_STEP[stored.currentStep]);
+      }
+      setGuestName(stored.guestDetails.name);
+      setGuestPhone(stored.guestDetails.phone);
+      setGuestEmail(stored.guestDetails.email);
+      setConsentChecked(stored.consentChecked);
+      setConsentTimestamp(stored.consentTimestamp);
+    }
+
+    setHydrated(true);
+    // Runs once, deliberately: this seeds state from storage, it doesn't react to changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Tracks the last `?step=` value this effect itself has already reconciled, so it only
+  // reacts to a *change* in the URL's step (browser back/forward, a manual edit, or our
+  // own router.push/replace below) rather than re-running whenever any booking field
+  // changes — otherwise editing a contact field mid-step could bounce the user to an
+  // earlier step the moment it's momentarily invalid.
+  const lastStepParamRef = useRef("__unset__");
+
+  // Keeps `currentStep` in sync with the URL's `?step=` param, in both directions:
+  // browser back/forward moves through booking steps (since changeStep() below pushes a
+  // history entry per step), and a step requested by the URL that the current draft
+  // doesn't actually qualify for (direct link, stale bookmark) gets clamped back to the
+  // furthest step the draft legitimately supports.
+  useEffect(() => {
+    if (!hydrated) return;
+
+    if (currentStep === 5) {
+      // Confirmation screen isn't a resumable step; stop reconciling against the URL.
+      lastStepParamRef.current = searchParams.get("step") ?? "";
+      return;
+    }
+
+    const stepParam = searchParams.get("step") ?? "";
+    if (stepParam === lastStepParamRef.current) return;
+    lastStepParamRef.current = stepParam;
+
+    const maxStepKey = earliestValidStep({
+      checkIn,
+      checkOut,
+      roomRows,
+      guestDetails: { name: guestName, phone: guestPhone, email: guestEmail },
+      consentChecked,
+    });
+    const maxStep = KEY_TO_STEP[maxStepKey];
+    // No explicit step in the URL yet: trust whatever currentStep restoration already
+    // landed on. An explicit step in the URL (nav, back/forward, typed link) is authoritative.
+    const requestedStep = stepParam ? (KEY_TO_STEP[stepParam as BookingStepKey] ?? 1) : currentStep;
+    const nextStep = Math.min(requestedStep, maxStep);
+
+    if (nextStep !== currentStep) {
+      setCurrentStep(nextStep);
+      scrollToStepsTop();
+    }
+    if (STEP_TO_KEY[nextStep] !== stepParam) {
+      router.replace(`${pathname}?step=${STEP_TO_KEY[nextStep]}`, { scroll: false });
+    }
+  }, [
+    searchParams,
+    hydrated,
+    currentStep,
+    checkIn,
+    checkOut,
+    roomRows,
+    guestName,
+    guestPhone,
+    guestEmail,
+    consentChecked,
+    pathname,
+    router,
+  ]);
+
+  // Persists the draft whenever a relevant field actually changes, once restoration has
+  // completed. Skipped on the confirmation step — that draft is intentionally cleared,
+  // not re-saved, once a booking succeeds (see submitReservation).
+  useEffect(() => {
+    if (!hydrated || currentStep === 5) return;
+    writeBookingDraft({
+      checkIn,
+      checkOut,
+      roomRows,
+      guestDetails: { name: guestName, phone: guestPhone, email: guestEmail },
+      consentChecked,
+      consentTimestamp,
+      currentStep: STEP_TO_KEY[currentStep] ?? "stay",
+    });
+  }, [
+    hydrated,
+    currentStep,
+    checkIn,
+    checkOut,
+    roomRows,
+    guestName,
+    guestPhone,
+    guestEmail,
+    consentChecked,
+    consentTimestamp,
+  ]);
 
   const stepsTopRef = useRef<HTMLDivElement>(null);
   const roomCardsRef = useRef<HTMLDivElement>(null);
@@ -1169,9 +1268,20 @@ function BookingPageInner() {
     }, 0);
   }
 
-  function goToStep(step: number) {
+  // The single place currentStep changes while the user is inside steps 1-4: updates the
+  // step, reflects it in the URL as a new history entry (so browser back/forward walks
+  // through booking steps instead of leaving /booking), and keeps the existing scroll
+  // behavior. Never uses router.back()/history.back() — see BookingPageClient's task notes.
+  function changeStep(step: number) {
     setCurrentStep(step);
+    const key = STEP_TO_KEY[step];
+    if (key) router.push(`${pathname}?step=${key}`, { scroll: false });
     scrollToStepsTop();
+  }
+
+  // "Edit" on a completed step's summary row — the flow's only Back mechanism today.
+  function goToStep(step: number) {
+    changeStep(step);
   }
 
   function addRoomRow(roomId: string) {
@@ -1235,20 +1345,17 @@ function BookingPageInner() {
 
   function continueFromStep1() {
     if (!step1Valid) return;
-    setCurrentStep(roomRows.length > 0 ? 3 : 2);
-    scrollToStepsTop();
+    changeStep(roomRows.length > 0 ? 3 : 2);
   }
 
   function continueFromStep2() {
     if (!step2Valid) return;
-    setCurrentStep(3);
-    scrollToStepsTop();
+    changeStep(3);
   }
 
   function continueFromStep3() {
     if (!step3Valid) return;
-    setCurrentStep(4);
-    scrollToStepsTop();
+    changeStep(4);
   }
 
   function handleConsentChange(checked: boolean) {
@@ -1302,8 +1409,12 @@ function BookingPageInner() {
         throw new Error(result.error || "Failed to process reservation");
       }
 
-      // 5. Success -> transition to confirmation screen
+      // 5. Success -> transition to confirmation screen. The draft has served its purpose;
+      // clear it and drop the ?step= param so a refresh here can't resubmit or reopen an
+      // editable session (currentStep itself stays 5 in memory for this render only).
       setCurrentStep(5);
+      clearBookingDraft();
+      router.replace(pathname, { scroll: false });
       setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
     } catch (err: unknown) {
       console.error("Reservation submit error:", err);

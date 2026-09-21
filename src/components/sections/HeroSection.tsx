@@ -19,7 +19,7 @@ export function HeroSection() {
       className="hero-story hero-pin relative bg-ivory text-brown"
       aria-labelledby="hero-heading"
     >
-      <div className="hero-canvas flex flex-col overflow-hidden px-5 sm:px-8 lg:px-12 pt-[max(4.25rem,10svh)] sm:pt-28 lg:pt-[max(6.25rem,11vh)] pb-5 sm:pb-10 lg:pb-[max(1.5rem,4vh)]">
+      <div className="hero-canvas flex flex-col overflow-hidden px-5 sm:px-8 lg:px-12 pt-[max(4.25rem,11.5svh)] sm:pt-28 lg:pt-[max(6.25rem,11vh)] pb-5 sm:pb-10 lg:pb-[max(1.5rem,4vh)]">
         {/* ── Stage 1: identity ─────────────────────────────────────────── */}
         <div data-stage="intro" className="w-full max-w-3xl mx-auto text-center animate-fade-up">
           <h1
@@ -43,7 +43,7 @@ export function HeroSection() {
             role="img"
             aria-label={J.ariaLabel}
           >
-            <Origin className="-translate-x-6 sm:-translate-x-8" />
+            <Origin />
 
             {/* segment 1: origin → 5 min walk */}
             <svg
@@ -53,45 +53,47 @@ export function HeroSection() {
               fill="none"
               aria-hidden
             >
-              <RoutePath d="M43,0 C43,9 45,12 46,20" thin stage="route-a" />
+              <RoutePath d="M50,0 C50,9 52,12 51,20" thin stage="route-a" />
             </svg>
 
             <WalkLabel className="mt-1.5" />
 
-            {/* segment 2: 5 min walk → destination; drifts toward the shrine and stops above the artwork */}
+            {/* segment 2: 5 min walk → destination; a gentle curve that returns to the shared centre axis
+                and runs a touch longer than segment 1 so "5 min walk" lands at the true midpoint once
+                the destination is pulled up to meet it (see Destination's margin below) */}
             <svg
               viewBox="0 0 100 23"
               preserveAspectRatio="none"
-              className="w-full h-[min(112px,calc(16svh-70px))] mt-1.5"
+              className="w-full h-[min(120px,calc(16svh-62px))] mt-1.5"
               fill="none"
               aria-hidden
             >
-              <RoutePath d="M46,0 C46,10 51,14 52,23" thin stage="route-b" />
+              <RoutePath d="M51,0 C51,10 49,14 50,23" thin stage="route-b" />
             </svg>
 
-            <Destination className="w-[min(72%,calc(34svh-80px))] sm:w-[min(66%,34svh)] ml-auto mr-[9%] sm:mr-[12%] mt-[calc(8px-0.17*min(72%,34svh-80px))] sm:mt-[calc(8px-0.17*min(66%,34svh))]" />
+            <Destination className="w-[min(72%,calc(34svh-80px))] sm:w-[min(66%,34svh)] mt-[calc(8px-0.17*min(72%,34svh-80px))] sm:mt-[calc(8px-0.17*min(66%,34svh))]" />
           </figure>
 
-          {/* Desktop: horizontal journey with the destination sitting higher */}
+          {/* Desktop: horizontal journey, both endpoints sharing one centre line */}
           <figure
-            className="hidden lg:grid m-0 grid-cols-[auto_1fr_auto] items-end mt-[max(0.5rem,2vh)]"
+            className="hidden lg:grid m-0 grid-cols-[auto_1fr_auto] items-center mt-[max(0.5rem,2vh)]"
             role="img"
             aria-label={J.ariaLabel}
           >
-            <Origin className="pr-6 pb-[calc(1rem+2.5vh)] animate-fade-up [animation-delay:150ms]" />
-            <div className="relative w-full h-[clamp(140px,20vh,190px)] pb-[calc(1rem+2.5vh)] box-content">
+            <Origin className="pr-8 animate-fade-up [animation-delay:150ms]" />
+            <div className="relative w-full h-[clamp(64px,9vh,92px)]">
               <svg
-                viewBox="0 0 400 110"
+                viewBox="0 0 400 56"
                 preserveAspectRatio="none"
-                className="absolute inset-x-0 top-0 w-full h-[clamp(140px,20vh,190px)]"
+                className="absolute inset-x-0 top-0 w-full h-full"
                 fill="none"
                 aria-hidden
               >
-                <RoutePath d="M0,90 C90,90 130,18 200,14 C270,10 330,20 400,26" />
+                <RoutePath d="M0,26 C150,23 250,30 400,26" />
               </svg>
-              <WalkLabel className="absolute left-1/2 -translate-x-1/2 -top-8" />
+              <WalkLabel className="absolute left-1/2 -translate-x-1/2 -top-9" />
             </div>
-            <Destination className="w-[clamp(230px,36vh,350px)] pb-[calc(2rem+4vh)]" />
+            <Destination className="w-[clamp(253px,40vh,385px)] pl-8" />
           </figure>
 
           {/* Booking */}
@@ -108,18 +110,18 @@ export function HeroSection() {
 }
 
 /* Origin: pin · hotel name · "Your stay" */
-function Origin({ className }: { className: string }) {
+function Origin({ className = "" }: { className?: string }) {
   return (
     <div className={`${className} flex flex-col items-center text-center`.trim()}>
       <MapPin
-        className="w-[18px] h-[18px] lg:w-4 lg:h-4 text-[var(--hero-gold)]"
+        className="w-[18px] h-[18px] lg:w-[18px] lg:h-[18px] text-[var(--hero-gold)]"
         strokeWidth={1.5}
         aria-hidden
       />
-      <span className="mt-1.5 lg:mt-2.5 font-display text-[15px] sm:text-lg lg:text-xl leading-tight text-brown whitespace-nowrap">
+      <span className="mt-1.5 lg:mt-[11px] font-display text-[15px] sm:text-lg lg:text-[23px] leading-tight text-brown whitespace-nowrap">
         {J.originName}
       </span>
-      <span className="mt-1 lg:mt-1.5 text-[9px] lg:text-[10px] tracking-[0.22em] lg:tracking-[0.28em] uppercase text-taupe">
+      <span className="mt-1 lg:mt-[7px] text-[9px] lg:text-[11px] tracking-[0.22em] lg:tracking-[0.28em] uppercase text-taupe">
         {J.originCaption}
       </span>
     </div>
@@ -132,11 +134,11 @@ function Destination({ className }: { className: string }) {
   return (
     <div className={`${className} flex flex-col items-center`.trim()}>
       <GoldenTempleArt data-stage="temple" className="w-full h-auto" />
-      <figcaption data-stage="temple-label" className="mt-1 lg:mt-3 text-center">
-        <span className="block font-display text-[15px] sm:text-lg leading-tight text-brown whitespace-nowrap lg:font-sans lg:font-medium lg:tracking-[0.32em] lg:uppercase lg:text-[10px] lg:leading-normal">
+      <figcaption data-stage="temple-label" className="mt-1 lg:mt-[13px] text-center">
+        <span className="block font-display text-[15px] sm:text-lg leading-tight text-brown whitespace-nowrap lg:font-sans lg:font-medium lg:tracking-[0.32em] lg:uppercase lg:text-[11px] lg:leading-normal">
           {J.destinationLabel}
         </span>
-        <span className="block mt-1 text-[9px] tracking-[0.22em] uppercase text-taupe whitespace-nowrap lg:normal-case lg:tracking-normal lg:font-display lg:italic lg:text-sm">
+        <span className="block mt-1 text-[9px] tracking-[0.22em] uppercase text-taupe whitespace-nowrap lg:normal-case lg:tracking-normal lg:font-display lg:italic lg:text-[15px]">
           {J.destinationName}
         </span>
       </figcaption>

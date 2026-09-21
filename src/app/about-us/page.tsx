@@ -33,8 +33,8 @@ export default function AboutPage() {
       </section>
 
       <div className="bg-ivory">
-        <section className="py-16 lg:py-24 px-5 sm:px-8 lg:px-20 grid grid-cols-12 gap-10 lg:gap-16 items-center">
-          <div className="col-span-12 lg:col-span-6">
+        <section className="py-16 lg:py-24 px-5 sm:px-8 lg:px-20 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+          <div className="lg:col-span-6 min-w-0">
             <span className="eyebrow text-gold text-[10px] lg:text-[11px] block mb-5">
               {ABOUT_PAGE.story.eyebrow}
             </span>
@@ -49,11 +49,11 @@ export default function AboutPage() {
               {ABOUT_PAGE.story.body2}
             </p>
           </div>
-          <div className="col-span-12 lg:col-span-5 lg:col-start-8">
+          <div className="lg:col-span-5 lg:col-start-8 min-w-0">
             <img
               src={hero.src}
               alt={ABOUT_PAGE.story.imgAlt}
-              className="w-full aspect-[4/5] object-cover object-bottom"
+              className="w-full max-w-full aspect-[4/5] object-cover object-bottom"
               loading="lazy"
             />
           </div>

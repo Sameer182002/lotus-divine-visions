@@ -190,10 +190,22 @@
   .hero-pin {
     height: 240svh;
   }
+  /* Paper grain lives directly on .hero-canvas's own background stack (color +
+     image + blend-mode) rather than a separate positioned layer, so there is
+     no stacking-context/z-index question to get wrong: a background always
+     paints behind 100% of an element's own content, in every browser, under
+     every `position` value. The SVG bakes its own effective strength into the
+     alpha channel (see the two feComponentTransfer stages below) rather than
+     relying on an element-level `opacity`, since `opacity` would also fade
+     the headline/copy/artwork/booking bar sitting inside this element. */
   .hero-canvas {
     position: sticky;
     top: 0;
     height: 100svh;
+    background-color: var(--ivory);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch' result='noise'/%3E%3CfeColorMatrix in='noise' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.33 0.33 0.33 0 0' result='luma'/%3E%3CfeComponentTransfer in='luma' result='shaped'%3E%3CfeFuncA type='linear' slope='3' intercept='-0.9'/%3E%3C/feComponentTransfer%3E%3CfeComponentTransfer in='shaped' result='scaled'%3E%3CfeFuncA type='linear' slope='0.098' intercept='0'/%3E%3C/feComponentTransfer%3E%3CfeFlood flood-color='%232a2118' result='ink'/%3E%3CfeComposite in='ink' in2='scaled' operator='in'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-blend-mode: multiply;
   }
   @media (min-width: 1024px) {
     .hero-pin {
