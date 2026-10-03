@@ -7,11 +7,13 @@ import { LotusMark } from "@/components/BrandLogo";
 import { BOOKING_DEFAULTS, BOOKING_GUEST_OPTIONS, BOOKING_LABELS } from "@/data/siteContent";
 import { bookingHref } from "@/lib/booking-url";
 import {
+  formatBookingDate,
   minCheckInISO,
   minCheckOutISO,
   resolveCheckOutOnCheckInChange,
   validateBookingDates,
 } from "@/lib/booking-dates";
+import { BookingCalendarField } from "@/components/BookingCalendarField";
 
 export type BookingVariant = "hero" | "luxury" | "serenity" | "modern";
 
@@ -516,9 +518,8 @@ function FieldDate({
   onChange: (v: string) => void;
   rounded?: boolean;
   big?: boolean;
-  min?: string;
+  min: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const labelColor = tone === "dark" ? "text-gold" : "text-taupe";
   const valueColor = tone === "dark" ? "text-ivory" : "text-brown";
   const placeholderColor = tone === "dark" ? "text-ivory/50" : "text-brown/40";
@@ -527,47 +528,34 @@ function FieldDate({
       ? "text-gold/70 group-hover:text-gold group-focus-within:text-gold"
       : "text-gold/80 group-hover:text-gold group-focus-within:text-gold";
 
-  function openPicker() {
-    const el = inputRef.current;
-    if (!el) return;
-    const withPicker = el as HTMLInputElement & { showPicker?: () => void };
-    try {
-      if (withPicker.showPicker) {
-        withPicker.showPicker();
-      } else {
-        el.focus();
-      }
-    } catch {
-      el.focus();
-    }
-  }
-
   return (
-    <label onClick={openPicker} className={`group block relative ${baseField(tone, rounded, big)}`}>
-      <div className={`eyebrow text-[9px] ${labelColor}`}>{label}</div>
-      <div className="flex items-center justify-between gap-2 mt-1">
-        <span
-          className={`font-display ${big ? "text-lg" : "text-base"} ${value ? valueColor : placeholderColor}`}
-        >
-          {value ? fmt(value) : "Select date"}
-        </span>
-        <ChevronDown
-          className={`shrink-0 transition-colors ${iconColor}`}
-          size={big ? 18 : 16}
-          strokeWidth={2.25}
-          aria-hidden="true"
-        />
-        <input
-          ref={inputRef}
-          type="date"
-          value={value}
-          min={min}
-          onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 opacity-0 cursor-pointer"
+    <BookingCalendarField
+      value={value}
+      onChange={onChange}
+      min={min}
+      trigger={
+        <button
+          type="button"
           aria-label={label}
-        />
-      </div>
-    </label>
+          className={`group block w-full relative ${baseField(tone, rounded, big)}`}
+        >
+          <div className={`eyebrow text-[9px] ${labelColor}`}>{label}</div>
+          <div className="flex items-center justify-between gap-2 mt-1">
+            <span
+              className={`font-display ${big ? "text-lg" : "text-base"} ${value ? valueColor : placeholderColor}`}
+            >
+              {value ? formatBookingDate(value) : "Select date"}
+            </span>
+            <ChevronDown
+              className={`shrink-0 transition-colors ${iconColor}`}
+              size={big ? 18 : 16}
+              strokeWidth={2.25}
+              aria-hidden="true"
+            />
+          </div>
+        </button>
+      }
+    />
   );
 }
 
@@ -635,13 +623,6 @@ function CompactField({
   );
 }
 
-function fmt(d: string) {
-  if (!d) return "";
-  const date = new Date(d);
-  if (Number.isNaN(date.getTime())) return d;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 function fmtOrPlaceholder(d: string) {
-  return d ? fmt(d) : "Select date";
+  return d ? formatBookingDate(d) : "Select date";
 }

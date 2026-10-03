@@ -64,3 +64,52 @@ export function resolveCheckOutOnCheckInChange(
 export function validateBookingDates(checkIn: string, checkOut: string): boolean {
   return isCheckInValid(checkIn) && isCheckOutValid(checkOut, checkIn);
 }
+
+/**
+ * Parses a "YYYY-MM-DD" string into a local `Date` at midnight, built from the numeric
+ * parts directly (never through a UTC parse), for use with calendar UI libraries that
+ * work in terms of `Date` objects (e.g. react-day-picker).
+ */
+export function isoToLocalDate(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/** The inverse of `isoToLocalDate`: reads a `Date`'s own local calendar fields back into "YYYY-MM-DD". */
+export function localDateToISO(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/**
+ * The single formatter for displaying a booking date anywhere on the site — homepage,
+ * /booking, summaries. "short" gives "Sep 21"; "long" gives "21 Sep, Mon". Returns "" for
+ * an empty/unselected date; callers pick their own empty-state text ("Select date", "—").
+ */
+export function formatBookingDate(iso: string, style: "short" | "long" = "short"): string {
+  if (!iso) return "";
+  const date = isoToLocalDate(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  if (style === "long") {
+    return `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}, ${WEEKDAYS_SHORT[date.getDay()]}`;
+  }
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
