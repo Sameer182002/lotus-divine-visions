@@ -102,6 +102,11 @@ const BookingSchema = new mongoose.Schema({
     trim: true,
     default: "",
   },
+  frontendUrl: {
+    type: String,
+    trim: true,
+    default: "",
+  },
   createdAt: {
     type: Date,
     default: Date.now,

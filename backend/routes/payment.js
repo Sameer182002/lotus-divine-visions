@@ -8,13 +8,41 @@ import { decryptRequest } from "../utils/crypto.js";
 const router = express.Router();
 
 // Helper to dynamically read current configuration
-function getPayUConfig() {
+function getPayUConfig(req) {
+  const frontendUrl =
+    process.env.FRONTEND_URL ||
+    process.env.NEXT_PUBLIC_FRONTEND_URL ||
+    "http://localhost:3000";
+
+  let backendUrl =
+    process.env.BACKEND_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    "http://localhost:5001";
+
+  // If running behind a reverse proxy / hosted domain and BACKEND_URL contains localhost, auto-detect host
+  if (req && backendUrl.includes("localhost")) {
+    const host = req.get("x-forwarded-host") || req.get("host");
+    const proto = req.get("x-forwarded-proto") || req.protocol || "http";
+    if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
+      backendUrl = `${proto}://${host}`;
+    }
+  }
+
   return {
-    key: process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "a2prwK",
-    salt: process.env.NEXT_PUBLIC_PAYU_MERCHANT_SALT || "wwMKqPIqGARVm4D2Dl18UtvFbKTGYlQA",
-    paymentUrl: process.env.NEXT_PUBLIC_PAYU_PAYMENT_URL || "https://test.payu.in/_payment",
-    frontendUrl: process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000",
-    backendUrl: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001",
+    key:
+      process.env.PAYU_MERCHANT_KEY ||
+      process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY ||
+      "a2prwK",
+    salt:
+      process.env.PAYU_MERCHANT_SALT ||
+      process.env.NEXT_PUBLIC_PAYU_MERCHANT_SALT ||
+      "wwMKqPIqGARVm4D2Dl18UtvFbKTGYlQA",
+    paymentUrl:
+      process.env.PAYU_PAYMENT_URL ||
+      process.env.NEXT_PUBLIC_PAYU_PAYMENT_URL ||
+      "https://test.payu.in/_payment",
+    frontendUrl: frontendUrl.replace(/\/$/, ""),
+    backendUrl: backendUrl.replace(/\/$/, ""),
   };
 }
 
@@ -124,6 +152,16 @@ router.post("/initiate", async (req, res) => {
     const gst = Math.round(calculatedSubtotal * 0.18);
     const secureTotal = calculatedSubtotal + gst;
 
+    // Detect caller frontend origin dynamically
+    let clientFrontendUrl =
+      payload.frontendUrl ||
+      req.get("origin") ||
+      (req.get("referer") ? new URL(req.get("referer")).origin : "") ||
+      config.frontendUrl;
+    if (clientFrontendUrl) {
+      clientFrontendUrl = clientFrontendUrl.replace(/\/$/, "");
+    }
+
     // 4. Upsert booking record in pending state
     let booking = await Booking.findOne({ bookingId });
     if (!booking) {
@@ -145,6 +183,7 @@ router.post("/initiate", async (req, res) => {
         paymentMethod: "PayU",
         source: "online",
         whatsappOptIn: Boolean(whatsappOptIn ?? true),
+        frontendUrl: clientFrontendUrl,
       });
     } else {
       booking.checkIn = checkIn;
@@ -158,6 +197,7 @@ router.post("/initiate", async (req, res) => {
       booking.paymentStatus = "Pending";
       booking.paymentMethod = "PayU";
       booking.whatsappOptIn = Boolean(whatsappOptIn ?? true);
+      booking.frontendUrl = clientFrontendUrl;
     }
 
     // Generate unique PayU transaction ID (alphanumeric up to 30 chars)
@@ -257,13 +297,19 @@ router.post("/response", async (req, res) => {
       (bookingId && (await Booking.findOne({ bookingId }))) ||
       (txnid && (await Booking.findOne({ payuTxnId: txnid })));
 
+    // Target frontend URL: prioritize the origin the user actually booked on!
+    const targetFrontendUrl =
+      booking?.frontendUrl ||
+      config.frontendUrl ||
+      "http://localhost:3000";
+
     if (!booking) {
       console.error(
         `[PayU Response Error] No booking found for TxnId: ${txnid}, BookingId: ${bookingId}`,
       );
       return res.redirect(
         302,
-        `${config.frontendUrl}/booking?step=payment&status=failed&error=booking_not_found`,
+        `${targetFrontendUrl}/booking?step=payment&status=failed&error=booking_not_found`,
       );
     }
 
@@ -304,7 +350,7 @@ router.post("/response", async (req, res) => {
 
       return res.redirect(
         302,
-        `${config.frontendUrl}/booking?step=payment&bookingId=${booking.bookingId}&status=failed&error=security_hash_mismatch`,
+        `${targetFrontendUrl}/booking?step=payment&bookingId=${booking.bookingId}&status=failed&error=security_hash_mismatch`,
       );
     }
 
@@ -354,7 +400,7 @@ router.post("/response", async (req, res) => {
 
       return res.redirect(
         302,
-        `${config.frontendUrl}/booking?step=confirmation&bookingId=${booking.bookingId}&status=success&txnid=${txnid}&mihpayid=${mihpayid || ""}`,
+        `${targetFrontendUrl}/booking?step=confirmation&bookingId=${booking.bookingId}&status=success&txnid=${txnid}&mihpayid=${mihpayid || ""}`,
       );
     }
 
@@ -367,11 +413,11 @@ router.post("/response", async (req, res) => {
     const failureReason = error_Message || "Payment was cancelled or unsuccessful";
     return res.redirect(
       302,
-      `${config.frontendUrl}/booking?step=payment&bookingId=${booking.bookingId}&status=failed&error=${encodeURIComponent(failureReason)}`,
+      `${targetFrontendUrl}/booking?step=payment&bookingId=${booking.bookingId}&status=failed&error=${encodeURIComponent(failureReason)}`,
     );
   } catch (error) {
     console.error("PayU callback error:", error);
-    const config = getPayUConfig();
+    const config = getPayUConfig(req);
     return res.redirect(
       302,
       `${config.frontendUrl}/booking?step=payment&status=failed&error=server_error`,
@@ -384,7 +430,7 @@ router.post("/response", async (req, res) => {
  * Fallback in case user or browser hits the response URL directly via GET
  */
 router.get("/response", (req, res) => {
-  const config = getPayUConfig();
+  const config = getPayUConfig(req);
   res.redirect(302, `${config.frontendUrl}/booking?step=payment`);
 });
 

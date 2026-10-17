@@ -1589,6 +1589,7 @@ function BookingPageInner() {
         whatsappOptIn,
         couponCode: couponCode.trim(),
         total,
+        frontendUrl: typeof window !== "undefined" ? window.location.origin : "",
       };
 
       // 3. Encrypt payload on client side using imported keys
