@@ -383,12 +383,14 @@ function RoomCard({
   room,
   count,
   totalRooms,
+  availableCount,
   onAttemptAdd,
   onRemoveOne,
 }: {
   room: RoomDetail;
   count: number;
   totalRooms: number;
+  availableCount?: number;
   onAttemptAdd: () => string | null;
   onRemoveOne: () => void;
 }) {
@@ -410,19 +412,32 @@ function RoomCard({
     };
   }, [notice]);
 
-  const cap = ROOM_TYPE_CAPS[room.category] ?? Infinity;
+  const isSoldOut = availableCount !== undefined && availableCount <= 0;
+  const isLowStock = availableCount !== undefined && availableCount > 0 && availableCount <= 3;
+  const cap =
+    availableCount !== undefined ? availableCount : (ROOM_TYPE_CAPS[room.category] ?? Infinity);
   const remaining = Math.max(0, cap - count);
   const lowStockThreshold = LOW_STOCK_THRESHOLDS[room.category] ?? 0;
-  const atCap = count >= cap || totalRooms >= OVERALL_ROOM_CAP;
+  const atCap = count >= cap || totalRooms >= OVERALL_ROOM_CAP || isSoldOut;
   const minusDisabled = count === 1 && totalRooms === 1;
 
   function handleAdd() {
+    if (isSoldOut) {
+      setNotice("This room type is sold out for your selected dates.");
+      return;
+    }
     const err = onAttemptAdd();
     if (err) setNotice(err);
   }
 
   return (
-    <div className="border-2 border-brown/10 bg-white hover:border-brown/25 hover:shadow-md transition-all duration-300 flex flex-row sm:flex-col">
+    <div
+      className={`border-2 bg-white transition-all duration-300 flex flex-row sm:flex-col ${
+        isSoldOut
+          ? "border-brown/10 opacity-75"
+          : "border-brown/10 hover:border-brown/25 hover:shadow-md"
+      }`}
+    >
       <div className="relative overflow-hidden w-[38%] sm:w-full shrink-0">
         <img
           src={getRoomImageUrl(room)}
@@ -430,11 +445,19 @@ function RoomCard({
           className="absolute inset-0 w-full h-full sm:static sm:h-auto sm:aspect-[16/10] object-cover transition-transform duration-500 hover:scale-[1.02]"
           loading="lazy"
         />
-        {remaining <= lowStockThreshold && (
+        {isSoldOut ? (
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-red-700 text-white eyebrow text-[8px] sm:text-[9px] px-2 py-1 sm:px-3 sm:py-1.5 font-bold tracking-wider shadow">
+            SOLD OUT
+          </div>
+        ) : isLowStock ? (
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-amber-600 text-white eyebrow text-[8px] sm:text-[9px] px-2 py-1 sm:px-3 sm:py-1.5 font-semibold shadow">
+            Only {availableCount} left
+          </div>
+        ) : remaining <= lowStockThreshold && remaining > 0 ? (
           <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-brown/85 text-ivory eyebrow text-[8px] sm:text-[9px] px-2 py-1 sm:px-3 sm:py-1.5">
             {remaining} left
           </div>
-        )}
+        ) : null}
       </div>
       <div className="flex-1 min-w-0 p-3 sm:p-5 lg:p-6">
         <h3 className="mb-1">
@@ -457,7 +480,7 @@ function RoomCard({
           )}
           <span className="flex items-center gap-1 text-taupe text-[11px] sm:text-xs">
             <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gold shrink-0" strokeWidth={1.75} />
-            Up to 2 Guests
+            {room.capacity || "2 Guests"}
           </span>
         </div>
         <div className="relative" ref={wrapRef}>
@@ -468,9 +491,14 @@ function RoomCard({
             {count === 0 ? (
               <button
                 onClick={handleAdd}
-                className="eyebrow text-[10px] h-full px-4 sm:px-5 flex items-center justify-center transition-all bg-brown text-ivory hover:bg-gold hover:text-brown"
+                disabled={isSoldOut}
+                className={`eyebrow text-[10px] h-full px-4 sm:px-5 flex items-center justify-center transition-all ${
+                  isSoldOut
+                    ? "bg-brown/20 text-brown/40 cursor-not-allowed"
+                    : "bg-brown text-ivory hover:bg-gold hover:text-brown"
+                }`}
               >
-                Book
+                {isSoldOut ? "Sold Out" : "Book"}
               </button>
             ) : (
               <div className="flex items-center gap-2 sm:gap-3 h-full">
@@ -795,7 +823,7 @@ function MobileBottomBar({
     ctaLabel = "Review Booking";
     ctaEnabled = step3Valid;
   } else if (currentStep === 4) {
-    ctaLabel = "Pay and Book";
+    ctaLabel = isSubmitting ? "Connecting to PayU..." : "Pay via PayU";
     ctaEnabled = !isSubmitting;
   }
 
@@ -922,49 +950,113 @@ function SuccessSection({
   bookingId,
   guestName,
   guestEmail,
+  guestPhone,
+  whatsappOptIn,
   rows,
   checkIn,
   checkOut,
   nights,
   total,
+  paymentStatus,
+  payuTxnId,
+  payuMihpayid,
 }: {
   bookingId: string;
   guestName: string;
   guestEmail: string;
+  guestPhone?: string;
+  whatsappOptIn?: boolean;
   rows: SidebarRow[];
   checkIn: string;
   checkOut: string;
   nights: number;
   total: number;
+  paymentStatus?: string;
+  payuTxnId?: string;
+  payuMihpayid?: string;
 }) {
   const totalGuests = rows.reduce((sum, r) => sum + r.guests, 0);
+
+  const cleanPhone = guestPhone ? guestPhone.replace(/\D/g, "") : "";
+  const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
+  const roomNames = rows
+    .map((r) => (r.room ? `${r.room.name} (${r.guests} Guest${r.guests !== 1 ? "s" : ""})` : ""))
+    .filter(Boolean)
+    .join(", ");
+
+  const isPaid = paymentStatus === "Paid" || Boolean(payuTxnId);
+
+  const waText = encodeURIComponent(
+    `*Hotel Lotus Divine — Booking Confirmation* 🏨\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `*Booking ID:* ${bookingId}\n` +
+      `*Payment Status:* Paid via PayU (Test Mode) ✅\n` +
+      (payuTxnId ? `*Transaction ID:* ${payuTxnId}\n` : "") +
+      `*Guest Name:* ${guestName}\n` +
+      `*Check-in:* ${fmtDate(checkIn)} (from 12:00 PM)\n` +
+      `*Check-out:* ${fmtDate(checkOut)} (until 11:00 AM)\n` +
+      `*Duration:* ${nights} night${nights !== 1 ? "s" : ""}\n` +
+      `*Rooms:* ${roomNames}\n` +
+      `*Total Amount:* ${fmtMoney(total)}\n\n` +
+      `📍 *Hotel Address:*\n1804, Katra Ahluwalia, Amritsar Cantt, Punjab 143001 (Near Golden Temple)\n` +
+      `Google Maps: https://maps.google.com/?q=Hotel+Lotus+Divine+Amritsar\n\n` +
+      `📞 *Hotel Desk:* +91 84379 66966\n` +
+      `_Thank you for choosing Hotel Lotus Divine!_`,
+  );
+
+  const whatsappHref = `https://api.whatsapp.com/send?phone=${phoneWithCountry || "918437966966"}&text=${waText}`;
 
   return (
     <div className="max-w-2xl mx-auto px-5 sm:px-8 py-16 lg:py-24">
       <div className="text-center mb-10">
-        <div className="w-14 h-14 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center mx-auto mb-6">
-          <span className="text-gold text-2xl">✓</span>
+        <div className="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
+          <span className="text-emerald-600 text-2xl font-bold">✓</span>
         </div>
-        <span className="eyebrow text-gold text-[10px] block mb-3">Reservation Received</span>
+        <span className="eyebrow text-emerald-600 text-[10px] block mb-3 font-semibold">
+          {isPaid ? "Reservation & Payment Confirmed" : "Reservation Received"}
+        </span>
         <h2 className="font-display text-4xl lg:text-5xl text-brown mb-4">
           Thank you, <span className="italic">{guestName.split(" ")[0]}.</span>
         </h2>
         <p className="text-taupe text-sm lg:text-base leading-relaxed max-w-md mx-auto">
-          We've received your reservation request. Our team will contact you at{" "}
-          <span className="text-brown font-medium">{guestEmail}</span> within 24 hours to confirm
-          your booking.
+          {isPaid
+            ? `Your payment of ${fmtMoney(total)} was successfully processed via PayU. A confirmation voucher and tax invoice have been emailed to `
+            : "We've received your reservation request. Our team will contact you at "}
+          <span className="text-brown font-medium">{guestEmail}</span>.
         </p>
       </div>
 
-      <div className="bg-brown text-ivory mb-8">
-        <div className="px-6 py-4 border-b border-ivory/10">
+      <div className="bg-brown text-ivory mb-8 shadow-md">
+        <div className="px-6 py-4 border-b border-ivory/10 flex items-center justify-between">
           <span className="eyebrow text-gold text-[10px]">Booking Details</span>
+          {isPaid && (
+            <span className="eyebrow text-[9px] px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold">
+              ✓ PayU Verified
+            </span>
+          )}
         </div>
         <div className="divide-y divide-ivory/8">
           <div className="px-6 py-3.5 flex items-center justify-between gap-4">
             <span className="eyebrow text-ivory/35 text-[10px] shrink-0">Booking ID</span>
             <span className="font-display text-gold tracking-widest text-sm">{bookingId}</span>
           </div>
+          {payuTxnId && (
+            <div className="px-6 py-3.5 flex items-center justify-between gap-4">
+              <span className="eyebrow text-ivory/35 text-[10px] shrink-0">PayU Txn ID</span>
+              <span className="font-mono text-ivory/90 text-xs text-right break-all">
+                {payuTxnId}
+              </span>
+            </div>
+          )}
+          {payuMihpayid && (
+            <div className="px-6 py-3.5 flex items-center justify-between gap-4">
+              <span className="eyebrow text-ivory/35 text-[10px] shrink-0">PayU Ref ID</span>
+              <span className="font-mono text-ivory/90 text-xs text-right break-all">
+                {payuMihpayid}
+              </span>
+            </div>
+          )}
           {rows.map((r) =>
             r.room ? (
               <div key={r.uid} className="px-6 py-3.5 flex items-center justify-between gap-4">
@@ -977,23 +1069,28 @@ function SuccessSection({
           )}
           {(
             [
-              ["Check-in", fmtDate(checkIn)],
-              ["Check-out", fmtDate(checkOut)],
+              ["Check-in", `${fmtDate(checkIn)} (from 12:00 PM)`],
+              ["Check-out", `${fmtDate(checkOut)} (until 11:00 AM)`],
               ["Duration", nights > 0 ? `${nights} night${nights !== 1 ? "s" : ""}` : "—"],
               ["Guests", String(totalGuests)],
               ["Guest Name", guestName],
-              ["Total", fmtMoney(total)],
-              ["Payment Status", "Pending — Our team will confirm"],
+              ["Total Paid", fmtMoney(total)],
+              [
+                "Payment Status",
+                isPaid ? "Paid via PayU (Test Mode)" : "Pending — Our team will confirm",
+              ],
             ] as [string, string][]
           ).map(([label, value]) => (
             <div key={label} className="px-6 py-3.5 flex items-center justify-between gap-4">
               <span className="eyebrow text-ivory/35 text-[10px] shrink-0">{label}</span>
               <span
                 className={
-                  label === "Total"
+                  label === "Total Paid"
                     ? "text-gold text-xl"
                     : label === "Payment Status"
-                      ? "eyebrow text-gold text-[10px] text-right"
+                      ? isPaid
+                        ? "text-emerald-400 font-semibold text-xs text-right"
+                        : "eyebrow text-gold text-[10px] text-right"
                       : "text-ivory text-sm text-right"
                 }
               >
@@ -1003,6 +1100,30 @@ function SuccessSection({
           ))}
         </div>
       </div>
+
+      {whatsappOptIn && (
+        <div className="bg-emerald-50/90 border border-emerald-300 p-5 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl shrink-0">💬</span>
+            <div>
+              <span className="font-display text-emerald-950 text-base block font-medium">
+                WhatsApp Confirmation Ready
+              </span>
+              <p className="text-emerald-800 text-xs mt-0.5 leading-relaxed">
+                We've prepared your booking confirmation voucher and directions for WhatsApp.
+              </p>
+            </div>
+          </div>
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba5a] text-white eyebrow text-[11px] px-6 py-3.5 shadow-sm transition-colors text-center font-semibold"
+          >
+            <span>💬</span> Open in WhatsApp
+          </a>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3">
         <Link
@@ -1063,7 +1184,27 @@ function BookingPageInner() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [hasAutoScrolledToRooms, setHasAutoScrolledToRooms] = useState(false);
   const [bookingId] = useState(() => "LDV-" + Math.random().toString(36).slice(2, 8).toUpperCase());
+  const [whatsappOptIn, setWhatsappOptIn] = useState(true);
+  const [availability, setAvailability] = useState<Record<string, number> | null>(null);
 
+  interface ConfirmedBookingDetails {
+    bookingId: string;
+    guestName: string;
+    guestEmail: string;
+    guestPhone?: string;
+    checkIn: string;
+    checkOut: string;
+    rooms: Array<{ roomId: string; guests: number }>;
+    total: number;
+    status: string;
+    paymentStatus: string;
+    paymentMethod: string;
+    payuTxnId?: string;
+    payuMihpayid?: string;
+    whatsappOptIn?: boolean;
+  }
+
+  const [confirmedBooking, setConfirmedBooking] = useState<ConfirmedBookingDetails | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -1091,6 +1232,33 @@ function BookingPageInner() {
       })
       .catch(console.error);
   }, []);
+
+  // Fetch real-time room availability whenever check-in or check-out dates change
+  useEffect(() => {
+    if (!checkIn || !checkOut || !validateBookingDates(checkIn, checkOut)) {
+      setAvailability(null);
+      return;
+    }
+
+    let isCurrent = true;
+    fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/rooms/availability?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`,
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isCurrent || !Array.isArray(data)) return;
+        const map: Record<string, number> = {};
+        data.forEach((item: { roomId: string; available: number }) => {
+          map[item.roomId] = item.available;
+        });
+        setAvailability(map);
+      })
+      .catch((err) => console.warn("Failed to fetch live room availability:", err));
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [checkIn, checkOut]);
 
   // Restore the persisted booking draft once, on mount. checkIn/checkOut/roomRows above
   // are already seeded from the entry URL (homepage widget / room-card deep link) by
@@ -1122,6 +1290,56 @@ function BookingPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Listen for PayU response redirection (?status=success or ?status=failed)
+  useEffect(() => {
+    const status = searchParams.get("status");
+    const paramBookingId = searchParams.get("bookingId");
+    const txnid = searchParams.get("txnid");
+    const mihpayid = searchParams.get("mihpayid");
+    const errorParam = searchParams.get("error");
+
+    if (status === "success" && paramBookingId) {
+      setCurrentStep(5);
+      clearBookingDraft();
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      fetch(`${apiUrl}/api/booking/${encodeURIComponent(paramBookingId)}`)
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error("Could not fetch remote booking record");
+        })
+        .then((data) => {
+          setConfirmedBooking(data);
+        })
+        .catch((err) => {
+          console.warn("Could not fetch remote booking record, using fallback:", err);
+          setConfirmedBooking({
+            bookingId: paramBookingId,
+            guestName: guestName || "Valued Guest",
+            guestEmail: guestEmail || "your provided email",
+            guestPhone: guestPhone,
+            checkIn: checkIn,
+            checkOut: checkOut,
+            rooms: roomRows.map((r) => ({ roomId: r.roomId, guests: r.guests })),
+            total: total,
+            status: "Confirmed",
+            paymentStatus: "Paid",
+            paymentMethod: "PayU",
+            payuTxnId: txnid || undefined,
+            payuMihpayid: mihpayid || undefined,
+            whatsappOptIn: whatsappOptIn,
+          });
+        });
+    } else if (status === "failed") {
+      setCurrentStep(4);
+      setSubmitError(
+        errorParam
+          ? decodeURIComponent(errorParam)
+          : "Payment was cancelled or could not be processed. Please try again.",
+      );
+    }
+  }, [searchParams]);
+
   // Tracks the last `?step=` value this effect itself has already reconciled, so it only
   // reacts to a *change* in the URL's step (browser back/forward, a manual edit, or our
   // own router.push/replace below) rather than re-running whenever any booking field
@@ -1137,7 +1355,7 @@ function BookingPageInner() {
   useEffect(() => {
     if (!hydrated) return;
 
-    if (currentStep === 5) {
+    if (currentStep === 5 || searchParams.get("status") === "success") {
       // Confirmation screen isn't a resumable step; stop reconciling against the URL.
       lastStepParamRef.current = searchParams.get("step") ?? "";
       return;
@@ -1220,29 +1438,7 @@ function BookingPageInner() {
     if (!room) return { uid: row.uid, room, guests: row.guests, subtotal: 0 };
 
     const basePrice = parsePrice(room.price);
-    const anyRoom = room as unknown as Record<string, string>;
-    const specialPrice = anyRoom.specialPrice ? parsePrice(anyRoom.specialPrice) : basePrice;
-
-    let subtotal = 0;
-    if (checkIn && nights > 0) {
-      for (let i = 0; i < nights; i++) {
-        const d = new Date(checkIn);
-        d.setDate(d.getDate() + i);
-        let nightPrice = basePrice;
-
-        if (anyRoom.specialPriceStartDate && anyRoom.specialPriceEndDate) {
-          const startDate = new Date(anyRoom.specialPriceStartDate).setHours(0, 0, 0, 0);
-          const endDate = new Date(anyRoom.specialPriceEndDate).setHours(23, 59, 59, 999);
-          const current = d.getTime();
-          if (current >= startDate && current <= endDate) {
-            nightPrice = specialPrice;
-          }
-        }
-        subtotal += nightPrice;
-      }
-    } else {
-      subtotal = basePrice;
-    }
+    const subtotal = checkIn && nights > 0 ? basePrice * nights : basePrice;
     return { uid: row.uid, room, guests: row.guests, subtotal };
   });
 
@@ -1321,9 +1517,12 @@ function BookingPageInner() {
   }
 
   function attemptAddRoom(room: RoomItem): string | null {
-    const cap = ROOM_TYPE_CAPS[room.category] ?? Infinity;
-    if (countOfType(room.id) >= cap) {
-      return `No more ${room.category} rooms available for these dates.`;
+    const liveAvailable =
+      availability && availability[room.id] !== undefined
+        ? availability[room.id]
+        : (ROOM_TYPE_CAPS[room.category] ?? Infinity);
+    if (countOfType(room.id) >= liveAvailable) {
+      return `No more ${room.name} rooms available for your selected dates.`;
     }
     if (roomRows.length >= OVERALL_ROOM_CAP) {
       return "Maximum 5 rooms per booking. Please contact us directly for larger group bookings.";
@@ -1368,9 +1567,10 @@ function BookingPageInner() {
     setSubmitError(null);
 
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+
       // 1. Fetch public key and session nonce from backend
-      // In production, you would fetch from window.location.origin or a configured API base
-      const keyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/security/key`);
+      const keyRes = await fetch(`${apiUrl}/api/security/key`);
       if (!keyRes.ok) {
         throw new Error("Failed to establish secure connection with server");
       }
@@ -1386,14 +1586,16 @@ function BookingPageInner() {
         guestEmail,
         guestPhone: guestPhone ? `+91${guestPhone}` : "",
         consent: { given: consentChecked, timestamp: consentTimestamp },
+        whatsappOptIn,
+        couponCode: couponCode.trim(),
         total,
       };
 
       // 3. Encrypt payload on client side using imported keys
       const envelope = await encryptPayload(payload, keyData.publicKey, keyData.nonceId);
 
-      // 4. Post encrypted envelope and the nonce ID to server
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking`, {
+      // 4. Initiate PayU order
+      const res = await fetch(`${apiUrl}/api/payment/initiate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1405,25 +1607,34 @@ function BookingPageInner() {
       });
 
       const result = await res.json();
-      if (!res.ok) {
-        throw new Error(result.error || "Failed to process reservation");
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || "Failed to initiate payment with PayU");
       }
 
-      // 5. Success -> transition to confirmation screen. The draft has served its purpose;
-      // clear it and drop the ?step= param so a refresh here can't resubmit or reopen an
-      // editable session (currentStep itself stays 5 in memory for this render only).
-      setCurrentStep(5);
-      clearBookingDraft();
-      router.replace(pathname, { scroll: false });
-      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
+      // 5. Submit dynamic form directly to PayU
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = result.actionUrl;
+
+      for (const [key, value] of Object.entries(result.params)) {
+        if (value !== undefined && value !== null) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = String(value);
+          form.appendChild(input);
+        }
+      }
+
+      document.body.appendChild(form);
+      form.submit();
     } catch (err: unknown) {
-      console.error("Reservation submit error:", err);
+      console.error("Payment initiation error:", err);
       const errorMessage =
         err instanceof Error
           ? err.message
-          : "Failed to connect to reservation service. Please try again.";
+          : "Failed to connect to PayU payment gateway. Please try again.";
       setSubmitError(errorMessage);
-    } finally {
       setIsSubmitting(false);
     }
   }
@@ -1559,6 +1770,7 @@ function BookingPageInner() {
                             room={r}
                             count={countOfType(r.id)}
                             totalRooms={roomRows.length}
+                            availableCount={availability ? availability[r.id] : undefined}
                             onAttemptAdd={() => attemptAddRoom(r)}
                             onRemoveOne={() => removeLastRowOfType(r.id)}
                           />
@@ -1694,6 +1906,25 @@ function BookingPageInner() {
                         </div>
                       </div>
 
+                      {/* WhatsApp Opt-In Toggle */}
+                      <label className="flex items-start gap-3 p-3.5 mb-4 bg-champagne/40 border border-brown/10 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={whatsappOptIn}
+                          onChange={(e) => setWhatsappOptIn(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 accent-[var(--color-gold,#b9985a)] shrink-0 cursor-pointer"
+                        />
+                        <div className="flex flex-col text-xs leading-relaxed">
+                          <span className="font-medium text-brown flex items-center gap-1.5">
+                            <span>💬</span> Receive booking confirmation &amp; updates on WhatsApp
+                          </span>
+                          <span className="text-taupe text-[11px] mt-0.5">
+                            We will send your room details, hotel location, and instant check-in
+                            voucher to your phone number.
+                          </span>
+                        </div>
+                      </label>
+
                       <label className="flex items-start gap-3 mb-8 cursor-pointer">
                         <input
                           type="checkbox"
@@ -1728,11 +1959,11 @@ function BookingPageInner() {
                   </div>
                 ))}
 
-              {/* ── Step 4: Review & Confirm ── */}
+              {/* ── Step 4: Review & Pay ── */}
               {currentStep >= 4 && (
                 <div style={{ scrollMarginTop: "96px" }} className="animate-fade-up">
                   <section>
-                    <SectionHeader n="04" title="Review & Confirm" />
+                    <SectionHeader n="04" title="Review & Pay" />
 
                     {/* Mobile: full inline booking summary (no persistent sidebar on mobile) */}
                     <div className="lg:hidden mb-6">
@@ -1748,8 +1979,8 @@ function BookingPageInner() {
                     </div>
 
                     {/* Desktop: concise confirmation (full detail already in the persistent sidebar) */}
-                    <div className="hidden lg:block mb-8">
-                      <p className="font-display text-brown text-xl leading-relaxed mb-4">
+                    <div className="hidden lg:block mb-6">
+                      <p className="font-display text-brown text-xl leading-relaxed mb-3">
                         You&rsquo;re booking {rows.length} room{rows.length !== 1 ? "s" : ""} for{" "}
                         {nights} night{nights !== 1 ? "s" : ""} ({fmtDate(checkIn)} –{" "}
                         {fmtDate(checkOut)})
@@ -1759,8 +1990,39 @@ function BookingPageInner() {
                       </span>
                     </div>
 
+                    {/* PayU Trust & Payment Methods Card */}
+                    <div className="bg-white border border-brown/15 p-5 mb-6 shadow-sm">
+                      <div className="flex items-center justify-between gap-4 mb-3 border-b border-brown/10 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-700 text-lg">🔒</span>
+                          <span className="eyebrow text-brown text-[11px] font-semibold">
+                            Secure Online Payment via PayU
+                          </span>
+                        </div>
+                        <span className="eyebrow text-[9px] px-2 py-0.5 bg-gold/15 text-gold border border-gold/30 uppercase font-semibold">
+                          Test Mode
+                        </span>
+                      </div>
+                      <p className="text-taupe text-xs leading-relaxed mb-4">
+                        Pay safely using your preferred payment method. You will be redirected to
+                        PayU India&rsquo;s encrypted gateway to complete the transaction.
+                      </p>
+                      <div className="flex flex-wrap gap-2 text-[10px] text-brown/70 eyebrow">
+                        <span className="bg-ivory border border-brown/15 px-2.5 py-1.5 flex items-center gap-1.5">
+                          📱 UPI (GPay, PhonePe, Paytm, BHIM)
+                        </span>
+                        <span className="bg-ivory border border-brown/15 px-2.5 py-1.5 flex items-center gap-1.5">
+                          💳 Debit &amp; Credit Cards (Visa, MC, RuPay)
+                        </span>
+                        <span className="bg-ivory border border-brown/15 px-2.5 py-1.5 flex items-center gap-1.5">
+                          🏦 Net Banking (50+ Banks)
+                        </span>
+                      </div>
+                    </div>
+
                     {submitError && (
                       <div className="bg-red-500/10 border border-red-500/20 text-red-600 p-4 mb-4 text-xs font-sans">
+                        <strong className="block mb-1 font-semibold">Payment Issue:</strong>
                         {submitError}
                       </div>
                     )}
@@ -1768,16 +2030,26 @@ function BookingPageInner() {
                     <button
                       onClick={submitReservation}
                       disabled={isSubmitting}
-                      className={`hidden lg:inline-block eyebrow px-10 py-4 transition-all text-[11px] ${
+                      className={`hidden lg:inline-flex items-center justify-center gap-3 eyebrow px-10 py-4 transition-all text-[11px] shadow-sm font-semibold ${
                         isSubmitting
                           ? "bg-brown/15 text-brown/40 cursor-not-allowed"
                           : "bg-gold text-brown hover:bg-brown hover:text-ivory"
                       }`}
                     >
-                      Pay and Book
+                      {isSubmitting ? (
+                        <>
+                          <span className="inline-block animate-spin text-sm">↻</span> Connecting to
+                          PayU...
+                        </>
+                      ) : (
+                        <>
+                          <span>🔒</span> Proceed to PayU (UPI / Cards / NetBanking)
+                        </>
+                      )}
                     </button>
                     <p className="text-taupe text-xs mt-3">
-                      You&rsquo;ll receive a booking confirmation and invoice via email.
+                      You&rsquo;ll receive an instant confirmation receipt and WhatsApp voucher upon
+                      payment.
                     </p>
                   </section>
                 </div>
@@ -1802,14 +2074,36 @@ function BookingPageInner() {
         </div>
       ) : (
         <SuccessSection
-          bookingId={bookingId}
-          guestName={guestName}
-          guestEmail={guestEmail}
-          rows={rows}
-          checkIn={checkIn}
-          checkOut={checkOut}
-          nights={nights}
-          total={total}
+          bookingId={confirmedBooking?.bookingId || bookingId}
+          guestName={confirmedBooking?.guestName || guestName}
+          guestEmail={confirmedBooking?.guestEmail || guestEmail}
+          guestPhone={confirmedBooking?.guestPhone || guestPhone}
+          whatsappOptIn={confirmedBooking?.whatsappOptIn ?? whatsappOptIn}
+          rows={
+            confirmedBooking
+              ? confirmedBooking.rooms.map((r, i) => {
+                  const room = roomsList.find((rm) => rm.id === r.roomId);
+                  const basePrice = room ? parsePrice(room.price) : 0;
+                  const cNights =
+                    confirmedBooking.checkIn && confirmedBooking.checkOut
+                      ? nightCount(confirmedBooking.checkIn, confirmedBooking.checkOut)
+                      : nights;
+                  const sub = cNights > 0 ? basePrice * cNights : basePrice;
+                  return { uid: `confirmed-${i}`, room, guests: r.guests, subtotal: sub };
+                })
+              : rows
+          }
+          checkIn={confirmedBooking?.checkIn || checkIn}
+          checkOut={confirmedBooking?.checkOut || checkOut}
+          nights={
+            confirmedBooking && confirmedBooking.checkIn && confirmedBooking.checkOut
+              ? nightCount(confirmedBooking.checkIn, confirmedBooking.checkOut)
+              : nights
+          }
+          total={confirmedBooking?.total || total}
+          paymentStatus={confirmedBooking?.paymentStatus || "Paid"}
+          payuTxnId={confirmedBooking?.payuTxnId || searchParams.get("txnid") || undefined}
+          payuMihpayid={confirmedBooking?.payuMihpayid || searchParams.get("mihpayid") || undefined}
         />
       )}
 

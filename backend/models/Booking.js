@@ -40,13 +40,14 @@ const BookingSchema = new mongoose.Schema({
   },
   guestEmail: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
     lowercase: true,
+    default: "",
   },
   consent: {
-    given: { type: Boolean, required: true },
-    timestamp: { type: Date, required: true },
+    given: { type: Boolean, default: true },
+    timestamp: { type: Date, default: Date.now },
     _id: false,
   },
   total: {
@@ -55,8 +56,51 @@ const BookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Confirmed", "Cancelled"],
-    default: "Confirmed",
+    enum: ["Pending", "Confirmed", "Cancelled", "Failed"],
+    default: "Pending",
+  },
+  paymentStatus: {
+    type: String,
+    enum: ["Pending", "Paid", "Failed", "Refunded"],
+    default: "Pending",
+  },
+  paymentMethod: {
+    type: String,
+    default: "PayU",
+  },
+  payuTxnId: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+  payuMihpayid: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+  payuMode: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+  payuStatus: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+  source: {
+    type: String,
+    enum: ["online", "offline"],
+    default: "online",
+  },
+  whatsappOptIn: {
+    type: Boolean,
+    default: true,
+  },
+  notes: {
+    type: String,
+    trim: true,
+    default: "",
   },
   createdAt: {
     type: Date,

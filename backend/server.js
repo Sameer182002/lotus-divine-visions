@@ -1,17 +1,15 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import Room from "./models/Room.js";
 import securityRoutes from "./routes/security.js";
 import bookingRoutes from "./routes/booking.js";
 import roomsRoutes from "./routes/rooms.js";
 import adminRoutes from "./routes/admin.js";
-
-// Load environment variables
-dotenv.config();
+import paymentRoutes from "./routes/payment.js";
 
 // Connect to MongoDB
 connectDB().then(async () => {
@@ -42,28 +40,51 @@ app.use(
 );
 
 // 2. Cross-Origin Resource Sharing
-// Allow requests from our configured frontend origin only
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    const isLocalhost =
-      origin.startsWith("http://localhost:") ||
-      origin.startsWith("https://localhost:") ||
-      origin.startsWith("http://127.0.0.1:") ||
-      origin.startsWith("https://127.0.0.1:");
+// Allow requests from our frontend, local development hosts, and PayU payment gateways
+const corsOptionsDelegate = function (req, callback) {
+  const origin = req.header("Origin");
 
-    if (isLocalhost || origin === process.env.CORS_ORIGIN) {
-      return callback(null, true);
-    }
-    return callback(new Error("Not allowed by CORS"));
-  },
-  optionsSuccessStatus: 200,
+  // Always allow PayU payment callbacks and webhooks unconditionally
+  if (
+    req.originalUrl &&
+    (req.originalUrl.includes("/api/payment/response") ||
+      req.originalUrl.includes("/api/payment"))
+  ) {
+    return callback(null, { origin: true });
+  }
+
+  // Non-browser requests or same-origin requests
+  if (!origin) {
+    return callback(null, { origin: true });
+  }
+
+  const isLocalhost =
+    origin.startsWith("http://localhost:") ||
+    origin.startsWith("https://localhost:") ||
+    origin.startsWith("http://127.0.0.1:") ||
+    origin.startsWith("https://127.0.0.1:");
+
+  const isPayU =
+    origin.includes("payu.in") ||
+    origin.includes("payubiz.in") ||
+    origin.includes("payumoney.com");
+
+  const isConfiguredOrigin =
+    process.env.CORS_ORIGIN && origin === process.env.CORS_ORIGIN;
+
+  if (isLocalhost || isPayU || isConfiguredOrigin) {
+    return callback(null, { origin: true, credentials: true });
+  }
+
+  // Disable CORS headers for untrusted origins without throwing an unhandled 500 error
+  return callback(null, { origin: false });
 };
-app.use(cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
 
 // 3. Body parser
-// Set JSON limit to 2mb to support Base64 image uploads for new rooms
+// Set JSON and urlencoded limits to support PayU form-post callbacks and image payloads
 app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 // 4. Rate Limiter (Brute-force and DDoS Mitigation)
 const apiLimiter = rateLimit({
@@ -71,6 +92,7 @@ const apiLimiter = rateLimit({
   max: 100, // Limit each IP to 100 requests per window
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => Boolean(req.originalUrl && req.originalUrl.includes("/api/payment/response")),
   message: { error: "Too many requests from this IP, please try again after 15 minutes" },
 });
 
@@ -94,6 +116,7 @@ app.use("/api/security", securityRoutes);
 app.use("/api/booking", bookingRoutes);
 app.use("/api/rooms", roomsRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/payment", paymentRoutes);
 
 // Root route — branded status page visible at api.yourdomain.com
 app.get("/", (req, res) => {

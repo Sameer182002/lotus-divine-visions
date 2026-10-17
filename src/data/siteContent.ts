@@ -106,12 +106,12 @@ export const ROOMS_SECTION = {
 export const ROOMS = [
   {
     name: "Deluxe",
-    desc: "Private plunge pool and meditation terrace overlooking the gardens.",
+    desc: "A comfortable, well-appointed room with a king-size bed and modern amenities near the Golden Temple.",
     price: "From ₹1,500",
   },
   {
     name: "Premium",
-    desc: "Panoramic views with floor-to-ceiling windows.",
+    desc: "A more spacious room with a king-size bed, ideal for extra room to relax.",
     price: "From ₹2,000",
   },
 ] as const;

@@ -37,63 +37,58 @@ async function runSeed() {
 
   console.log("Converting static room asset images to Base64...");
 
+  const ROOM_AMENITIES = [
+    "King-size bed",
+    "Air conditioning",
+    "Free Wi-Fi",
+    "Smart TV",
+    "Work desk & chair",
+    "Wardrobe with hangers",
+    "Blackout curtains",
+    "24-hour hot & cold water",
+  ];
+
   const defaultRooms = [
     {
       id: "lotus-sanctuary",
-      name: "Deluxe Room",
+      name: "Deluxe",
       category: "Deluxe",
       description:
-        "A well-appointed room with modern furnishings, a comfortable king-size bed, and garden views. Ideal for couples and solo travellers looking for a relaxing stay.",
-      amenities: [
-        "King-size bed",
-        "Garden view",
-        "Free Wi-Fi",
-        "Smart TV",
-        "Work desk",
-        "En-suite bathroom",
-      ],
-      size: "32 sq m",
+        "A comfortable, well-appointed room with a king-size bed and everything you need for a relaxing stay near the Golden Temple.",
+      amenities: ROOM_AMENITIES,
+      size: "11 × 12 FT",
       capacity: "2 Guests",
-      price: "From ₹8,000 / night",
-      imageUrl: imageToBase64("room-1.jpg"),
-      gallery: [
-        imageToBase64("room-1.jpg"),
-        imageToBase64("spa.jpg"),
-        imageToBase64("pool.jpg"),
-        imageToBase64("lobby.jpg"),
-      ],
+      price: "From ₹1,500 / night",
+      inventory: 14,
+      imageKey: "room1",
+      imageAlt: "Deluxe room at Lotus Divine",
+      imageUrl: imageToBase64("room-deluxe.jpg"),
+      gallery: [imageToBase64("room-deluxe.jpg")],
+      isActive: true,
     },
     {
       id: "imperial-vista",
-      name: "Family Suite",
-      category: "Suite",
+      name: "Premium",
+      category: "Premium",
       description:
-        "A spacious suite with a separate living area, perfect for families and groups. Includes a comfortable lounge, two bedrooms, and modern amenities throughout.",
-      amenities: [
-        "Two bedrooms",
-        "Separate living area",
-        "Free Wi-Fi",
-        "Smart TV",
-        "Mini-bar",
-        "En-suite bathroom",
-      ],
-      size: "54 sq m",
-      capacity: "4 Guests",
-      price: "From ₹12,000 / night",
-      imageUrl: imageToBase64("room-2.jpg"),
-      gallery: [
-        imageToBase64("room-2.jpg"),
-        imageToBase64("dining.jpg"),
-        imageToBase64("room-3.jpg"),
-        imageToBase64("hero-luxury.jpg"),
-      ],
+        "A more spacious room with a king-size bed, ideal if you want extra room to relax.",
+      amenities: ROOM_AMENITIES,
+      size: "15 × 12 FT",
+      capacity: "Up to 4 Guests",
+      price: "From ₹2,000 / night",
+      inventory: 5,
+      imageKey: "room2",
+      imageAlt: "Premium room at Lotus Divine",
+      imageUrl: imageToBase64("room-premium.jpg"),
+      gallery: [imageToBase64("room-premium.jpg")],
+      isActive: true,
     },
   ];
 
   console.log("Clearing existing rooms collection...");
   await Room.deleteMany({});
 
-  console.log("Seeding base64 dynamic rooms...");
+  console.log("Seeding accurate dynamic rooms matching frontend...");
   await Room.insertMany(defaultRooms);
 
   console.log("Database seeding completed successfully!");

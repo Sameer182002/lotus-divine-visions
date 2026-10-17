@@ -13,14 +13,14 @@ async function updateInventory() {
     // Update Deluxe Rooms
     const deluxeResult = await Room.updateMany(
       { category: "Deluxe" },
-      { $set: { inventory: 14, price: "1500", weekendPrice: "2000" } },
+      { $set: { inventory: 14, price: "From ₹1,500 / night", size: "11 × 12 FT" } },
     );
     console.log(`Updated ${deluxeResult.modifiedCount} Deluxe rooms.`);
 
     // Update Premium Rooms
     const premiumResult = await Room.updateMany(
       { category: "Premium" },
-      { $set: { inventory: 5, price: "2000", weekendPrice: "2500" } },
+      { $set: { inventory: 5, price: "From ₹2,000 / night", size: "15 × 12 FT" } },
     );
     console.log(`Updated ${premiumResult.modifiedCount} Premium rooms.`);
 

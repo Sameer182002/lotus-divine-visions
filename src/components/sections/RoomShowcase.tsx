@@ -51,13 +51,18 @@ const GALLERIES: Record<string, GalleryImage[]> = {
 
 const AMENITY_ICONS: Record<string, LucideIcon> = {
   "King-size bed": BedDouble,
+  "Queen-size bed": BedDouble,
   "Air conditioning": Wind,
   "Free Wi-Fi": Wifi,
   "Smart TV": Tv,
   "Work desk & chair": Briefcase,
+  "Work desk": Briefcase,
   "Wardrobe with hangers": Shirt,
+  Wardrobe: Shirt,
   "Blackout curtains": Blinds,
   "24-hour hot & cold water": Droplet,
+  "Hot & cold water": Droplet,
+  "En-suite bathroom": Droplet,
 };
 
 const BOOKING_SLUGS: Record<string, string> = {

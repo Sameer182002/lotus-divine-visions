@@ -3,16 +3,23 @@
 // param and sessionStorage. `BookingPageClient.tsx` is the only consumer today.
 import { isCheckInValid, isCheckOutValid, validateBookingDates } from "@/lib/booking-dates";
 
-export type BookingStepKey = "stay" | "rooms" | "contact" | "payment";
+export type BookingStepKey = "stay" | "rooms" | "contact" | "payment" | "confirmation";
 
 // Ordered so array index + 1 lines up with BookingPageClient's numeric `currentStep`.
-export const STEP_ORDER: readonly BookingStepKey[] = ["stay", "rooms", "contact", "payment"];
+export const STEP_ORDER: readonly BookingStepKey[] = [
+  "stay",
+  "rooms",
+  "contact",
+  "payment",
+  "confirmation",
+];
 
 export const STEP_TO_KEY: Record<number, BookingStepKey> = {
   1: "stay",
   2: "rooms",
   3: "contact",
   4: "payment",
+  5: "confirmation",
 };
 
 export const KEY_TO_STEP: Record<BookingStepKey, number> = {
@@ -20,6 +27,7 @@ export const KEY_TO_STEP: Record<BookingStepKey, number> = {
   rooms: 2,
   contact: 3,
   payment: 4,
+  confirmation: 5,
 };
 
 export const PHONE_DIGITS = 10;

@@ -58,6 +58,10 @@ const RoomSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  imageAlt: {
+    type: String,
+    trim: true,
+  },
   gallery: {
     type: [String],
     default: [],

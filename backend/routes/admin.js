@@ -48,6 +48,238 @@ router.put("/bookings/:id/cancel", requireAdmin, async (req, res) => {
   }
 });
 
+// POST /api/admin/bookings/offline
+router.post("/bookings/offline", requireAdmin, async (req, res) => {
+  const {
+    guestName,
+    guestPhone,
+    guestEmail,
+    roomId,
+    roomCount = 1,
+    guestsPerRoom = 2,
+    checkIn,
+    checkOut,
+    total,
+    notes,
+  } = req.body;
+
+  if (!guestName || !roomId || !checkIn || !checkOut) {
+    return res.status(400).json({
+      error: "Missing required booking details (guestName, roomId, checkIn, checkOut)",
+    });
+  }
+
+  const checkInDate = new Date(checkIn);
+  const checkOutDate = new Date(checkOut);
+  if (
+    isNaN(checkInDate.getTime()) ||
+    isNaN(checkOutDate.getTime()) ||
+    checkOutDate <= checkInDate
+  ) {
+    return res.status(400).json({ error: "Invalid check-in or check-out dates" });
+  }
+
+  try {
+    const dbRoom = await Room.findOne({ id: roomId, isActive: { $ne: false } });
+    if (!dbRoom) {
+      return res.status(400).json({ error: `Room type ${roomId} not found or inactive` });
+    }
+
+    const countToBook = Math.max(1, parseInt(roomCount, 10) || 1);
+
+    // Check inventory availability for these dates
+    const overlappingBookings = await Booking.find({
+      status: "Confirmed",
+      checkIn: { $lt: checkOut },
+      checkOut: { $gt: checkIn },
+    });
+
+    let alreadyBookedCount = 0;
+    overlappingBookings.forEach((b) => {
+      alreadyBookedCount += b.rooms.filter((r) => r.roomId === roomId).length;
+    });
+
+    const roomCapacity = dbRoom.inventory || 1;
+    const availableRooms = Math.max(0, roomCapacity - alreadyBookedCount);
+
+    if (countToBook > availableRooms) {
+      return res.status(400).json({
+        error: `Cannot book ${countToBook} room(s). Only ${availableRooms} room(s) available for these dates (${alreadyBookedCount}/${roomCapacity} already occupied).`,
+      });
+    }
+
+    const nights = Math.max(
+      1,
+      Math.round((checkOutDate.getTime() - checkInDate.getTime()) / 86400000),
+    );
+    const basePrice = parseFloat(dbRoom.price.toString().replace(/[^0-9.]/g, "")) || 0;
+    const calculatedTotal =
+      total !== undefined && total !== "" ? Number(total) : basePrice * countToBook * nights;
+
+    const bookingId = "LDV-OFF-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+
+    const roomItems = [];
+    for (let i = 0; i < countToBook; i++) {
+      roomItems.push({
+        roomId,
+        guests: Math.max(1, parseInt(guestsPerRoom, 10) || 2),
+      });
+    }
+
+    const booking = new Booking({
+      bookingId,
+      checkIn,
+      checkOut,
+      rooms: roomItems,
+      guestName: guestName.trim(),
+      guestPhone: guestPhone ? guestPhone.trim() : "",
+      guestEmail: guestEmail ? guestEmail.trim() : "",
+      consent: {
+        given: true,
+        timestamp: new Date(),
+      },
+      total: calculatedTotal,
+      status: "Confirmed",
+      paymentStatus: "Paid",
+      paymentMethod: "Cash / Desk",
+      source: "offline",
+      whatsappOptIn: false,
+      notes: notes ? notes.trim() : "",
+    });
+
+    await booking.save();
+
+    res.status(201).json({
+      success: true,
+      message: `Offline booking confirmed for ${countToBook} ${dbRoom.name} room(s)`,
+      booking,
+    });
+  } catch (error) {
+    console.error("Create offline booking error:", error);
+    res.status(500).json({ error: "Failed to create offline booking: " + error.message });
+  }
+});
+
+// GET /api/admin/occupancy?startDate=YYYY-MM-DD&days=30
+router.get("/occupancy", requireAdmin, async (req, res) => {
+  try {
+    let { startDate, days = 30 } = req.query;
+    days = Math.min(90, Math.max(1, parseInt(days, 10) || 30));
+
+    const start = startDate ? new Date(startDate) : new Date();
+    const startIso = !isNaN(start.getTime())
+      ? start.toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0];
+
+    const dbRooms = await Room.find({ isActive: { $ne: false } });
+    const deluxeRoom = dbRooms.find((r) => r.id === "lotus-sanctuary" || r.category === "Deluxe");
+    const premiumRoom = dbRooms.find((r) => r.id === "imperial-vista" || r.category === "Premium");
+
+    const deluxeTotal = deluxeRoom ? deluxeRoom.inventory || 14 : 14;
+    const premiumTotal = premiumRoom ? premiumRoom.inventory || 5 : 5;
+    const grandTotal = deluxeTotal + premiumTotal;
+
+    const endDateObj = new Date(new Date(startIso).getTime() + days * 86400000);
+    const endIso = endDateObj.toISOString().split("T")[0];
+
+    const bookings = await Booking.find({
+      status: "Confirmed",
+      checkIn: { $lt: endIso },
+      checkOut: { $gt: startIso },
+    }).sort({ checkIn: 1 });
+
+    const timeline = [];
+    const baseDate = new Date(startIso);
+
+    for (let i = 0; i < days; i++) {
+      const curDateObj = new Date(baseDate.getTime() + i * 86400000);
+      const curIso = curDateObj.toISOString().split("T")[0];
+
+      const activeBookings = bookings.filter((b) => b.checkIn <= curIso && b.checkOut > curIso);
+
+      let deluxeOccupied = 0;
+      let premiumOccupied = 0;
+      const occupyingBookings = [];
+
+      for (const b of activeBookings) {
+        let bDeluxe = 0;
+        let bPremium = 0;
+        b.rooms.forEach((r) => {
+          if (r.roomId === "lotus-sanctuary" || (deluxeRoom && r.roomId === deluxeRoom.id)) {
+            bDeluxe++;
+            deluxeOccupied++;
+          } else if (
+            r.roomId === "imperial-vista" ||
+            (premiumRoom && r.roomId === premiumRoom.id)
+          ) {
+            bPremium++;
+            premiumOccupied++;
+          }
+        });
+
+        occupyingBookings.push({
+          bookingId: b.bookingId,
+          guestName: b.guestName,
+          guestPhone: b.guestPhone,
+          source: b.source || "online",
+          checkIn: b.checkIn,
+          checkOut: b.checkOut,
+          deluxeRooms: bDeluxe,
+          premiumRooms: bPremium,
+          total: b.total,
+          notes: b.notes,
+        });
+      }
+
+      timeline.push({
+        date: curIso,
+        dayOfWeek: curDateObj.toLocaleDateString("en-US", { weekday: "short" }),
+        deluxe: {
+          total: deluxeTotal,
+          occupied: deluxeOccupied,
+          available: Math.max(0, deluxeTotal - deluxeOccupied),
+          isFull: deluxeOccupied >= deluxeTotal,
+        },
+        premium: {
+          total: premiumTotal,
+          occupied: premiumOccupied,
+          available: Math.max(0, premiumTotal - premiumOccupied),
+          isFull: premiumOccupied >= premiumTotal,
+        },
+        overall: {
+          total: grandTotal,
+          occupied: deluxeOccupied + premiumOccupied,
+          available: Math.max(0, grandTotal - (deluxeOccupied + premiumOccupied)),
+          isFull: deluxeOccupied + premiumOccupied >= grandTotal,
+        },
+        total: {
+          capacity: grandTotal,
+          occupied: deluxeOccupied + premiumOccupied,
+          available: Math.max(0, grandTotal - (deluxeOccupied + premiumOccupied)),
+          isFull: deluxeOccupied + premiumOccupied >= grandTotal,
+        },
+        bookings: occupyingBookings,
+      });
+    }
+
+    res.json({
+      summary: {
+        grandTotalRooms: grandTotal,
+        deluxeTotal,
+        premiumTotal,
+        grandTotal,
+        startDate: startIso,
+        days,
+        today: timeline[0] || null,
+      },
+      timeline,
+    });
+  } catch (error) {
+    console.error("Fetch occupancy error:", error);
+    res.status(500).json({ error: "Failed to calculate occupancy: " + error.message });
+  }
+});
+
 // POST /api/admin/rooms
 router.post("/rooms", requireAdmin, async (req, res) => {
   const { name, category, description, amenities, size, capacity, price, weekendPrice, imageUrl } =
@@ -103,8 +335,21 @@ router.post("/rooms", requireAdmin, async (req, res) => {
 // Updates a room by its slug id
 router.put("/rooms/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { name, category, description, amenities, size, capacity, price, imageUrl, gallery } =
-    req.body;
+  const {
+    name,
+    category,
+    description,
+    amenities,
+    size,
+    capacity,
+    price,
+    specialPrice,
+    specialPriceStartDate,
+    specialPriceEndDate,
+    imageUrl,
+    gallery,
+    inventory,
+  } = req.body;
 
   try {
     const room = await Room.findOne({ id });
@@ -123,6 +368,7 @@ router.put("/rooms/:id", requireAdmin, async (req, res) => {
     if (specialPriceEndDate !== undefined) room.specialPriceEndDate = specialPriceEndDate;
     if (imageUrl !== undefined) room.imageUrl = imageUrl;
     if (gallery !== undefined) room.gallery = gallery;
+    if (inventory !== undefined) room.inventory = inventory;
 
     if (amenities) {
       room.amenities = Array.isArray(amenities)

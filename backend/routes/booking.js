@@ -30,6 +30,7 @@ router.post("/", async (req, res) => {
       guestEmail,
       consent,
       couponCode,
+      whatsappOptIn,
     } = payload;
 
     if (
@@ -158,6 +159,8 @@ router.post("/", async (req, res) => {
       guestEmail,
       consent,
       total: secureTotal,
+      source: "online",
+      whatsappOptIn: Boolean(whatsappOptIn ?? true),
     });
 
     await booking.save();
@@ -243,6 +246,37 @@ router.post("/", async (req, res) => {
   } catch (error) {
     console.error("Booking handler error:", error.message);
     res.status(401).json({ error: error.message || "Failed to process booking request" });
+  }
+});
+
+// GET /api/booking/:bookingId
+// Public query to display confirmed booking summary upon successful payment
+router.get("/:bookingId", async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await Booking.findOne({ bookingId });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    res.json({
+      bookingId: booking.bookingId,
+      guestName: booking.guestName,
+      guestEmail: booking.guestEmail,
+      guestPhone: booking.guestPhone,
+      checkIn: booking.checkIn,
+      checkOut: booking.checkOut,
+      rooms: booking.rooms,
+      total: booking.total,
+      status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      paymentMethod: booking.paymentMethod,
+      payuTxnId: booking.payuTxnId,
+      payuMihpayid: booking.payuMihpayid,
+      whatsappOptIn: booking.whatsappOptIn,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch booking details" });
   }
 });
 
