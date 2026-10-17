@@ -10,11 +10,11 @@ const router = express.Router();
 // Helper to dynamically read current configuration
 function getPayUConfig() {
   return {
-    key: process.env.PAYU_MERCHANT_KEY || "a2prwK",
-    salt: process.env.PAYU_MERCHANT_SALT || "wwMKqPIqGARVm4D2Dl18UtvFbKTGYlQA",
-    paymentUrl: process.env.PAYU_PAYMENT_URL || "https://test.payu.in/_payment",
-    frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
-    backendUrl: process.env.BACKEND_URL || "http://localhost:5001",
+    key: process.env.NEXT_PUBLIC_PAYU_MERCHANT_KEY || "a2prwK",
+    salt: process.env.NEXT_PUBLIC_PAYU_MERCHANT_SALT || "wwMKqPIqGARVm4D2Dl18UtvFbKTGYlQA",
+    paymentUrl: process.env.NEXT_PUBLIC_PAYU_PAYMENT_URL || "https://test.payu.in/_payment",
+    frontendUrl: process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000",
+    backendUrl: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001",
   };
 }
 
