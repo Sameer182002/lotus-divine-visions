@@ -4,6 +4,7 @@ import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 import Settings from "../models/Settings.js";
 import { decryptRequest } from "../utils/crypto.js";
+import { sendWhatsAppConfirmation } from "../utils/aisensy.js";
 
 const router = express.Router();
 
@@ -396,6 +397,13 @@ router.post("/response", async (req, res) => {
         } catch (mailErr) {
           console.error("Failed to send post-payment email:", mailErr.message);
         }
+      }
+
+      // Send WhatsApp confirmation + Invoice PDF via AiSensy
+      try {
+        await sendWhatsAppConfirmation(booking);
+      } catch (waErr) {
+        console.error("Failed to send WhatsApp confirmation:", waErr.message);
       }
 
       return res.redirect(

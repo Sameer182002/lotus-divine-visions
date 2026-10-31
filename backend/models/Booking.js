@@ -107,6 +107,15 @@ const BookingSchema = new mongoose.Schema({
     trim: true,
     default: "",
   },
+  whatsappReminders: {
+    confirmationSent: { type: Boolean, default: false },
+    confirmationSentAt: { type: Date },
+    checkinReminderSent: { type: Boolean, default: false },
+    checkinReminderSentAt: { type: Date },
+    checkoutReminderSent: { type: Boolean, default: false },
+    checkoutReminderSentAt: { type: Date },
+    lastError: { type: String, default: "" },
+  },
   createdAt: {
     type: Date,
     default: Date.now,

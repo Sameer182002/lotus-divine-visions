@@ -44,6 +44,15 @@ interface AdminBooking {
   source?: "online" | "offline";
   whatsappOptIn?: boolean;
   notes?: string;
+  whatsappReminders?: {
+    confirmationSent?: boolean;
+    confirmationSentAt?: string;
+    checkinReminderSent?: boolean;
+    checkinReminderSentAt?: string;
+    checkoutReminderSent?: boolean;
+    checkoutReminderSentAt?: string;
+    lastError?: string;
+  };
 }
 
 interface AdminRoom {
@@ -192,9 +201,11 @@ export default function AdminDashboardPage() {
   });
   const [offlineTotal, setOfflineTotal] = useState("");
   const [offlineNotes, setOfflineNotes] = useState("");
+  const [offlineWhatsappOptIn, setOfflineWhatsappOptIn] = useState(true);
   const [offlineSubmitting, setOfflineSubmitting] = useState(false);
   const [offlineError, setOfflineError] = useState<string | null>(null);
   const [offlineSuccess, setOfflineSuccess] = useState<string | null>(null);
+  const [waSendingId, setWaSendingId] = useState<string | null>(null);
 
   // Gallery viewing modal
   const [activeGalleryRoom, setActiveGalleryRoom] = useState<AdminRoom | null>(null);
@@ -365,6 +376,50 @@ export default function AdminDashboardPage() {
     }
   }
 
+  // Manually dispatch WhatsApp messages (Confirmation / Check-in / Check-out)
+  async function handleSendWhatsApp(
+    bookingId: string,
+    action: "confirmation" | "checkin" | "checkout",
+  ) {
+    const actionLabel =
+      action === "confirmation"
+        ? "Booking Confirmation + Invoice PDF"
+        : action === "checkin"
+          ? "Check-in Reminder (Arrival)"
+          : "Check-out Reminder (Departure)";
+
+    if (!confirm(`Send ${actionLabel} to guest via WhatsApp for ${bookingId}?`)) return;
+
+    setWaSendingId(`${bookingId}-${action}`);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/bookings/${bookingId}/whatsapp-${action}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(
+          data.error || (data.result && (data.result.error || data.result.data?.message)) || "Failed to dispatch WhatsApp message",
+        );
+      }
+
+      alert(`✓ WhatsApp message sent to guest successfully!`);
+      fetchBookings();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to send WhatsApp message";
+      alert(`WhatsApp Error: ${msg}`);
+    } finally {
+      setWaSendingId(null);
+    }
+  }
+
   // Start editing a room's price/inventory
   function startEditRoom(room: AdminRoom) {
     setEditingRoom(room);
@@ -497,6 +552,7 @@ export default function AdminDashboardPage() {
           checkOut: offlineCheckOut,
           total: offlineTotal ? Number(offlineTotal) : undefined,
           notes: offlineNotes.trim(),
+          whatsappOptIn: offlineWhatsappOptIn,
         }),
       });
 
@@ -869,18 +925,79 @@ export default function AdminDashboardPage() {
                                   Txn: {b.payuTxnId}
                                 </span>
                               )}
+
+                              {/* WhatsApp status badge */}
+                              {b.whatsappReminders?.confirmationSent ? (
+                                <span
+                                  className="eyebrow text-[9px] px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1 font-medium"
+                                  title={`Confirmation sent at ${b.whatsappReminders.confirmationSentAt ? new Date(b.whatsappReminders.confirmationSentAt).toLocaleString() : ""}`}
+                                >
+                                  💬 WA Confirmed
+                                </span>
+                              ) : b.whatsappOptIn === false ? (
+                                <span className="eyebrow text-[9px] px-2 py-0.5 bg-gray-100 text-gray-500 border border-gray-200 inline-flex items-center gap-1">
+                                  💬 WA Opt-out
+                                </span>
+                              ) : (
+                                <span className="eyebrow text-[9px] px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center gap-1">
+                                  💬 WA Pending
+                                </span>
+                              )}
                             </div>
                           </td>
 
                           <td className="p-4 align-top text-right">
-                            {b.status !== "Cancelled" && (
-                              <button
-                                onClick={() => handleCancelBooking(b.bookingId)}
-                                className="eyebrow text-[9px] text-red-500 border border-red-500/30 px-3 py-1.5 hover:bg-red-500 hover:text-white transition-colors"
+                            <div className="flex flex-col gap-1.5 items-end">
+                              <a
+                                href={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/booking/${b.bookingId}/invoice.pdf`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="eyebrow text-[9px] border border-brown/30 px-2.5 py-1 text-brown hover:bg-brown hover:text-white transition-colors inline-flex items-center gap-1"
+                                title="Download Official Tax Invoice PDF"
                               >
-                                CANCEL
-                              </button>
-                            )}
+                                📄 Invoice
+                              </a>
+
+                              {b.guestPhone && (
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <button
+                                    onClick={() => handleSendWhatsApp(b.bookingId, "confirmation")}
+                                    disabled={waSendingId === `${b.bookingId}-confirmation`}
+                                    className="eyebrow text-[8.5px] bg-[#25D366] hover:bg-[#1faa4e] text-white px-2 py-1 transition-colors font-semibold"
+                                    title="Send or resend WhatsApp booking confirmation with attached Invoice PDF"
+                                  >
+                                    {waSendingId === `${b.bookingId}-confirmation`
+                                      ? "..."
+                                      : "💬 Confirm"}
+                                  </button>
+                                  <button
+                                    onClick={() => handleSendWhatsApp(b.bookingId, "checkin")}
+                                    disabled={waSendingId === `${b.bookingId}-checkin`}
+                                    className="eyebrow text-[8.5px] border border-emerald-600 text-emerald-800 hover:bg-emerald-50 px-1.5 py-1 transition-colors"
+                                    title="Send arrival check-in reminder (Directions & timing)"
+                                  >
+                                    {waSendingId === `${b.bookingId}-checkin` ? "..." : "Arrival"}
+                                  </button>
+                                  <button
+                                    onClick={() => handleSendWhatsApp(b.bookingId, "checkout")}
+                                    disabled={waSendingId === `${b.bookingId}-checkout`}
+                                    className="eyebrow text-[8.5px] border border-emerald-600 text-emerald-800 hover:bg-emerald-50 px-1.5 py-1 transition-colors"
+                                    title="Send departure check-out reminder (Luggage store & review link)"
+                                  >
+                                    {waSendingId === `${b.bookingId}-checkout` ? "..." : "Depart"}
+                                  </button>
+                                </div>
+                              )}
+
+                              {b.status !== "Cancelled" && (
+                                <button
+                                  onClick={() => handleCancelBooking(b.bookingId)}
+                                  className="eyebrow text-[9px] text-red-500 border border-red-500/30 px-2.5 py-1 hover:bg-red-500 hover:text-white transition-colors mt-1"
+                                >
+                                  CANCEL
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1696,6 +1813,25 @@ export default function AdminDashboardPage() {
                   placeholder="e.g. Paid in cash at desk, Walk-in, OTA Booking ID #12345"
                   className="w-full border border-brown/15 p-2.5 bg-white text-xs focus:border-gold outline-none text-brown"
                 />
+              </div>
+
+              <div className="flex items-center gap-2.5 p-3 bg-emerald-50/70 border border-emerald-200">
+                <input
+                  type="checkbox"
+                  id="offlineWhatsappOptIn"
+                  checked={offlineWhatsappOptIn}
+                  onChange={(e) => setOfflineWhatsappOptIn(e.target.checked)}
+                  className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
+                />
+                <label
+                  htmlFor="offlineWhatsappOptIn"
+                  className="text-xs text-emerald-900 cursor-pointer select-none"
+                >
+                  <span className="font-semibold block text-[11px]">Send WhatsApp Confirmation &amp; Invoice PDF</span>
+                  <span className="text-[10px] text-emerald-700 block">
+                    Dispatches official booking confirmation and PDF invoice to guest&apos;s phone via AiSensy.
+                  </span>
+                </label>
               </div>
 
               <div className="flex gap-3 pt-3">

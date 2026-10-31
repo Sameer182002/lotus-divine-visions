@@ -10,6 +10,7 @@ import bookingRoutes from "./routes/booking.js";
 import roomsRoutes from "./routes/rooms.js";
 import adminRoutes from "./routes/admin.js";
 import paymentRoutes from "./routes/payment.js";
+import { initReminderCron } from "./cron/reminders.js";
 
 // Connect to MongoDB
 connectDB().then(async () => {
@@ -22,6 +23,8 @@ connectDB().then(async () => {
       console.log("with their respective Base64 images.");
       console.log("==================================================\n");
     }
+    // Initialize automated daily reminder cron (Check-in at 9:00 AM, Check-out at 8:30 AM IST)
+    initReminderCron();
   } catch (error) {
     console.error("Error checking database status on startup:", error);
   }

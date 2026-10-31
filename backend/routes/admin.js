@@ -3,6 +3,12 @@ import { generateToken, requireAdmin } from "../utils/auth.js";
 import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 import Settings from "../models/Settings.js";
+import {
+  sendWhatsAppConfirmation,
+  sendWhatsAppCheckinReminder,
+  sendWhatsAppCheckoutReminder,
+} from "../utils/aisensy.js";
+import { runCheckinReminders, runCheckoutReminders } from "../cron/reminders.js";
 
 const router = express.Router();
 
@@ -143,11 +149,18 @@ router.post("/bookings/offline", requireAdmin, async (req, res) => {
       paymentStatus: "Paid",
       paymentMethod: "Cash / Desk",
       source: "offline",
-      whatsappOptIn: false,
+      whatsappOptIn: Boolean(req.body.whatsappOptIn ?? true),
       notes: notes ? notes.trim() : "",
     });
 
     await booking.save();
+
+    // If phone number provided and WhatsApp enabled, send confirmation via AiSensy
+    if (booking.whatsappOptIn && booking.guestPhone) {
+      sendWhatsAppConfirmation(booking).catch((err) =>
+        console.warn("Could not dispatch offline WhatsApp confirmation:", err.message),
+      );
+    }
 
     res.status(201).json({
       success: true,
@@ -464,6 +477,76 @@ router.post("/settings", requireAdmin, async (req, res) => {
     res.json(settings);
   } catch (error) {
     res.status(500).json({ error: "Failed to update settings" });
+  }
+});
+
+// POST /api/admin/bookings/:id/whatsapp-confirmation
+// Manually resend booking confirmation + invoice PDF via WhatsApp
+router.post("/bookings/:id/whatsapp-confirmation", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findOne({ bookingId: id });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const result = await sendWhatsAppConfirmation(booking);
+    res.json({ success: result.success, result });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to send confirmation: " + error.message });
+  }
+});
+
+// POST /api/admin/bookings/:id/whatsapp-checkin
+// Manually send check-in reminder via WhatsApp
+router.post("/bookings/:id/whatsapp-checkin", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findOne({ bookingId: id });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const result = await sendWhatsAppCheckinReminder(booking);
+    res.json({ success: result.success, result });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to send checkin reminder: " + error.message });
+  }
+});
+
+// POST /api/admin/bookings/:id/whatsapp-checkout
+// Manually send checkout reminder via WhatsApp
+router.post("/bookings/:id/whatsapp-checkout", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findOne({ bookingId: id });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const result = await sendWhatsAppCheckoutReminder(booking);
+    res.json({ success: result.success, result });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to send checkout reminder: " + error.message });
+  }
+});
+
+// POST /api/admin/reminders/trigger
+// Manually trigger today's automated reminders batch
+router.post("/reminders/trigger", requireAdmin, async (req, res) => {
+  try {
+    const { type } = req.body; // "checkin", "checkout", or "all"
+    if (type === "checkout") {
+      await runCheckoutReminders();
+    } else if (type === "checkin") {
+      await runCheckinReminders();
+    } else {
+      await runCheckoutReminders();
+      await runCheckinReminders();
+    }
+    res.json({ success: true, message: "Reminders batch triggered successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to trigger reminders: " + error.message });
   }
 });
 

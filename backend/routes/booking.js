@@ -4,6 +4,7 @@ import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 import Settings from "../models/Settings.js";
 import { Resend } from "resend";
+import { generateInvoicePdf } from "../utils/invoice.js";
 
 const router = express.Router();
 
@@ -278,6 +279,39 @@ router.get("/:bookingId", async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch booking details" });
   }
+});
+
+// GET /api/booking/:bookingId/invoice (or .pdf)
+// Generates and streams branded Tax Invoice PDF
+router.get("/:bookingId/invoice", async (req, res) => {
+  try {
+    let { bookingId } = req.params;
+    if (bookingId.endsWith(".pdf")) {
+      bookingId = bookingId.replace(/\.pdf$/i, "");
+    }
+    const booking = await Booking.findOne({ bookingId });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const pdfBuffer = await generateInvoicePdf(booking);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="Lotus_Divine_Invoice_${booking.bookingId}.pdf"`,
+    );
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Invoice PDF generation error:", error);
+    res.status(500).json({ error: "Failed to generate invoice PDF: " + error.message });
+  }
+});
+
+// Also support direct .pdf URL: /api/booking/:bookingId.pdf
+router.get("/:bookingId/invoice.pdf", async (req, res) => {
+  req.url = `/${req.params.bookingId}/invoice`;
+  return router.handle(req, res);
 });
 
 export default router;
