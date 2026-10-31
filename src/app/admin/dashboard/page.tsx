@@ -406,7 +406,9 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(
-          data.error || (data.result && (data.result.error || data.result.data?.message)) || "Failed to dispatch WhatsApp message",
+          data.error ||
+            (data.result && (data.result.error || data.result.data?.message)) ||
+            "Failed to dispatch WhatsApp message",
         );
       }
 
@@ -1827,9 +1829,12 @@ export default function AdminDashboardPage() {
                   htmlFor="offlineWhatsappOptIn"
                   className="text-xs text-emerald-900 cursor-pointer select-none"
                 >
-                  <span className="font-semibold block text-[11px]">Send WhatsApp Confirmation &amp; Invoice PDF</span>
+                  <span className="font-semibold block text-[11px]">
+                    Send WhatsApp Confirmation &amp; Invoice PDF
+                  </span>
                   <span className="text-[10px] text-emerald-700 block">
-                    Dispatches official booking confirmation and PDF invoice to guest&apos;s phone via AiSensy.
+                    Dispatches official booking confirmation and PDF invoice to guest&apos;s phone
+                    via AiSensy.
                   </span>
                 </label>
               </div>
