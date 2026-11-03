@@ -168,15 +168,19 @@ export async function sendWhatsAppConfirmation(booking) {
   }
 
   const campaignName =
-    process.env.AISENSY_CONFIRMATION_CAMPAIGN || "lotus_booking_confirmation";
+    process.env.AISENSY_CONFIRMATION_CAMPAIGN || "lotus_booking_confirmation_with_invoice";
   const backendBase = (
     process.env.BACKEND_URL ||
     process.env.NEXT_PUBLIC_BACKEND_URL ||
-    "http://localhost:5001"
+    "https://lotus-divine-visions.onrender.com"
   ).replace(/\/$/, "");
 
   // Invoice direct PDF download URL for attachment
-  const invoicePdfUrl = `${backendBase}/api/booking/${booking.bookingId}/invoice.pdf`;
+  let invoicePdfUrl = `${backendBase}/api/booking/${booking.bookingId}/invoice.pdf`;
+  if (invoicePdfUrl.includes("localhost") || invoicePdfUrl.includes("127.0.0.1")) {
+    // If running on localhost, fallback to public production host so Meta/AiSensy can download the PDF
+    invoicePdfUrl = `https://lotus-divine-visions.onrender.com/api/booking/${booking.bookingId}/invoice.pdf`;
+  }
 
   const guestName = (booking.guestName || "Guest").trim();
   const roomSummary = summarizeRooms(booking.rooms);
@@ -194,18 +198,11 @@ export async function sendWhatsAppConfirmation(booking) {
     formattedTotal,
   ];
 
-  // Invoice direct PDF download URL for attachment (attached when backend is hosted with HTTPS)
-  const isPublicUrl =
-    invoicePdfUrl.startsWith("https://") &&
-    !invoicePdfUrl.includes("localhost") &&
-    !invoicePdfUrl.includes("127.0.0.1");
-
-  const mediaPayload = isPublicUrl
-    ? {
-        url: invoicePdfUrl,
-        filename: `Lotus_Divine_Invoice_${booking.bookingId}.pdf`,
-      }
-    : null;
+  // Invoice direct PDF download URL for attachment
+  const mediaPayload = {
+    url: invoicePdfUrl,
+    filename: `Lotus_Divine_Invoice_${booking.bookingId}.pdf`,
+  };
 
   const result = await sendAiSensyCampaign({
     campaignName,

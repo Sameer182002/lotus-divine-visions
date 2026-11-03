@@ -53,7 +53,7 @@ function getPayUConfig(req) {
  */
 router.post("/initiate", async (req, res) => {
   try {
-    const config = getPayUConfig();
+    const config = getPayUConfig(req);
     let payload = req.body;
 
     // Check if request is encrypted with envelope
@@ -271,7 +271,7 @@ router.post("/initiate", async (req, res) => {
  */
 router.post("/response", async (req, res) => {
   try {
-    const config = getPayUConfig();
+    const config = getPayUConfig(req);
     const {
       status,
       txnid,
