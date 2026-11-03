@@ -163,8 +163,20 @@ router.post("/initiate", async (req, res) => {
       clientFrontendUrl = clientFrontendUrl.replace(/\/$/, "");
     }
 
-    // 4. Upsert booking record in pending state
+    // 4. Upsert booking record in pending state (reuse any existing pending/cancelled booking from same guest to prevent duplicate DB records)
     let booking = await Booking.findOne({ bookingId });
+    if (!booking) {
+      // Deduplicate: check if this guest already initiated a booking for these dates within the past hour
+      booking = await Booking.findOne({
+        guestEmail: guestEmail.trim().toLowerCase(),
+        checkIn,
+        checkOut,
+        status: { $in: ["Pending", "Cancelled"] },
+        paymentStatus: { $in: ["Pending", "Failed"] },
+        createdAt: { $gte: new Date(Date.now() - 60 * 60 * 1000) },
+      }).sort({ createdAt: -1 });
+    }
+
     if (!booking) {
       booking = new Booking({
         bookingId,
@@ -187,6 +199,7 @@ router.post("/initiate", async (req, res) => {
         frontendUrl: clientFrontendUrl,
       });
     } else {
+      // Reuse existing booking record and update with latest details
       booking.checkIn = checkIn;
       booking.checkOut = checkOut;
       booking.rooms = rooms;
@@ -220,7 +233,7 @@ router.post("/initiate", async (req, res) => {
     const email = guestEmail.trim().toLowerCase();
     const phone = guestPhone ? guestPhone.replace(/\D/g, "").slice(-10) : "9999999999";
 
-    const udf1 = bookingId;
+    const udf1 = booking.bookingId;
     const udf2 = "online";
     const udf3 = whatsappOptIn ? "1" : "0";
     const udf4 = "";
@@ -234,12 +247,13 @@ router.post("/initiate", async (req, res) => {
     const hashString = `${config.key}|${txnid}|${amountStr}|${productinfo}|${firstname}|${email}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}||||||${config.salt}`;
     const hash = crypto.createHash("sha512").update(hashString).digest("hex");
 
-    console.log(`[PayU Initiate] TxnId: ${txnid}, Amount: ${amountStr}`);
+    console.log(`[PayU Initiate] BookingId: ${booking.bookingId}, TxnId: ${txnid}, Amount: ${amountStr}`);
     console.log(`[PayU Initiate] HashString: ${hashString}`);
     console.log(`[PayU Initiate] Hash: ${hash}`);
 
     res.json({
       success: true,
+      bookingId: booking.bookingId,
       actionUrl: config.paymentUrl,
       params: {
         key: config.key,

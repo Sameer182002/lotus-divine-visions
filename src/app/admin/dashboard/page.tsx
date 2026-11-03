@@ -433,7 +433,11 @@ export default function AdminDashboardPage() {
         );
       }
 
-      alert(`✓ WhatsApp message sent to guest successfully!`);
+      const targetInfo = data.guestPhone
+        ? `to ${data.guestPhone}${data.guestName ? " (" + data.guestName + ")" : ""}`
+        : "to guest";
+      const messageIdInfo = data.messageId ? `\nAiSensy Message ID: ${data.messageId}` : "";
+      alert(`✓ WhatsApp message sent ${targetInfo} successfully!${messageIdInfo}`);
       fetchBookings();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to send WhatsApp message";

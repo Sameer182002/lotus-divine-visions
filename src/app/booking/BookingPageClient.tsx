@@ -1183,7 +1183,15 @@ function BookingPageInner() {
   const [consentTimestamp, setConsentTimestamp] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [hasAutoScrolledToRooms, setHasAutoScrolledToRooms] = useState(false);
-  const [bookingId] = useState(() => "LDV-" + Math.random().toString(36).slice(2, 8).toUpperCase());
+  const [bookingId, setBookingId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const urlBookingId = new URLSearchParams(window.location.search).get("bookingId");
+      if (urlBookingId) return urlBookingId;
+      const cached = sessionStorage.getItem("ldv_active_booking_id");
+      if (cached) return cached;
+    }
+    return "LDV-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+  });
   const [whatsappOptIn, setWhatsappOptIn] = useState(true);
   const [availability, setAvailability] = useState<Record<string, number> | null>(null);
 
@@ -1301,6 +1309,9 @@ function BookingPageInner() {
     if (status === "success" && paramBookingId) {
       setCurrentStep(5);
       clearBookingDraft();
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("ldv_active_booking_id");
+      }
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
       fetch(`${apiUrl}/api/booking/${encodeURIComponent(paramBookingId)}`)
@@ -1331,6 +1342,12 @@ function BookingPageInner() {
           });
         });
     } else if (status === "failed") {
+      if (paramBookingId) {
+        setBookingId(paramBookingId);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("ldv_active_booking_id", paramBookingId);
+        }
+      }
       setCurrentStep(4);
       setSubmitError(
         errorParam
@@ -1610,6 +1627,11 @@ function BookingPageInner() {
       const result = await res.json();
       if (!res.ok || !result.success) {
         throw new Error(result.error || "Failed to initiate payment with PayU");
+      }
+
+      if (result.bookingId && typeof window !== "undefined") {
+        setBookingId(result.bookingId);
+        sessionStorage.setItem("ldv_active_booking_id", result.bookingId);
       }
 
       // 5. Submit dynamic form directly to PayU

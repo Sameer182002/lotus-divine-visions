@@ -495,6 +495,34 @@ router.post("/settings", requireAdmin, async (req, res) => {
   }
 });
 
+// Helper to format consistent WhatsApp response
+function respondWhatsAppDispatch(res, booking, result, actionName) {
+  if (!result || !result.success) {
+    const errorMsg =
+      result?.reason === "guest_opted_out"
+        ? "Guest opted out of WhatsApp updates"
+        : result?.error ||
+          (result?.data && (result.data.message || result.data.errorMessage)) ||
+          `Failed to dispatch ${actionName}`;
+    return res.status(400).json({
+      success: false,
+      error: errorMsg,
+      guestPhone: booking.guestPhone,
+      guestName: booking.guestName,
+      result,
+    });
+  }
+
+  return res.json({
+    success: true,
+    message: `${actionName} dispatched successfully`,
+    guestPhone: booking.guestPhone,
+    guestName: booking.guestName,
+    messageId: result.data?.submitted_message_id || "",
+    result,
+  });
+}
+
 // POST /api/admin/bookings/:id/whatsapp-confirmation
 // Manually resend booking confirmation + invoice PDF via WhatsApp
 router.post("/bookings/:id/whatsapp-confirmation", requireAdmin, async (req, res) => {
@@ -506,7 +534,7 @@ router.post("/bookings/:id/whatsapp-confirmation", requireAdmin, async (req, res
     }
 
     const result = await sendWhatsAppConfirmation(booking);
-    res.json({ success: result.success, result });
+    return respondWhatsAppDispatch(res, booking, result, "Booking Confirmation + Invoice");
   } catch (error) {
     res.status(500).json({ error: "Failed to send confirmation: " + error.message });
   }
@@ -523,7 +551,7 @@ router.post("/bookings/:id/whatsapp-checkin", requireAdmin, async (req, res) => 
     }
 
     const result = await sendWhatsAppCheckinReminder(booking);
-    res.json({ success: result.success, result });
+    return respondWhatsAppDispatch(res, booking, result, "Check-in Reminder");
   } catch (error) {
     res.status(500).json({ error: "Failed to send checkin reminder: " + error.message });
   }
@@ -540,7 +568,7 @@ router.post("/bookings/:id/whatsapp-checkout", requireAdmin, async (req, res) =>
     }
 
     const result = await sendWhatsAppCheckoutReminder(booking);
-    res.json({ success: result.success, result });
+    return respondWhatsAppDispatch(res, booking, result, "Check-out Reminder");
   } catch (error) {
     res.status(500).json({ error: "Failed to send checkout reminder: " + error.message });
   }
@@ -558,7 +586,7 @@ router.post("/bookings/:id/whatsapp-welcome", requireAdmin, async (req, res) => 
     }
 
     const result = await sendWhatsAppWelcome(booking, { wifiName, wifiPassword, roomNumber });
-    res.json({ success: result.success, result });
+    return respondWhatsAppDispatch(res, booking, result, "Welcome & Wi-Fi Guide");
   } catch (error) {
     res.status(500).json({ error: "Failed to send welcome guide: " + error.message });
   }
@@ -579,7 +607,7 @@ router.post("/bookings/:id/whatsapp-cancellation", requireAdmin, async (req, res
       booking,
       refundStatus || "Processed as per hotel policy",
     );
-    res.json({ success: result.success, result });
+    return respondWhatsAppDispatch(res, booking, result, "Cancellation Notice");
   } catch (error) {
     res.status(500).json({ error: "Failed to send cancellation notice: " + error.message });
   }
@@ -596,7 +624,7 @@ router.post("/bookings/:id/whatsapp-feedback", requireAdmin, async (req, res) =>
     }
 
     const result = await sendWhatsAppPostCheckoutFeedback(booking);
-    res.json({ success: result.success, result });
+    return respondWhatsAppDispatch(res, booking, result, "Post-stay Review Request");
   } catch (error) {
     res.status(500).json({ error: "Failed to send feedback request: " + error.message });
   }
