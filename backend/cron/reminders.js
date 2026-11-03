@@ -3,6 +3,7 @@ import Booking from "../models/Booking.js";
 import {
   sendWhatsAppCheckinReminder,
   sendWhatsAppCheckoutReminder,
+  sendWhatsAppPostCheckoutFeedback,
 } from "../utils/aisensy.js";
 
 /**
@@ -82,6 +83,40 @@ export async function runCheckoutReminders() {
 }
 
 /**
+ * Finds all confirmed bookings checking out today and dispatches evening feedback & review request
+ */
+export async function runPostCheckoutFeedback() {
+  const today = getTodayIST();
+  console.log(`[Reminders Cron] Running evening review follow-up check for date: ${today}`);
+
+  try {
+    const departedBookings = await Booking.find({
+      status: { $in: ["Confirmed", "Checked-Out"] },
+      checkOut: today,
+      whatsappOptIn: { $ne: false },
+      "whatsappReminders.feedbackSent": { $ne: true },
+    });
+
+    console.log(
+      `[Reminders Cron] Found ${departedBookings.length} booking(s) departed today requiring review request.`,
+    );
+
+    for (const booking of departedBookings) {
+      try {
+        await sendWhatsAppPostCheckoutFeedback(booking);
+      } catch (err) {
+        console.error(
+          `[Reminders Cron] Error sending feedback request for ${booking.bookingId}:`,
+          err.message,
+        );
+      }
+    }
+  } catch (err) {
+    console.error("[Reminders Cron] Feedback batch failed:", err.message);
+  }
+}
+
+/**
  * Initializes automated daily reminder cron schedules
  */
 export function initReminderCron() {
@@ -101,5 +136,13 @@ export function initReminderCron() {
     timezone: "Asia/Kolkata",
   });
 
-  console.log("[Reminders Cron] Automated WhatsApp Reminder Cron Jobs registered (8:30 AM & 9:00 AM IST)");
+  // Post-checkout feedback & Google review runs every day at 06:00 PM IST (18:00)
+  cron.schedule("0 18 * * *", () => {
+    console.log("[Reminders Cron] 06:00 PM IST - Triggering evening post-checkout review requests");
+    runPostCheckoutFeedback();
+  }, {
+    timezone: "Asia/Kolkata",
+  });
+
+  console.log("[Reminders Cron] Automated WhatsApp Reminder Cron Jobs registered (8:30 AM, 9:00 AM, & 6:00 PM IST)");
 }

@@ -314,3 +314,137 @@ export async function sendWhatsAppCheckoutReminder(booking) {
 
   return result;
 }
+
+/**
+ * Sends Booking Cancellation Notification
+ * @param {Object} booking
+ * @param {string} refundStatus
+ * @returns {Promise<Object>}
+ */
+export async function sendWhatsAppCancellation(booking, refundStatus = "Processed as per hotel policy") {
+  if (!booking || !booking.guestPhone) {
+    return { success: false, error: "Missing guest phone" };
+  }
+
+  if (booking.whatsappOptIn === false) {
+    return { success: false, skipped: true, reason: "guest_opted_out" };
+  }
+
+  const campaignName =
+    process.env.AISENSY_CANCELLATION_CAMPAIGN || "lotus_booking_cancellation";
+  const guestName = (booking.guestName || "Guest").trim();
+  const formattedCheckIn = formatDatePretty(booking.checkIn);
+
+  // Template variables: {{1}}=Name, {{2}}=Booking ID, {{3}}=Check-in Date, {{4}}=Refund Status
+  const templateParams = [
+    guestName,
+    booking.bookingId,
+    formattedCheckIn,
+    refundStatus,
+  ];
+
+  const result = await sendAiSensyCampaign({
+    campaignName,
+    destination: booking.guestPhone,
+    userName: guestName,
+    templateParams,
+  });
+
+  try {
+    if (!booking.whatsappReminders) booking.whatsappReminders = {};
+    if (result.success) {
+      booking.whatsappReminders.cancellationSent = true;
+      booking.whatsappReminders.cancellationSentAt = new Date();
+    }
+    await booking.save();
+  } catch (dbErr) {
+    console.warn("Could not record cancellation WhatsApp in booking:", dbErr.message);
+  }
+
+  return result;
+}
+
+/**
+ * Sends Welcome / In-House Guide upon Check-In
+ * @param {Object} booking
+ * @returns {Promise<Object>}
+ */
+export async function sendWhatsAppWelcome(booking) {
+  if (!booking || !booking.guestPhone) {
+    return { success: false, error: "Missing guest phone" };
+  }
+
+  if (booking.whatsappOptIn === false) {
+    return { success: false, skipped: true, reason: "guest_opted_out" };
+  }
+
+  const campaignName =
+    process.env.AISENSY_WELCOME_CAMPAIGN || "lotus_welcome_inhouse";
+  const guestName = (booking.guestName || "Guest").trim();
+  const roomName = getPrimaryRoomName(booking.rooms);
+
+  // Template variables: {{1}}=Name, {{2}}=Room
+  const templateParams = [guestName, roomName];
+
+  const result = await sendAiSensyCampaign({
+    campaignName,
+    destination: booking.guestPhone,
+    userName: guestName,
+    templateParams,
+  });
+
+  try {
+    if (!booking.whatsappReminders) booking.whatsappReminders = {};
+    if (result.success) {
+      booking.whatsappReminders.welcomeSent = true;
+      booking.whatsappReminders.welcomeSentAt = new Date();
+    }
+    await booking.save();
+  } catch (dbErr) {
+    console.warn("Could not record welcome WhatsApp in booking:", dbErr.message);
+  }
+
+  return result;
+}
+
+/**
+ * Sends Post-Checkout Thank You & Google Review Request (Evening of Departure)
+ * @param {Object} booking
+ * @returns {Promise<Object>}
+ */
+export async function sendWhatsAppPostCheckoutFeedback(booking) {
+  if (!booking || !booking.guestPhone) {
+    return { success: false, error: "Missing guest phone" };
+  }
+
+  if (booking.whatsappOptIn === false) {
+    return { success: false, skipped: true, reason: "guest_opted_out" };
+  }
+
+  const campaignName =
+    process.env.AISENSY_FEEDBACK_CAMPAIGN || "lotus_post_checkout_feedback";
+  const guestName = (booking.guestName || "Guest").trim();
+
+  // Template variables: {{1}}=Name
+  const templateParams = [guestName];
+
+  const result = await sendAiSensyCampaign({
+    campaignName,
+    destination: booking.guestPhone,
+    userName: guestName,
+    templateParams,
+  });
+
+  try {
+    if (!booking.whatsappReminders) booking.whatsappReminders = {};
+    if (result.success) {
+      booking.whatsappReminders.feedbackSent = true;
+      booking.whatsappReminders.feedbackSentAt = new Date();
+    }
+    await booking.save();
+  } catch (dbErr) {
+    console.warn("Could not record feedback WhatsApp in booking:", dbErr.message);
+  }
+
+  return result;
+}

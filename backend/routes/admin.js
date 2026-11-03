@@ -7,8 +7,15 @@ import {
   sendWhatsAppConfirmation,
   sendWhatsAppCheckinReminder,
   sendWhatsAppCheckoutReminder,
+  sendWhatsAppCancellation,
+  sendWhatsAppWelcome,
+  sendWhatsAppPostCheckoutFeedback,
 } from "../utils/aisensy.js";
-import { runCheckinReminders, runCheckoutReminders } from "../cron/reminders.js";
+import {
+  runCheckinReminders,
+  runCheckoutReminders,
+  runPostCheckoutFeedback,
+} from "../cron/reminders.js";
 
 const router = express.Router();
 
@@ -47,6 +54,14 @@ router.put("/bookings/:id/cancel", requireAdmin, async (req, res) => {
 
     booking.status = "Cancelled";
     await booking.save();
+
+    // Trigger automated WhatsApp Cancellation notification if opted in
+    sendWhatsAppCancellation(
+      booking,
+      req.body.refundStatus || "Processed as per hotel policy",
+    ).catch((err) =>
+      console.warn("Could not dispatch WhatsApp cancellation update:", err.message),
+    );
 
     res.json({ success: true, message: "Booking cancelled successfully", booking });
   } catch (error) {
@@ -531,18 +546,76 @@ router.post("/bookings/:id/whatsapp-checkout", requireAdmin, async (req, res) =>
   }
 });
 
+// POST /api/admin/bookings/:id/whatsapp-welcome
+// Manually send in-house welcome & Wi-Fi guide via WhatsApp
+router.post("/bookings/:id/whatsapp-welcome", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findOne({ bookingId: id });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const result = await sendWhatsAppWelcome(booking);
+    res.json({ success: result.success, result });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to send welcome guide: " + error.message });
+  }
+});
+
+// POST /api/admin/bookings/:id/whatsapp-cancellation
+// Manually resend cancellation notice via WhatsApp
+router.post("/bookings/:id/whatsapp-cancellation", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { refundStatus } = req.body;
+    const booking = await Booking.findOne({ bookingId: id });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const result = await sendWhatsAppCancellation(
+      booking,
+      refundStatus || "Processed as per hotel policy",
+    );
+    res.json({ success: result.success, result });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to send cancellation notice: " + error.message });
+  }
+});
+
+// POST /api/admin/bookings/:id/whatsapp-feedback
+// Manually send post-stay Google review request via WhatsApp
+router.post("/bookings/:id/whatsapp-feedback", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findOne({ bookingId: id });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const result = await sendWhatsAppPostCheckoutFeedback(booking);
+    res.json({ success: result.success, result });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to send feedback request: " + error.message });
+  }
+});
+
 // POST /api/admin/reminders/trigger
 // Manually trigger today's automated reminders batch
 router.post("/reminders/trigger", requireAdmin, async (req, res) => {
   try {
-    const { type } = req.body; // "checkin", "checkout", or "all"
+    const { type } = req.body; // "checkin", "checkout", "feedback", or "all"
     if (type === "checkout") {
       await runCheckoutReminders();
     } else if (type === "checkin") {
       await runCheckinReminders();
+    } else if (type === "feedback") {
+      await runPostCheckoutFeedback();
     } else {
       await runCheckoutReminders();
       await runCheckinReminders();
+      await runPostCheckoutFeedback();
     }
     res.json({ success: true, message: "Reminders batch triggered successfully" });
   } catch (error) {

@@ -379,14 +379,20 @@ export default function AdminDashboardPage() {
   // Manually dispatch WhatsApp messages (Confirmation / Check-in / Check-out)
   async function handleSendWhatsApp(
     bookingId: string,
-    action: "confirmation" | "checkin" | "checkout",
+    action: "confirmation" | "checkin" | "checkout" | "welcome" | "cancellation" | "feedback",
   ) {
     const actionLabel =
       action === "confirmation"
         ? "Booking Confirmation + Invoice PDF"
         : action === "checkin"
           ? "Check-in Reminder (Arrival)"
-          : "Check-out Reminder (Departure)";
+          : action === "checkout"
+            ? "Check-out Reminder (Departure)"
+            : action === "welcome"
+              ? "In-House Welcome & Wi-Fi Guide"
+              : action === "cancellation"
+                ? "Cancellation Notice"
+                : "Post-Stay Google Review Request";
 
     if (!confirm(`Send ${actionLabel} to guest via WhatsApp for ${bookingId}?`)) return;
 
@@ -987,6 +993,14 @@ export default function AdminDashboardPage() {
                                     title="Send departure check-out reminder (Luggage store & review link)"
                                   >
                                     {waSendingId === `${b.bookingId}-checkout` ? "..." : "Depart"}
+                                  </button>
+                                  <button
+                                    onClick={() => handleSendWhatsApp(b.bookingId, "welcome")}
+                                    disabled={waSendingId === `${b.bookingId}-welcome`}
+                                    className="eyebrow text-[8.5px] border border-gold text-brown hover:bg-gold/10 px-1.5 py-1 transition-colors"
+                                    title="Send in-house welcome guide & Wi-Fi details"
+                                  >
+                                    {waSendingId === `${b.bookingId}-welcome` ? "..." : "Welcome"}
                                   </button>
                                 </div>
                               )}

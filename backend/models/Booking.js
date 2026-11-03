@@ -114,6 +114,12 @@ const BookingSchema = new mongoose.Schema({
     checkinReminderSentAt: { type: Date },
     checkoutReminderSent: { type: Boolean, default: false },
     checkoutReminderSentAt: { type: Date },
+    welcomeSent: { type: Boolean, default: false },
+    welcomeSentAt: { type: Date },
+    cancellationSent: { type: Boolean, default: false },
+    cancellationSentAt: { type: Date },
+    feedbackSent: { type: Boolean, default: false },
+    feedbackSentAt: { type: Date },
     lastError: { type: String, default: "" },
   },
   createdAt: {
