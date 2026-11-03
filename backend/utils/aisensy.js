@@ -365,11 +365,15 @@ export async function sendWhatsAppCancellation(booking, refundStatus = "Processe
 }
 
 /**
- * Sends Welcome / In-House Guide upon Check-In
+ * Sends Welcome / In-House Guide upon Check-In with dynamic Wi-Fi credentials
  * @param {Object} booking
+ * @param {Object} options
+ * @param {string} options.wifiName
+ * @param {string} options.wifiPassword
+ * @param {string} options.roomNumber
  * @returns {Promise<Object>}
  */
-export async function sendWhatsAppWelcome(booking) {
+export async function sendWhatsAppWelcome(booking, options = {}) {
   if (!booking || !booking.guestPhone) {
     return { success: false, error: "Missing guest phone" };
   }
@@ -381,10 +385,12 @@ export async function sendWhatsAppWelcome(booking) {
   const campaignName =
     process.env.AISENSY_WELCOME_CAMPAIGN || "lotus_welcome_inhouse";
   const guestName = (booking.guestName || "Guest").trim();
-  const roomName = getPrimaryRoomName(booking.rooms);
+  const roomName = (options.roomNumber ? `${options.roomNumber} (${getPrimaryRoomName(booking.rooms)})` : getPrimaryRoomName(booking.rooms)).trim();
+  const wifiName = (options.wifiName || "LotusDivine_Guest").trim();
+  const wifiPassword = (options.wifiPassword || "lotus@divine").trim();
 
-  // Template variables: {{1}}=Name, {{2}}=Room
-  const templateParams = [guestName, roomName];
+  // Template variables: {{1}}=Name, {{2}}=Room, {{3}}=Wi-Fi SSID, {{4}}=Wi-Fi Password
+  const templateParams = [guestName, roomName, wifiName, wifiPassword];
 
   const result = await sendAiSensyCampaign({
     campaignName,

@@ -394,7 +394,21 @@ export default function AdminDashboardPage() {
                 ? "Cancellation Notice"
                 : "Post-Stay Google Review Request";
 
-    if (!confirm(`Send ${actionLabel} to guest via WhatsApp for ${bookingId}?`)) return;
+    let requestBody: Record<string, string> = {};
+    if (action === "welcome") {
+      const roomNumber = prompt("Enter Room Number assigned to guest (or room name):", "Room 101");
+      if (roomNumber === null) return;
+      const wifiName = prompt(
+        "Enter Wi-Fi Network Name (SSID) for this room/floor:",
+        "LotusDivine_Guest",
+      );
+      if (wifiName === null) return;
+      const wifiPassword = prompt("Enter Wi-Fi Password:", "lotus@divine");
+      if (wifiPassword === null) return;
+      requestBody = { roomNumber, wifiName, wifiPassword };
+    } else {
+      if (!confirm(`Send ${actionLabel} to guest via WhatsApp for ${bookingId}?`)) return;
+    }
 
     setWaSendingId(`${bookingId}-${action}`);
     try {
@@ -406,6 +420,7 @@ export default function AdminDashboardPage() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify(requestBody),
         },
       );
 

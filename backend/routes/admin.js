@@ -551,12 +551,13 @@ router.post("/bookings/:id/whatsapp-checkout", requireAdmin, async (req, res) =>
 router.post("/bookings/:id/whatsapp-welcome", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    const { wifiName, wifiPassword, roomNumber } = req.body || {};
     const booking = await Booking.findOne({ bookingId: id });
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
 
-    const result = await sendWhatsAppWelcome(booking);
+    const result = await sendWhatsAppWelcome(booking, { wifiName, wifiPassword, roomNumber });
     res.json({ success: result.success, result });
   } catch (error) {
     res.status(500).json({ error: "Failed to send welcome guide: " + error.message });
