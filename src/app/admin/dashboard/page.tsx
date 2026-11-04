@@ -7,10 +7,12 @@ import { BrandLogo } from "@/components/BrandLogo";
 import {
   Calendar,
   Building,
+  Building2,
   DollarSign,
   Settings as SettingsIcon,
   PlusCircle,
   Users,
+  User,
   Phone,
   Mail,
   AlertCircle,
@@ -20,6 +22,15 @@ import {
   ChevronRight,
   TrendingUp,
   RefreshCw,
+  Globe,
+  FileText,
+  Clock,
+  Shield,
+  Eye,
+  MessageSquare,
+  Compass,
+  Luggage,
+  Wifi,
 } from "lucide-react";
 
 interface AdminBooking {
@@ -153,6 +164,28 @@ export default function AdminDashboardPage() {
   const [bookingFilterSource, setBookingFilterSource] = useState<"all" | "online" | "offline">(
     "all",
   );
+  // Staff Privacy Mode: By default true to protect guest personal contact details from hotel desk boys
+  const [privacyMode, setPrivacyMode] = useState(true);
+
+  // Mask guest name for staff privacy protection (e.g. "Sameer Bajaj" -> "S•••••• B••••")
+  function maskName(name?: string) {
+    if (!name) return "Guest";
+    return name
+      .trim()
+      .split(/\s+/)
+      .map((part) => (part.length > 1 ? part[0] + "•".repeat(Math.min(6, part.length - 1)) : part))
+      .join(" ");
+  }
+
+  // Mask guest phone (e.g. "+91 93562 47973" -> "+91 ••••• ••973")
+  function maskPhone(phone?: string) {
+    if (!phone) return "";
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length >= 10) {
+      return `+91 ••••• ••${digits.slice(-3)}`;
+    }
+    return "••••••••••";
+  }
 
   // Rooms state
   const [rooms, setRooms] = useState<AdminRoom[]>([]);
@@ -780,265 +813,442 @@ export default function AdminDashboardPage() {
                 No bookings match your current filter.
               </div>
             ) : (
-              <div className="bg-white border border-brown/10 overflow-x-auto shadow-sm">
-                <table className="w-full text-left border-collapse text-[13px]">
-                  <thead>
-                    <tr className="bg-brown/5 border-b border-brown/10 eyebrow text-[9px] text-brown/60">
-                      <th className="p-4">BOOKING ID &amp; SOURCE</th>
-                      <th className="p-4">GUEST CONTACT</th>
-                      <th className="p-4">STAY DATES</th>
-                      <th className="p-4">ROOMS &amp; TOTAL</th>
-                      <th className="p-4">STATUS &amp; PAYMENT</th>
-                      <th className="p-4 text-right">ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-brown/8 text-brown/80">
-                    {filteredBookings.map((b) => {
-                      const isOffline = b.source === "offline";
-                      const cleanPhone = b.guestPhone ? b.guestPhone.replace(/\D/g, "") : "";
-                      const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+              <div className="space-y-3">
+                {/* ── STICKY ICON LEGEND & PRIVACY BAR ── */}
+                <div className="sticky top-[61px] z-20 bg-white/95 backdrop-blur-md border border-brown/15 p-3 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-4 text-[11px] text-brown/80">
+                    <span className="eyebrow text-gold font-bold text-[9px] tracking-wider uppercase">
+                      LEGEND:
+                    </span>
+                    <span
+                      className="inline-flex items-center gap-1.5"
+                      title="Online Direct Website Reservation"
+                    >
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <Globe className="w-3 h-3" />
+                      </span>
+                      <span className="font-medium text-brown/90">Online Direct</span>
+                    </span>
+                    <span
+                      className="inline-flex items-center gap-1.5"
+                      title="Offline Reception Walk-in Reservation"
+                    >
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                        <Building2 className="w-3 h-3" />
+                      </span>
+                      <span className="font-medium text-brown/90">Offline / Front Desk</span>
+                    </span>
+                    <span
+                      className="inline-flex items-center gap-1.5"
+                      title="WhatsApp Booking Confirmation Dispatched"
+                    >
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-[#25D366] border border-emerald-200">
+                        <CheckCircle2 className="w-3 h-3 text-[#25D366]" />
+                      </span>
+                      <span className="font-medium text-brown/90">WhatsApp Confirmed</span>
+                    </span>
+                    <span
+                      className="inline-flex items-center gap-1.5"
+                      title="WhatsApp Pending Dispatch or Opted Out"
+                    >
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+                        <Clock className="w-3 h-3" />
+                      </span>
+                      <span className="font-medium text-brown/90">WhatsApp Pending</span>
+                    </span>
+                  </div>
 
-                      return (
-                        <tr key={b.bookingId} className="hover:bg-brown/[0.015] transition-colors">
-                          <td className="p-4 align-top">
-                            <span className="font-display font-semibold text-gold tracking-widest text-[14px] block">
-                              {b.bookingId}
-                            </span>
-                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                              <span
-                                className={`eyebrow text-[9px] px-2 py-0.5 inline-block font-semibold ${
-                                  isOffline
-                                    ? "bg-purple-100 text-purple-900 border border-purple-300"
-                                    : "bg-blue-100 text-blue-900 border border-blue-300"
-                                }`}
-                              >
-                                {isOffline ? "🏢 Offline / Walk-in" : "🌐 Online Direct"}
-                              </span>
-                              <span className="text-[10px] text-taupe">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPrivacyMode(!privacyMode)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-all border rounded-sm ${
+                        privacyMode
+                          ? "bg-brown text-ivory border-brown shadow-xs"
+                          : "bg-white text-brown/70 border-brown/20 hover:border-gold"
+                      }`}
+                      title="Staff Privacy Mode: protects guest personal identity and phone numbers from hotel front-desk staff"
+                    >
+                      {privacyMode ? (
+                        <>
+                          <Shield className="w-3.5 h-3.5 text-gold" />
+                          <span>Staff Privacy: Masked</span>
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-3.5 h-3.5 text-taupe" />
+                          <span>Staff Privacy: Revealed</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── BOOKINGS TABLE ── */}
+                <div className="bg-white border border-brown/10 overflow-x-auto shadow-sm">
+                  <table className="w-full text-left border-collapse text-[13px]">
+                    <thead>
+                      <tr className="bg-brown/5 border-b border-brown/10 eyebrow text-[9px] text-brown/60">
+                        <th className="p-4">BOOKING ID &amp; SOURCE</th>
+                        <th className="p-4">GUEST CONTACT</th>
+                        <th className="p-4">STAY DATES</th>
+                        <th className="p-4">ROOMS &amp; TOTAL</th>
+                        <th className="p-4">STATUS &amp; PAYMENT</th>
+                        <th className="p-4 text-right">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-brown/8 text-brown/80">
+                      {filteredBookings.map((b) => {
+                        const isOffline = b.source === "offline";
+                        const cleanPhone = b.guestPhone ? b.guestPhone.replace(/\D/g, "") : "";
+                        const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
+                        return (
+                          <tr
+                            key={b.bookingId}
+                            className="hover:bg-brown/[0.015] transition-colors"
+                          >
+                            {/* 1. BOOKING ID & SOURCE */}
+                            <td className="p-4 align-top">
+                              <div className="flex items-center gap-2">
+                                <span className="font-display font-semibold text-gold tracking-widest text-[14px]">
+                                  {b.bookingId}
+                                </span>
+                                {isOffline ? (
+                                  <span
+                                    className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs"
+                                    title="Offline / Front-Desk Walk-in Reservation"
+                                  >
+                                    <Building2 className="w-3.5 h-3.5" />
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs"
+                                    title="Online Direct Website Reservation"
+                                  >
+                                    <Globe className="w-3.5 h-3.5" />
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-taupe mt-1">
                                 {new Date(b.createdAt).toLocaleDateString("en-IN", {
                                   day: "numeric",
                                   month: "short",
                                   hour: "2-digit",
                                   minute: "2-digit",
                                 })}
-                              </span>
-                            </div>
-                            {b.notes && (
-                              <div className="mt-2 text-xs bg-amber-50 border border-amber-200 text-amber-900 p-1.5 max-w-xs">
-                                <span className="font-semibold block text-[10px] uppercase text-amber-700">
-                                  Notes:
-                                </span>
-                                {b.notes}
                               </div>
-                            )}
-                          </td>
-
-                          <td className="p-4 align-top space-y-1">
-                            <div className="font-semibold text-brown">{b.guestName}</div>
-                            {b.guestPhone ? (
-                              <div className="flex items-center gap-2 text-xs text-taupe">
-                                <Phone className="w-3 h-3 text-gold shrink-0" />
-                                <span>{b.guestPhone}</span>
-                                <a
-                                  href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
-                                    `Hello ${b.guestName}, this is Hotel Lotus Divine regarding your reservation ${b.bookingId}.`,
-                                  )}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-emerald-600 hover:text-emerald-700 text-[10px] font-semibold flex items-center gap-0.5 bg-emerald-50 px-1.5 py-0.5 border border-emerald-200"
-                                  title="Chat with guest on WhatsApp"
-                                >
-                                  💬 WhatsApp
-                                </a>
-                              </div>
-                            ) : null}
-                            {b.guestEmail ? (
-                              <div className="flex items-center gap-2 text-xs text-taupe">
-                                <Mail className="w-3 h-3 text-gold shrink-0" />
-                                <span>{b.guestEmail}</span>
-                              </div>
-                            ) : null}
-                          </td>
-
-                          <td className="p-4 align-top space-y-1">
-                            <div className="font-medium text-brown">
-                              {new Date(b.checkIn + "T00:00:00").toLocaleDateString("en-IN", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}{" "}
-                              →{" "}
-                              {new Date(b.checkOut + "T00:00:00").toLocaleDateString("en-IN", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
-                            </div>
-                            <div className="text-xs text-taupe">
-                              Duration:{" "}
-                              {Math.max(
-                                1,
-                                Math.round(
-                                  (new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) /
-                                    86400000,
-                                ),
-                              )}{" "}
-                              night(s)
-                            </div>
-                            {b.arrivalTime && (
-                              <div className="text-[11px] text-gold font-medium">
-                                Expected Arrival: {b.arrivalTime}
-                              </div>
-                            )}
-                          </td>
-
-                          <td className="p-4 align-top space-y-1">
-                            <div className="font-medium text-brown">
-                              {b.rooms && b.rooms.length > 0
-                                ? `${b.rooms.length} room${b.rooms.length > 1 ? "s" : ""} (${b.rooms
-                                    .map((r) =>
-                                      r.roomId === "lotus-sanctuary" ? "Deluxe" : "Premium",
-                                    )
-                                    .join(", ")})`
-                                : b.roomId || "1 Room"}
-                            </div>
-                            <div className="font-display font-semibold text-brown text-sm">
-                              ₹{b.total.toLocaleString("en-IN")}
-                            </div>
-                            {b.specialRequest && (
-                              <div className="text-xs italic text-taupe max-w-xs border-l-2 border-gold/30 pl-2 mt-1">
-                                "{b.specialRequest}"
-                              </div>
-                            )}
-                          </td>
-
-                          <td className="p-4 align-top">
-                            <div className="flex flex-col gap-1.5 items-start">
-                              <span
-                                className={`eyebrow text-[9px] px-2.5 py-1 inline-block font-semibold ${
-                                  b.status === "Cancelled" || b.status === "Failed"
-                                    ? "bg-red-500/10 text-red-600 border border-red-500/20"
-                                    : b.status === "Pending"
-                                      ? "bg-amber-500/10 text-amber-700 border border-amber-500/20"
-                                      : "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20"
-                                }`}
-                              >
-                                {b.status || "Confirmed"}
-                              </span>
-
-                              <span
-                                className={`eyebrow text-[9px] px-2 py-0.5 inline-flex items-center gap-1 font-medium ${
-                                  b.paymentStatus === "Paid"
-                                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                                    : b.paymentStatus === "Failed"
-                                      ? "bg-red-100 text-red-800 border border-red-300"
-                                      : "bg-amber-100 text-amber-800 border border-amber-300"
-                                }`}
-                              >
-                                {b.paymentStatus === "Paid"
-                                  ? isOffline
-                                    ? "✓ Paid (Desk)"
-                                    : "✓ Paid (PayU)"
-                                  : b.paymentStatus === "Failed"
-                                    ? "✕ Payment Failed"
-                                    : "⏳ PayU Pending"}
-                              </span>
-
-                              {b.payuTxnId && (
-                                <span
-                                  className="text-[10px] text-taupe font-mono break-all max-w-[150px]"
-                                  title={`PayU Txn ID: ${b.payuTxnId}`}
-                                >
-                                  Txn: {b.payuTxnId}
-                                </span>
-                              )}
-
-                              {/* WhatsApp status badge */}
-                              {b.whatsappReminders?.confirmationSent ? (
-                                <span
-                                  className="eyebrow text-[9px] px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1 font-medium"
-                                  title={`Confirmation sent at ${b.whatsappReminders.confirmationSentAt ? new Date(b.whatsappReminders.confirmationSentAt).toLocaleString() : ""}`}
-                                >
-                                  💬 WA Confirmed
-                                </span>
-                              ) : b.whatsappOptIn === false ? (
-                                <span className="eyebrow text-[9px] px-2 py-0.5 bg-gray-100 text-gray-500 border border-gray-200 inline-flex items-center gap-1">
-                                  💬 WA Opt-out
-                                </span>
-                              ) : (
-                                <span className="eyebrow text-[9px] px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center gap-1">
-                                  💬 WA Pending
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          <td className="p-4 align-top text-right">
-                            <div className="flex flex-col gap-1.5 items-end">
-                              <a
-                                href={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/booking/${b.bookingId}/invoice.pdf`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="eyebrow text-[9px] border border-brown/30 px-2.5 py-1 text-brown hover:bg-brown hover:text-white transition-colors inline-flex items-center gap-1"
-                                title="Download Official Tax Invoice PDF"
-                              >
-                                📄 Invoice
-                              </a>
-
-                              {b.guestPhone && (
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <button
-                                    onClick={() => handleSendWhatsApp(b.bookingId, "confirmation")}
-                                    disabled={waSendingId === `${b.bookingId}-confirmation`}
-                                    className="eyebrow text-[8.5px] bg-[#25D366] hover:bg-[#1faa4e] text-white px-2 py-1 transition-colors font-semibold"
-                                    title="Send or resend WhatsApp booking confirmation with attached Invoice PDF"
-                                  >
-                                    {waSendingId === `${b.bookingId}-confirmation`
-                                      ? "..."
-                                      : "💬 Confirm"}
-                                  </button>
-                                  <button
-                                    onClick={() => handleSendWhatsApp(b.bookingId, "checkin")}
-                                    disabled={waSendingId === `${b.bookingId}-checkin`}
-                                    className="eyebrow text-[8.5px] border border-emerald-600 text-emerald-800 hover:bg-emerald-50 px-1.5 py-1 transition-colors"
-                                    title="Send arrival check-in reminder (Directions & timing)"
-                                  >
-                                    {waSendingId === `${b.bookingId}-checkin` ? "..." : "Arrival"}
-                                  </button>
-                                  <button
-                                    onClick={() => handleSendWhatsApp(b.bookingId, "checkout")}
-                                    disabled={waSendingId === `${b.bookingId}-checkout`}
-                                    className="eyebrow text-[8.5px] border border-emerald-600 text-emerald-800 hover:bg-emerald-50 px-1.5 py-1 transition-colors"
-                                    title="Send departure check-out reminder (Luggage store & review link)"
-                                  >
-                                    {waSendingId === `${b.bookingId}-checkout` ? "..." : "Depart"}
-                                  </button>
-                                  <button
-                                    onClick={() => handleSendWhatsApp(b.bookingId, "welcome")}
-                                    disabled={waSendingId === `${b.bookingId}-welcome`}
-                                    className="eyebrow text-[8.5px] border border-gold text-brown hover:bg-gold/10 px-1.5 py-1 transition-colors"
-                                    title="Send in-house welcome guide & Wi-Fi details"
-                                  >
-                                    {waSendingId === `${b.bookingId}-welcome` ? "..." : "Welcome"}
-                                  </button>
+                              {b.notes && (
+                                <div className="mt-2 text-xs bg-amber-50 border border-amber-200 text-amber-900 p-2 max-w-xs rounded-sm">
+                                  <span className="font-semibold block text-[9px] uppercase tracking-wider text-amber-800">
+                                    Notes:
+                                  </span>
+                                  {b.notes}
                                 </div>
                               )}
+                            </td>
 
-                              {b.status !== "Cancelled" && (
-                                <button
-                                  onClick={() => handleCancelBooking(b.bookingId)}
-                                  className="eyebrow text-[9px] text-red-500 border border-red-500/30 px-2.5 py-1 hover:bg-red-500 hover:text-white transition-colors mt-1"
-                                >
-                                  CANCEL
-                                </button>
+                            {/* 2. GUEST CONTACT (STAFF PRIVACY PROTECTED) */}
+                            <td className="p-4 align-top space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-brown/5 border border-brown/10 flex items-center justify-center shrink-0">
+                                  <User className="w-3.5 h-3.5 text-taupe" />
+                                </div>
+                                <div className="font-medium text-brown text-sm">
+                                  {privacyMode ? maskName(b.guestName) : b.guestName}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                                {b.guestPhone ? (
+                                  <>
+                                    {/* Direct Phone Dial Icon Button */}
+                                    <a
+                                      href={`tel:${b.guestPhone}`}
+                                      className="inline-flex items-center justify-center w-7 h-7 rounded bg-white hover:bg-gold/15 text-brown/70 hover:text-brown border border-brown/15 hover:border-gold transition-colors shadow-2xs"
+                                      title={
+                                        privacyMode
+                                          ? `Call Guest (${maskPhone(b.guestPhone)})`
+                                          : `Call Guest (${b.guestPhone})`
+                                      }
+                                    >
+                                      <Phone className="w-3.5 h-3.5" />
+                                    </a>
+
+                                    {/* Direct WhatsApp Chat Icon Button */}
+                                    <a
+                                      href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
+                                        `Hello ${privacyMode ? "Guest" : b.guestName}, this is Hotel Lotus Divine regarding your reservation ${b.bookingId}.`,
+                                      )}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center justify-center w-7 h-7 rounded bg-emerald-50 hover:bg-emerald-100 text-[#25D366] border border-emerald-200 transition-colors shadow-2xs"
+                                      title="Open WhatsApp Chat directly"
+                                    >
+                                      <MessageSquare className="w-3.5 h-3.5" />
+                                    </a>
+
+                                    {/* Display masked or unmasked phone number */}
+                                    <span className="font-mono text-[11px] text-taupe ml-1">
+                                      {privacyMode ? maskPhone(b.guestPhone) : b.guestPhone}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-[11px] text-taupe italic">
+                                    No phone provided
+                                  </span>
+                                )}
+
+                                {b.guestEmail && (
+                                  <a
+                                    href={`mailto:${b.guestEmail}`}
+                                    className="inline-flex items-center justify-center w-7 h-7 rounded bg-white hover:bg-brown/5 text-brown/70 hover:text-brown border border-brown/15 transition-colors shadow-2xs ml-auto"
+                                    title={
+                                      privacyMode
+                                        ? "Email Guest (Staff Privacy Mode)"
+                                        : `Email: ${b.guestEmail}`
+                                    }
+                                  >
+                                    <Mail className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* 3. STAY DATES */}
+                            <td className="p-4 align-top space-y-1">
+                              <div className="font-medium text-brown">
+                                {new Date(b.checkIn + "T00:00:00").toLocaleDateString("en-IN", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}{" "}
+                                →{" "}
+                                {new Date(b.checkOut + "T00:00:00").toLocaleDateString("en-IN", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </div>
+                              <div className="text-xs text-taupe">
+                                Duration:{" "}
+                                {Math.max(
+                                  1,
+                                  Math.round(
+                                    (new Date(b.checkOut).getTime() -
+                                      new Date(b.checkIn).getTime()) /
+                                      86400000,
+                                  ),
+                                )}{" "}
+                                night(s)
+                              </div>
+                              {b.arrivalTime && (
+                                <div className="text-[11px] text-gold font-medium">
+                                  Expected Arrival: {b.arrivalTime}
+                                </div>
                               )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            </td>
+
+                            {/* 4. ROOMS & TOTAL */}
+                            <td className="p-4 align-top space-y-1">
+                              <div className="font-medium text-brown">
+                                {b.rooms && b.rooms.length > 0
+                                  ? `${b.rooms.length} room${b.rooms.length > 1 ? "s" : ""} (${b.rooms
+                                      .map((r) =>
+                                        r.roomId === "lotus-sanctuary" ? "Deluxe" : "Premium",
+                                      )
+                                      .join(", ")})`
+                                  : b.roomId || "1 Room"}
+                              </div>
+                              <div className="font-display font-semibold text-brown text-sm">
+                                ₹{b.total.toLocaleString("en-IN")}
+                              </div>
+                              {b.specialRequest && (
+                                <div className="text-xs italic text-taupe max-w-xs border-l-2 border-gold/30 pl-2 mt-1">
+                                  "{b.specialRequest}"
+                                </div>
+                              )}
+                            </td>
+
+                            {/* 5. STATUS & PAYMENT (CLEAN, NO PAYU, ICON-ONLY WHATSAPP) */}
+                            <td className="p-4 align-top">
+                              <div className="flex flex-col gap-2 items-start">
+                                {/* Reservation Status Pill */}
+                                <span
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-medium rounded-full ${
+                                    b.status === "Cancelled" || b.status === "Failed"
+                                      ? "bg-red-50 text-red-700 border border-red-200"
+                                      : b.status === "Pending"
+                                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                        : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  }`}
+                                >
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      b.status === "Cancelled" || b.status === "Failed"
+                                        ? "bg-red-500"
+                                        : b.status === "Pending"
+                                          ? "bg-amber-500"
+                                          : "bg-emerald-500"
+                                    }`}
+                                  />
+                                  {b.status || "Confirmed"}
+                                </span>
+
+                                <div className="flex items-center gap-2">
+                                  {/* Payment Status - No "PayU" branding */}
+                                  <span
+                                    className={`text-[11px] font-medium inline-flex items-center gap-1 ${
+                                      b.paymentStatus === "Paid"
+                                        ? "text-emerald-700"
+                                        : b.paymentStatus === "Failed"
+                                          ? "text-red-600"
+                                          : "text-amber-700"
+                                    }`}
+                                  >
+                                    {b.paymentStatus === "Paid"
+                                      ? "✓ Paid"
+                                      : b.paymentStatus === "Failed"
+                                        ? "✕ Failed"
+                                        : "⏳ Pending"}
+                                  </span>
+
+                                  {/* WhatsApp Status: Icon Only */}
+                                  {b.whatsappReminders?.confirmationSent ? (
+                                    <span
+                                      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-[#25D366] border border-emerald-200 shadow-2xs"
+                                      title={`WhatsApp Confirmed: Dispatched on ${
+                                        b.whatsappReminders.confirmationSentAt
+                                          ? new Date(
+                                              b.whatsappReminders.confirmationSentAt,
+                                            ).toLocaleString("en-IN")
+                                          : "recent dispatch"
+                                      }`}
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-[#25D366]" />
+                                    </span>
+                                  ) : b.whatsappOptIn === false ? (
+                                    <span
+                                      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-400 border border-gray-200"
+                                      title="WhatsApp updates opted-out by guest"
+                                    >
+                                      <X className="w-3 h-3 text-gray-400" />
+                                    </span>
+                                  ) : (
+                                    <span
+                                      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-50 text-amber-600 border border-amber-200"
+                                      title="WhatsApp confirmation pending dispatch"
+                                    >
+                                      <Clock className="w-3 h-3 text-amber-600" />
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* 6. ACTIONS (BEAUTIFUL, COHESIVE LUXURY DOCK) */}
+                            <td className="p-4 align-top text-right">
+                              <div className="flex flex-col gap-2 items-end">
+                                {/* Primary Action Row: Invoice + WhatsApp Actions */}
+                                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                  {/* Official Tax Invoice PDF */}
+                                  <a
+                                    href={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/booking/${b.bookingId}/invoice.pdf`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-brown/80 bg-white hover:bg-brown/5 border border-brown/20 hover:border-gold rounded-sm shadow-2xs transition-all"
+                                    title="Download Official Tax Invoice PDF"
+                                  >
+                                    <FileText className="w-3.5 h-3.5 text-gold" />
+                                    <span>Invoice</span>
+                                  </a>
+
+                                  {b.guestPhone && (
+                                    <>
+                                      {/* Send/Resend WhatsApp Booking Confirmation + Invoice PDF */}
+                                      <button
+                                        onClick={() =>
+                                          handleSendWhatsApp(b.bookingId, "confirmation")
+                                        }
+                                        disabled={waSendingId === `${b.bookingId}-confirmation`}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-sm shadow-2xs transition-all"
+                                        title="Send or resend WhatsApp booking confirmation with attached Invoice PDF"
+                                      >
+                                        {waSendingId === `${b.bookingId}-confirmation` ? (
+                                          <RefreshCw className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                          <MessageSquare className="w-3 h-3" />
+                                        )}
+                                        <span>Confirm</span>
+                                      </button>
+
+                                      {/* Check-in Arrival Reminder */}
+                                      <button
+                                        onClick={() => handleSendWhatsApp(b.bookingId, "checkin")}
+                                        disabled={waSendingId === `${b.bookingId}-checkin`}
+                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-brown/70 bg-white hover:bg-brown/5 border border-brown/20 hover:border-gold disabled:opacity-50 rounded-sm shadow-2xs transition-all"
+                                        title="Send arrival check-in reminder (directions & timing)"
+                                      >
+                                        {waSendingId === `${b.bookingId}-checkin` ? (
+                                          <RefreshCw className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                          <Compass className="w-3 h-3 text-gold" />
+                                        )}
+                                        <span>Arrival</span>
+                                      </button>
+
+                                      {/* Check-out Departure Reminder */}
+                                      <button
+                                        onClick={() => handleSendWhatsApp(b.bookingId, "checkout")}
+                                        disabled={waSendingId === `${b.bookingId}-checkout`}
+                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-brown/70 bg-white hover:bg-brown/5 border border-brown/20 hover:border-gold disabled:opacity-50 rounded-sm shadow-2xs transition-all"
+                                        title="Send departure check-out reminder (luggage store & review link)"
+                                      >
+                                        {waSendingId === `${b.bookingId}-checkout` ? (
+                                          <RefreshCw className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                          <Luggage className="w-3 h-3 text-gold" />
+                                        )}
+                                        <span>Depart</span>
+                                      </button>
+
+                                      {/* Welcome & Wi-Fi Guide */}
+                                      <button
+                                        onClick={() => handleSendWhatsApp(b.bookingId, "welcome")}
+                                        disabled={waSendingId === `${b.bookingId}-welcome`}
+                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-brown/70 bg-white hover:bg-gold/10 border border-gold/40 hover:border-gold disabled:opacity-50 rounded-sm shadow-2xs transition-all"
+                                        title="Send in-house welcome guide & Wi-Fi credentials"
+                                      >
+                                        {waSendingId === `${b.bookingId}-welcome` ? (
+                                          <RefreshCw className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                          <Wifi className="w-3 h-3 text-gold" />
+                                        )}
+                                        <span>Welcome</span>
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+
+                                {/* Secondary Action: Subtle Cancel Reservation */}
+                                {b.status !== "Cancelled" && (
+                                  <button
+                                    onClick={() => handleCancelBooking(b.bookingId)}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] text-red-600/70 hover:text-red-700 hover:bg-red-50 border border-transparent hover:border-red-200 rounded transition-all"
+                                    title="Cancel this reservation"
+                                  >
+                                    <X className="w-3 h-3" />
+                                    <span>Cancel</span>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </section>
@@ -1936,20 +2146,28 @@ export default function AdminDashboardPage() {
                       <span className="font-display font-semibold text-gold text-sm tracking-wider">
                         {b.bookingId}
                       </span>
-                      <span
-                        className={`eyebrow text-[8px] px-2 py-0.5 font-semibold ${
-                          b.source === "offline"
-                            ? "bg-purple-100 text-purple-900 border border-purple-300"
-                            : "bg-blue-100 text-blue-900 border border-blue-300"
-                        }`}
-                      >
-                        {b.source === "offline" ? "🏢 Offline" : "🌐 Online"}
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-brown/70">
+                        {b.source === "offline" ? (
+                          <>
+                            <Building2 className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Front Desk</span>
+                          </>
+                        ) : (
+                          <>
+                            <Globe className="w-3.5 h-3.5 text-emerald-700" />
+                            <span>Online</span>
+                          </>
+                        )}
                       </span>
                     </div>
 
-                    <div className="font-medium text-brown">{b.guestName}</div>
+                    <div className="font-medium text-brown">
+                      {privacyMode ? maskName(b.guestName) : b.guestName}
+                    </div>
                     {b.guestPhone && (
-                      <div className="text-taupe text-[11px]">Phone: {b.guestPhone}</div>
+                      <div className="text-taupe text-[11px] font-mono">
+                        Phone: {privacyMode ? maskPhone(b.guestPhone) : b.guestPhone}
+                      </div>
                     )}
                     <div className="text-taupe text-[11px]">
                       Stay: {b.checkIn} → {b.checkOut}

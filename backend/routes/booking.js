@@ -281,9 +281,8 @@ router.get("/:bookingId", async (req, res) => {
   }
 });
 
-// GET /api/booking/:bookingId/invoice (or .pdf)
-// Generates and streams branded Tax Invoice PDF
-router.get("/:bookingId/invoice", async (req, res) => {
+// Stream branded Tax Invoice PDF
+async function streamInvoicePdfHandler(req, res) {
   try {
     let { bookingId } = req.params;
     if (bookingId.endsWith(".pdf")) {
@@ -306,12 +305,10 @@ router.get("/:bookingId/invoice", async (req, res) => {
     console.error("Invoice PDF generation error:", error);
     res.status(500).json({ error: "Failed to generate invoice PDF: " + error.message });
   }
-});
+}
 
-// Also support direct .pdf URL: /api/booking/:bookingId.pdf
-router.get("/:bookingId/invoice.pdf", async (req, res) => {
-  req.url = `/${req.params.bookingId}/invoice`;
-  return router.handle(req, res);
-});
+// GET /api/booking/:bookingId/invoice and /api/booking/:bookingId/invoice.pdf
+router.get("/:bookingId/invoice", streamInvoicePdfHandler);
+router.get("/:bookingId/invoice.pdf", streamInvoicePdfHandler);
 
 export default router;

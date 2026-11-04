@@ -167,8 +167,14 @@ export async function sendWhatsAppConfirmation(booking) {
     return { success: false, skipped: true, reason: "guest_opted_out" };
   }
 
-  const campaignName =
+  let campaignName =
     process.env.AISENSY_CONFIRMATION_CAMPAIGN || "lotus_booking_confirmation_with_invoice";
+
+  // If environment was set to the text-only template, upgrade to the invoice campaign to send the PDF
+  if (campaignName === "lotus_booking_confirmation") {
+    campaignName = "lotus_booking_confirmation_with_invoice";
+  }
+
   const backendBase = (
     process.env.BACKEND_URL ||
     process.env.NEXT_PUBLIC_BACKEND_URL ||
@@ -204,13 +210,31 @@ export async function sendWhatsAppConfirmation(booking) {
     filename: `Lotus_Divine_Invoice_${booking.bookingId}.pdf`,
   };
 
-  const result = await sendAiSensyCampaign({
+  let result = await sendAiSensyCampaign({
     campaignName,
     destination: booking.guestPhone,
     userName: guestName,
     templateParams,
     media: mediaPayload,
   });
+
+  // If campaign with invoice fails because campaign does not exist in AiSensy, fall back to lotus_booking_confirmation
+  if (
+    !result.success &&
+    (result.error?.includes("Campaign does not exist") ||
+      result.data?.message?.includes("Campaign does not exist")) &&
+    campaignName !== "lotus_booking_confirmation"
+  ) {
+    console.warn(
+      `[AiSensy] Campaign "${campaignName}" not found; falling back to "lotus_booking_confirmation"`,
+    );
+    result = await sendAiSensyCampaign({
+      campaignName: "lotus_booking_confirmation",
+      destination: booking.guestPhone,
+      userName: guestName,
+      templateParams,
+    });
+  }
 
   try {
     if (!booking.whatsappReminders) booking.whatsappReminders = {};

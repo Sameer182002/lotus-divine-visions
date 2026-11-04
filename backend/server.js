@@ -92,18 +92,27 @@ app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 // 4. Rate Limiter (Brute-force and DDoS Mitigation)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  max: 200, // Limit each IP to 200 requests per window
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => Boolean(req.originalUrl && req.originalUrl.includes("/api/payment/response")),
+  skip: (req) =>
+    Boolean(
+      req.originalUrl &&
+        (req.originalUrl.includes("/api/payment/response") ||
+          req.originalUrl.includes("/invoice")),
+    ),
   message: { error: "Too many requests from this IP, please try again after 15 minutes" },
 });
 
 const bookingLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 10, // Strict limit: max 10 booking requests per 10 minutes per IP
+  max: 20, // Limit booking creation attempts per IP
   standardHeaders: true,
   legacyHeaders: false,
+  // Only rate limit booking creations (POST); never throttle GET requests like status queries or invoice PDF downloads
+  skip: (req) =>
+    req.method === "GET" ||
+    Boolean(req.originalUrl && req.originalUrl.includes("/invoice")),
   message: { error: "Too many booking attempts. Please try again later or contact us directly." },
 });
 
