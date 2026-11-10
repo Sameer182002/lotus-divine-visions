@@ -73,11 +73,17 @@ function Calendar({
             : "[&>svg]:text-muted-foreground flex h-8 items-center gap-1 rounded-md pl-2 pr-1 text-sm [&>svg]:size-3.5",
           defaultClassNames.caption_label,
         ),
-        month_grid: cn("w-full border-collapse block", defaultClassNames.month_grid),
-        table: cn("w-full border-collapse block", defaultClassNames.month_grid),
-        weekdays: cn("flex w-full", defaultClassNames.weekdays),
+        month_grid: cn(
+          "w-full border-collapse block [&_thead]:block [&_thead]:w-full",
+          defaultClassNames.month_grid,
+        ),
+        table: cn(
+          "w-full border-collapse block [&_thead]:block [&_thead]:w-full",
+          defaultClassNames.month_grid,
+        ),
+        weekdays: cn("flex w-full items-center", defaultClassNames.weekdays),
         weekday: cn(
-          "text-muted-foreground flex-1 select-none rounded-md text-[0.8rem] font-normal",
+          "text-muted-foreground flex-1 select-none rounded-md text-[0.8rem] font-normal text-center",
           defaultClassNames.weekday,
         ),
         weeks: cn("block w-full", defaultClassNames.weeks),
@@ -122,6 +128,13 @@ function Calendar({
           return <ChevronDownIcon className={cn("size-4", className)} {...props} />;
         },
         DayButton: CalendarDayButton,
+        Weekdays: ({ className, ...props }) => {
+          return (
+            <thead aria-hidden="true" className="block w-full">
+              <tr className={cn("flex w-full items-center", className)} {...props} />
+            </thead>
+          );
+        },
         WeekNumber: ({ children, ...props }) => {
           return (
             <td {...props}>

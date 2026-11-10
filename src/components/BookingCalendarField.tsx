@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { useState } from "react";
-import type { DayButton } from "react-day-picker";
+import type { DayButton, Weekdays } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { isoToLocalDate, localDateToISO } from "@/lib/booking-dates";
@@ -21,15 +21,24 @@ const calendarClassNames = {
     "h-8 w-8 flex items-center justify-center rounded-full text-brown/50 hover:bg-champagne/70 hover:text-brown transition-colors disabled:opacity-25 disabled:pointer-events-none disabled:hover:bg-transparent",
   button_next:
     "h-8 w-8 flex items-center justify-center rounded-full text-brown/50 hover:bg-champagne/70 hover:text-brown transition-colors disabled:opacity-25 disabled:pointer-events-none disabled:hover:bg-transparent",
-  month_grid: "w-full border-collapse block",
-  weekdays: "flex w-full",
-  weekday: "flex-1 eyebrow text-taupe text-[9px] text-center pb-1",
+  month_grid: "w-full border-collapse block [&_thead]:block [&_thead]:w-full",
+  weekdays: "flex w-full items-center",
+  weekday:
+    "flex-1 text-center font-sans font-semibold text-taupe text-[10px] tracking-wide uppercase pb-2",
   weeks: "block w-full",
   week: "flex w-full mt-1",
   day: "flex-1 p-0.5 flex items-center justify-center",
   outside: "invisible",
   hidden: "invisible",
 };
+
+function BookingWeekdays({ className, ...props }: React.ComponentProps<typeof Weekdays>) {
+  return (
+    <thead aria-hidden="true" className="block w-full">
+      <tr className={cn("flex w-full items-center", className)} {...props} />
+    </thead>
+  );
+}
 
 function BookingDayButton({
   className,
@@ -99,7 +108,10 @@ export function BookingCalendarField({
           showOutsideDays={false}
           className="w-full p-0 [--cell-size:2.5rem]"
           classNames={calendarClassNames}
-          components={{ DayButton: BookingDayButton }}
+          components={{
+            DayButton: BookingDayButton,
+            Weekdays: BookingWeekdays,
+          }}
         />
       </PopoverContent>
     </Popover>
