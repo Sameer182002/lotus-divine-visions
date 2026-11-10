@@ -13,18 +13,20 @@ import { cn } from "@/lib/utils";
 // OS date picker — the visible field is always a button that opens this popover.
 
 const calendarClassNames = {
-  months: "flex flex-col",
-  month: "flex flex-col gap-3",
+  months: "flex flex-col w-full",
+  month: "flex flex-col gap-3 w-full",
   month_caption: "flex items-center justify-center h-9 font-display text-brown text-[15px]",
   nav: "absolute inset-x-0 top-0 flex items-center justify-between px-0.5",
   button_previous:
     "h-8 w-8 flex items-center justify-center rounded-full text-brown/50 hover:bg-champagne/70 hover:text-brown transition-colors disabled:opacity-25 disabled:pointer-events-none disabled:hover:bg-transparent",
   button_next:
     "h-8 w-8 flex items-center justify-center rounded-full text-brown/50 hover:bg-champagne/70 hover:text-brown transition-colors disabled:opacity-25 disabled:pointer-events-none disabled:hover:bg-transparent",
-  weekdays: "flex",
+  month_grid: "w-full border-collapse block",
+  weekdays: "flex w-full",
   weekday: "flex-1 eyebrow text-taupe text-[9px] text-center pb-1",
+  weeks: "block w-full",
   week: "flex w-full mt-1",
-  day: "flex-1 p-0.5",
+  day: "flex-1 p-0.5 flex items-center justify-center",
   outside: "invisible",
   hidden: "invisible",
 };
@@ -46,7 +48,7 @@ function BookingDayButton({
       type="button"
       data-day={day.date.toLocaleDateString()}
       className={cn(
-        "flex aspect-square w-full items-center justify-center rounded-full font-sans text-[13px] text-brown transition-colors",
+        "flex aspect-square h-9 w-9 max-h-[38px] max-w-[38px] items-center justify-center rounded-full font-sans text-[13px] text-brown transition-colors",
         "hover:bg-champagne/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60",
         modifiers.today && !modifiers.selected && "font-semibold ring-1 ring-gold/50",
         modifiers.selected && "bg-gold font-semibold text-brown hover:bg-gold",
@@ -82,7 +84,7 @@ export function BookingCalendarField({
         align={align}
         sideOffset={10}
         collisionPadding={12}
-        className="w-[19.5rem] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-brown/10 bg-ivory p-4 shadow-gold"
+        className="w-[20rem] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-brown/15 bg-ivory p-4 pb-5 shadow-2xl z-50 overflow-hidden"
       >
         <Calendar
           mode="single"

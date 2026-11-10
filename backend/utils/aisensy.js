@@ -34,12 +34,40 @@ function formatDatePretty(dateStr) {
 }
 
 /**
+ * Resolves room ID/slug into branded display title (e.g. "Deluxe Room", "Premium Room")
+ * @param {string} roomId
+ * @returns {string}
+ */
+export function getRoomDisplayName(roomId) {
+  if (!roomId) return "Deluxe Room";
+  const id = String(roomId).toLowerCase();
+  if (id.includes("imperial") || id.includes("vista") || id.includes("premium")) {
+    return "Premium Room";
+  }
+  if (id.includes("family")) {
+    return "Family Suite";
+  }
+  if (id.includes("super")) {
+    return "Super Deluxe Room";
+  }
+  if (id.includes("lotus") || id.includes("sanctuary") || id.includes("deluxe")) {
+    return "Deluxe Room";
+  }
+  return (
+    id.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) + " Room"
+  );
+}
+
+/**
  * Summarizes booked rooms into a string for WhatsApp confirmation template
- * Format matches approved template: "Deluxe Room (2 Guests)"
+ * Format matches approved template:
+ * - Single room: "Deluxe Room (2 Guests)" or "Premium Room (2 Guests)"
+ * - Multiple of same room: "Deluxe Room (3 Rooms) (6 Guests)"
+ * - Multiple different rooms: "1 Deluxe Room + 1 Premium Room (4 Guests)"
  * @param {Array} rooms
  * @returns {string}
  */
-function summarizeRooms(rooms) {
+export function summarizeRooms(rooms) {
   if (!Array.isArray(rooms) || rooms.length === 0) {
     return "Deluxe Room (2 Guests)";
   }
@@ -47,32 +75,36 @@ function summarizeRooms(rooms) {
   const map = {};
   let totalGuests = 0;
   rooms.forEach((r) => {
-    const id = r.roomId || "deluxe-room";
-    let name = "Deluxe Room";
-    if (id.includes("family")) name = "Family Suite";
-    else if (id.includes("super")) name = "Super Deluxe Room";
+    const name = getRoomDisplayName(r.roomId);
     map[name] = (map[name] || 0) + 1;
     totalGuests += Number(r.guests) || 2;
   });
 
-  const roomNames = Object.entries(map)
-    .map(([name, count]) => (count > 1 ? `${name} (${count} Rooms)` : name))
-    .join(", ");
+  const entries = Object.entries(map);
+  let roomSummary = "";
 
-  return `${roomNames} (${totalGuests} Guest${totalGuests !== 1 ? "s" : ""})`;
+  if (entries.length === 1) {
+    const [name, count] = entries[0];
+    roomSummary = count > 1 ? `${name} (${count} Rooms)` : name;
+  } else {
+    // When different room types are booked together (e.g. 1 Deluxe + 1 Premium)
+    roomSummary = entries
+      .map(([name, count]) => `${count} ${name}${count > 1 ? "s" : ""}`)
+      .join(" + ");
+  }
+
+  return `${roomSummary} (${totalGuests} Guest${totalGuests !== 1 ? "s" : ""})`;
 }
 
 /**
- * Gets clean primary room title for check-in reminder template (e.g. "Deluxe Room")
+ * Gets clean primary room title for check-in reminder template (e.g. "Deluxe Room & Premium Room")
  * @param {Array} rooms
  * @returns {string}
  */
-function getPrimaryRoomName(rooms) {
+export function getPrimaryRoomName(rooms) {
   if (!Array.isArray(rooms) || rooms.length === 0) return "Deluxe Room";
-  const id = rooms[0].roomId || "";
-  if (id.includes("family")) return "Family Suite";
-  if (id.includes("super")) return "Super Deluxe Room";
-  return "Deluxe Room";
+  const uniqueNames = [...new Set(rooms.map((r) => getRoomDisplayName(r.roomId)))];
+  return uniqueNames.join(" & ");
 }
 
 /**

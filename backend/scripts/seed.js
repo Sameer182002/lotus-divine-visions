@@ -74,7 +74,7 @@ async function runSeed() {
         "A more spacious room with a king-size bed, ideal if you want extra room to relax.",
       amenities: ROOM_AMENITIES,
       size: "15 × 12 FT",
-      capacity: "Up to 4 Guests",
+      capacity: "2 Guests",
       price: "From ₹2,000 / night",
       inventory: 5,
       imageKey: "room2",

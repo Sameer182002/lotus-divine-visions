@@ -264,7 +264,7 @@ export const ROOMS_DETAIL = [
       "A more spacious room with a king-size bed, ideal if you want extra room to relax.",
     amenities: ROOM_AMENITIES,
     size: "15 × 12 FT",
-    capacity: "Up to 4 Guests",
+    capacity: "2 Guests",
     price: "From ₹2,000 / night",
     imageKey: "room2" as const,
     imageAlt: "Premium room at Lotus Divine",

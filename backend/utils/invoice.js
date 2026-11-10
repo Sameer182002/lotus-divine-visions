@@ -174,11 +174,16 @@ export function generateInvoicePdf(booking) {
         doc.rect(40, currentY, 515, 28).fill(rowBg);
 
         const roomTitle =
-          r.roomId && r.roomId.includes("family")
-            ? "Family Suite — Premium Golden Temple View"
-            : r.roomId && r.roomId.includes("super")
-              ? "Super Deluxe Room — Luxury Amenities"
-              : "Deluxe Room — King Bed & Ensuite Bath";
+          r.roomId &&
+          (r.roomId.includes("imperial") ||
+            r.roomId.includes("vista") ||
+            r.roomId.includes("premium"))
+            ? "Premium Room — Spacious King Bed & Luxury Amenities"
+            : r.roomId && r.roomId.includes("family")
+              ? "Family Suite — Premium Golden Temple View"
+              : r.roomId && r.roomId.includes("super")
+                ? "Super Deluxe Room — Luxury Amenities"
+                : "Deluxe Room — King Bed & Ensuite Bath";
 
         doc
           .font("Helvetica-Bold")
